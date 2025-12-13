@@ -1,38 +1,83 @@
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import { AppProvider } from './context/AppProvider';
-import { useApp } from './context/useApp';
-import Home from './pages/Home';
-import Onboarding from './pages/Onboarding';
-import Capture from './pages/Capture';
-import ManualEntry from './pages/ManualEntry';
-import History from './pages/History';
+import { Navigate, Route, Routes } from 'react-router-dom'
+import { useApp } from './state/AppContext'
+import { MobileShell } from './components/MobileShell'
+import { HomeRoute } from './routes/HomeRoute'
+import { OnboardingRoute } from './routes/OnboardingRoute'
+import { ManualEntryRoute } from './routes/ManualEntryRoute'
+import { MealsRoute } from './routes/MealsRoute'
+import { MealDetailRoute } from './routes/MealDetailRoute'
+import { SettingsRoute } from './routes/SettingsRoute'
+import { CaptureMealRoute } from './routes/CaptureMealRoute'
 
-function AppRoutes() {
-  const { user, isLoading } = useApp();
+export default function App() {
+  const { isHydrated, currentProfileId } = useApp()
 
-  if (isLoading) {
-    return <div className="p-4">Loading...</div>;
+  if (!isHydrated) {
+    return (
+      <MobileShell title="AI Nutritionist">
+        <div className="text-sm text-slate-600">Loading…</div>
+      </MobileShell>
+    )
   }
 
   return (
-    <Routes>
-      <Route path="/onboarding" element={<Onboarding />} />
-      <Route path="/" element={user ? <Home /> : <Navigate to="/onboarding" replace />} />
-      <Route path="/capture" element={user ? <Capture /> : <Navigate to="/onboarding" replace />} />
-      <Route path="/manual-entry" element={user ? <ManualEntry /> : <Navigate to="/onboarding" replace />} />
-      <Route path="/history" element={user ? <History /> : <Navigate to="/onboarding" replace />} />
-    </Routes>
-  );
+    <MobileShell title="AI Nutritionist">
+      <Routes>
+        <Route path="/onboarding" element={<OnboardingRoute />} />
+        <Route
+          path="/"
+          element={
+            currentProfileId ? <HomeRoute /> : <Navigate to="/onboarding" replace />
+          }
+        />
+        <Route
+          path="/capture"
+          element={
+            currentProfileId ? (
+              <CaptureMealRoute />
+            ) : (
+              <Navigate to="/onboarding" replace />
+            )
+          }
+        />
+        <Route
+          path="/manual"
+          element={
+            currentProfileId ? (
+              <ManualEntryRoute />
+            ) : (
+              <Navigate to="/onboarding" replace />
+            )
+          }
+        />
+        <Route
+          path="/meals"
+          element={
+            currentProfileId ? <MealsRoute /> : <Navigate to="/onboarding" replace />
+          }
+        />
+        <Route
+          path="/meals/:mealId"
+          element={
+            currentProfileId ? (
+              <MealDetailRoute />
+            ) : (
+              <Navigate to="/onboarding" replace />
+            )
+          }
+        />
+        <Route
+          path="/settings"
+          element={
+            currentProfileId ? (
+              <SettingsRoute />
+            ) : (
+              <Navigate to="/onboarding" replace />
+            )
+          }
+        />
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+    </MobileShell>
+  )
 }
-
-function App() {
-  return (
-    <AppProvider>
-      <Router>
-        <AppRoutes />
-      </Router>
-    </AppProvider>
-  );
-}
-
-export default App;

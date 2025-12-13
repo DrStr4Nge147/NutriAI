@@ -1,0 +1,60 @@
+export type Sex = 'male' | 'female' | 'other' | 'prefer_not_say'
+
+export type ActivityLevel =
+  | 'sedentary'
+  | 'light'
+  | 'moderate'
+  | 'active'
+  | 'very_active'
+
+export type MacroNutrients = {
+  calories: number
+  carbs_g: number
+  protein_g: number
+  fat_g: number
+}
+
+export type BodyMetrics = {
+  heightCm: number
+  weightKg: number
+  age: number
+  sex: Sex
+  activityLevel: ActivityLevel
+}
+
+export type MedicalInfo = {
+  conditions: string[]
+}
+
+export type UserProfile = {
+  id: string
+  createdAt: string
+  name: string
+  body: BodyMetrics
+  medical: MedicalInfo
+}
+
+export type FoodItem = {
+  id: string
+  name: string
+  quantityGrams: number
+  macros: MacroNutrients
+}
+
+export type Meal = {
+  id: string
+  profileId: string
+  createdAt: string
+  eatenAt: string
+  photoDataUrl?: string
+  items: FoodItem[]
+  totalMacros: MacroNutrients
+}
+
+export type ExportPayloadV1 = {
+  version: 1
+  exportedAt: string
+  currentProfileId: string | null
+  profiles: UserProfile[]
+  meals: Meal[]
+}
