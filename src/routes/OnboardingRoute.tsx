@@ -18,6 +18,8 @@ const DEFAULTS: Omit<UserProfile, 'id' | 'createdAt'> = {
   medical: {
     conditions: [],
   },
+  goal: 'maintain',
+  targetCaloriesKcal: null,
 }
 
 export function OnboardingRoute() {

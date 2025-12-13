@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import type { ActivityLevel, Sex } from '../models/types'
+import type { ActivityLevel, Goal, Sex } from '../models/types'
 import { useApp } from '../state/AppContext'
 import { clampNumber, safeNumber } from '../utils/numbers'
 
@@ -19,6 +19,8 @@ export function ProfileRoute() {
   const [sex, setSex] = useState<Sex>('prefer_not_say')
   const [activityLevel, setActivityLevel] = useState<ActivityLevel>('moderate')
   const [conditionsText, setConditionsText] = useState('')
+  const [goal, setGoal] = useState<Goal>('maintain')
+  const [targetCaloriesKcal, setTargetCaloriesKcal] = useState('')
 
   useEffect(() => {
     setMessage(null)
@@ -33,6 +35,12 @@ export function ProfileRoute() {
     setSex(currentProfile.body.sex)
     setActivityLevel(currentProfile.body.activityLevel)
     setConditionsText((currentProfile.medical.conditions ?? []).join(', '))
+    setGoal(currentProfile.goal ?? 'maintain')
+    setTargetCaloriesKcal(
+      currentProfile.targetCaloriesKcal == null || !Number.isFinite(currentProfile.targetCaloriesKcal)
+        ? ''
+        : String(currentProfile.targetCaloriesKcal),
+    )
   }, [currentProfile?.id])
 
   const parsedConditions = useMemo(() => {
@@ -63,6 +71,9 @@ export function ProfileRoute() {
         medical: {
           conditions: parsedConditions,
         },
+        goal,
+        targetCaloriesKcal:
+          targetCaloriesKcal.trim() === '' ? null : Math.max(0, safeNumber(targetCaloriesKcal, 0)),
       }
 
       await saveProfile(nextProfile)
@@ -182,6 +193,34 @@ export function ProfileRoute() {
           />
         </label>
 
+        <div className="grid grid-cols-2 gap-3">
+          <label className="block text-sm">
+            <div className="font-medium">Goal</div>
+            <select
+              className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
+              value={goal}
+              onChange={(e) => setGoal(e.target.value as Goal)}
+              disabled={busy}
+            >
+              <option value="maintain">Maintain</option>
+              <option value="lose">Lose weight</option>
+              <option value="gain">Gain weight</option>
+            </select>
+          </label>
+
+          <label className="block text-sm">
+            <div className="font-medium">Daily target (kcal) (optional)</div>
+            <input
+              className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
+              value={targetCaloriesKcal}
+              onChange={(e) => setTargetCaloriesKcal(e.target.value)}
+              inputMode="numeric"
+              placeholder="e.g., 2000"
+              disabled={busy}
+            />
+          </label>
+        </div>
+
         <button
           className="w-full rounded-md bg-slate-900 px-3 py-2 text-sm font-medium text-white disabled:opacity-50"
           onClick={() => void onSave()}
@@ -195,8 +234,16 @@ export function ProfileRoute() {
           Cancel
         </Link>
 
-        {message ? <div className="text-sm text-green-700">{message}</div> : null}
-        {error ? <div className="text-sm text-red-600">{error}</div> : null}
+        {message ? (
+          <div className="text-sm text-green-700" role="status" aria-live="polite">
+            {message}
+          </div>
+        ) : null}
+        {error ? (
+          <div className="text-sm text-red-600" role="alert" aria-live="assertive">
+            {error}
+          </div>
+        ) : null}
       </div>
     </div>
   )

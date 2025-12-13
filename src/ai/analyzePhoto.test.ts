@@ -23,6 +23,8 @@ describe('ai/analyzePhoto', () => {
             protein_g: 5.4,
             carbs_g: 56.4,
             fat_g: 0.6,
+            sugar_g: 0.2,
+            sodium_mg: 12,
           },
         ],
       }),
@@ -33,6 +35,8 @@ describe('ai/analyzePhoto', () => {
     expect(items[0].quantityGrams).toBe(200)
     expect(items[0].macros.calories).toBe(260)
     expect(items[0].macros.protein_g).toBe(5.4)
+    expect(items[0].macros.sugar_g).toBe(0.2)
+    expect(items[0].macros.sodium_mg).toBe(12)
   })
 
   it('parses AI JSON when response is an array', () => {

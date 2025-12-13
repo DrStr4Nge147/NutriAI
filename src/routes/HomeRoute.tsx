@@ -1,6 +1,6 @@
 import { useMemo } from 'react'
 import { Link } from 'react-router-dom'
-import { estimateTdee } from '../nutrition/dailyNeeds'
+import { dailyCalorieTarget } from '../nutrition/dailyNeeds'
 import { buildHealthInsights } from '../nutrition/health'
 import { sumMacroNutrients } from '../nutrition/macros'
 import { useApp } from '../state/AppContext'
@@ -30,7 +30,11 @@ export function HomeRoute() {
 
   const dailyNeeds = useMemo(() => {
     if (!currentProfile) return null
-    return estimateTdee(currentProfile.body)
+    return dailyCalorieTarget({
+      body: currentProfile.body,
+      goal: currentProfile.goal,
+      targetCaloriesKcal: currentProfile.targetCaloriesKcal,
+    })
   }, [currentProfile])
 
   const healthInsights = useMemo(() => {
@@ -39,9 +43,9 @@ export function HomeRoute() {
       body: currentProfile.body,
       medical: currentProfile.medical,
       totals: todaySummary.totals,
-      tdeeKcal: dailyNeeds?.tdee ?? null,
+      targetKcal: dailyNeeds?.target ?? null,
     })
-  }, [currentProfile, todaySummary.totals, dailyNeeds?.tdee])
+  }, [currentProfile, todaySummary.totals, dailyNeeds?.target])
 
   return (
     <div className="space-y-4">
@@ -55,7 +59,7 @@ export function HomeRoute() {
 
         {dailyNeeds ? (
           <div className="text-xs text-slate-600">
-            Daily target: {dailyNeeds.tdee} kcal (BMR {dailyNeeds.bmr} · activity x{dailyNeeds.multiplier})
+            Daily target: {dailyNeeds.target} kcal (BMR {dailyNeeds.bmr} · activity x{dailyNeeds.multiplier})
           </div>
         ) : (
           <div className="text-xs text-slate-600">Add your body details to estimate daily needs.</div>
@@ -81,12 +85,12 @@ export function HomeRoute() {
         {dailyNeeds ? (
           <div
             className={
-              todaySummary.totals.calories > dailyNeeds.tdee ? 'text-sm text-red-700' : 'text-sm text-green-700'
+              todaySummary.totals.calories > dailyNeeds.target ? 'text-sm text-red-700' : 'text-sm text-green-700'
             }
           >
-            {todaySummary.totals.calories > dailyNeeds.tdee
-              ? `Over by ${todaySummary.totals.calories - dailyNeeds.tdee} kcal`
-              : `Remaining ${dailyNeeds.tdee - todaySummary.totals.calories} kcal`}
+            {todaySummary.totals.calories > dailyNeeds.target
+              ? `Over by ${todaySummary.totals.calories - dailyNeeds.target} kcal`
+              : `Remaining ${dailyNeeds.target - todaySummary.totals.calories} kcal`}
           </div>
         ) : null}
       </div>

@@ -1,4 +1,4 @@
-import type { ActivityLevel, BodyMetrics, Sex } from '../models/types'
+import type { ActivityLevel, BodyMetrics, Goal, Sex } from '../models/types'
 
 export function activityMultiplier(level: ActivityLevel): number {
   switch (level) {
@@ -42,4 +42,29 @@ export function estimateTdee(body: BodyMetrics): { bmr: number; tdee: number; mu
   if (bmr == null) return null
   const multiplier = activityMultiplier(body.activityLevel)
   return { bmr, multiplier, tdee: Math.round(bmr * multiplier) }
+}
+
+export function dailyCalorieTarget(input: {
+  body: BodyMetrics
+  goal?: Goal
+  targetCaloriesKcal?: number | null
+}): { bmr: number; tdee: number; multiplier: number; target: number; mode: 'tdee' | 'goal' | 'override' } | null {
+  const base = estimateTdee(input.body)
+  if (!base) return null
+
+  const override = input.targetCaloriesKcal
+  if (typeof override === 'number' && Number.isFinite(override) && override > 0) {
+    return { ...base, target: Math.round(override), mode: 'override' }
+  }
+
+  const goal = input.goal ?? 'maintain'
+  if (goal === 'lose') {
+    const target = Math.max(1200, base.tdee - 500)
+    return { ...base, target, mode: 'goal' }
+  }
+  if (goal === 'gain') {
+    return { ...base, target: base.tdee + 300, mode: 'goal' }
+  }
+
+  return { ...base, target: base.tdee, mode: 'tdee' }
 }

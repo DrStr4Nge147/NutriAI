@@ -18,6 +18,6 @@ describe('sumMacros', () => {
       },
     ])
 
-    expect(total).toEqual({ calories: 150, carbs_g: 15, protein_g: 7, fat_g: 3 })
+    expect(total).toEqual({ calories: 150, carbs_g: 15, protein_g: 7, fat_g: 3, sugar_g: 0, sodium_mg: 0 })
   })
 })

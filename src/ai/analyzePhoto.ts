@@ -18,6 +18,8 @@ type AiItemJson = {
   protein_g?: unknown
   carbs_g?: unknown
   fat_g?: unknown
+  sugar_g?: unknown
+  sodium_mg?: unknown
 }
 
 type AiPayloadJson = {
@@ -43,6 +45,8 @@ export function parseAiJsonToFoodItems(jsonText: string): FoodItem[] {
       protein_g: numberOrZero(r.protein_g),
       carbs_g: numberOrZero(r.carbs_g),
       fat_g: numberOrZero(r.fat_g),
+      sugar_g: numberOrZero(r.sugar_g),
+      sodium_mg: numberOrZero(r.sodium_mg),
     }
 
     if (!name) throw new Error('AI item missing name')
@@ -74,7 +78,7 @@ export async function analyzeMealPhoto(input: {
     const url = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(settings.gemini.model)}:generateContent`
 
     const prompt =
-      'You are a nutrition assistant. Analyze the meal photo. Return ONLY valid JSON with the shape: {"items": [{"name": string, "quantityGrams": number, "calories": number, "protein_g": number, "carbs_g": number, "fat_g": number}]}. Use numbers only. If uncertain, make a best guess.'
+      'You are a nutrition assistant. Analyze the meal photo. Return ONLY valid JSON with the shape: {"items": [{"name": string, "quantityGrams": number, "calories": number, "protein_g": number, "carbs_g": number, "fat_g": number, "sugar_g": number, "sodium_mg": number}]}. Use numbers only. If uncertain, make a best guess.'
 
     const res = await fetch(url, {
       method: 'POST',
@@ -122,7 +126,7 @@ export async function analyzeMealPhoto(input: {
     const url = `${baseUrl}/api/chat`
 
     const prompt =
-      'Analyze the meal photo. Return ONLY valid JSON with the shape: {"items": [{"name": string, "quantityGrams": number, "calories": number, "protein_g": number, "carbs_g": number, "fat_g": number}]}. Use numbers only. If uncertain, make a best guess.'
+      'Analyze the meal photo. Return ONLY valid JSON with the shape: {"items": [{"name": string, "quantityGrams": number, "calories": number, "protein_g": number, "carbs_g": number, "fat_g": number, "sugar_g": number, "sodium_mg": number}]}. Use numbers only. If uncertain, make a best guess.'
 
     const res = await fetch(url, {
       method: 'POST',

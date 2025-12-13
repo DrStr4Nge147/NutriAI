@@ -2,17 +2,30 @@ import { useMemo, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { analyzeMealPhoto } from '../ai/analyzePhoto'
 import { MealItemsEditor } from '../components/MealItemsEditor'
+import { buildHealthInsights } from '../nutrition/health'
 import { useApp } from '../state/AppContext'
 
 export function MealDetailRoute() {
   const navigate = useNavigate()
   const { mealId } = useParams<{ mealId: string }>()
-  const { meals, removeMeal, updateMeal } = useApp()
+  const { meals, removeMeal, updateMeal, currentProfile } = useApp()
 
   const [analyzing, setAnalyzing] = useState(false)
   const [analysisError, setAnalysisError] = useState<string | null>(null)
 
   const meal = useMemo(() => meals.find((m) => m.id === mealId) ?? null, [meals, mealId])
+
+  const mealInsights = useMemo(() => {
+    if (!meal || !currentProfile) return []
+    return buildHealthInsights({
+      scope: 'meal',
+      body: currentProfile.body,
+      medical: currentProfile.medical,
+      totals: meal.totalMacros,
+      targetKcal: null,
+      items: meal.items.map((i) => ({ name: i.name })),
+    })
+  }, [meal, currentProfile])
 
   async function onDelete() {
     if (!meal) return
@@ -75,7 +88,11 @@ export function MealDetailRoute() {
               <div className="text-xs text-slate-600">Not analyzed yet.</div>
             )}
 
-            {analysisError ? <div className="text-sm text-red-600">{analysisError}</div> : null}
+            {analysisError ? (
+              <div className="text-sm text-red-600" role="alert" aria-live="assertive">
+                {analysisError}
+              </div>
+            ) : null}
 
             <button
               className="w-full rounded-md bg-slate-900 px-3 py-2 text-sm font-medium text-white disabled:opacity-50"
@@ -85,6 +102,26 @@ export function MealDetailRoute() {
             >
               {analyzing ? 'Analyzing…' : 'Analyze photo'}
             </button>
+          </div>
+        </div>
+      ) : null}
+
+      {mealInsights.length > 0 ? (
+        <div className="rounded-lg bg-white p-4 shadow-sm space-y-2">
+          <div className="text-sm font-medium">Warnings</div>
+          <div className="space-y-2">
+            {mealInsights.map((i) => (
+              <div
+                key={i.id}
+                className={
+                  i.severity === 'warning'
+                    ? 'rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900'
+                    : 'rounded-md border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900'
+                }
+              >
+                {i.text}
+              </div>
+            ))}
           </div>
         </div>
       ) : null}

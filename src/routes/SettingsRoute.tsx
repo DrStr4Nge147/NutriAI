@@ -280,8 +280,16 @@ export function SettingsRoute() {
           Clear local data
         </button>
 
-        {message ? <div className="text-sm text-green-700">{message}</div> : null}
-        {error ? <div className="text-sm text-red-600">{error}</div> : null}
+        {message ? (
+          <div className="text-sm text-green-700" role="status" aria-live="polite">
+            {message}
+          </div>
+        ) : null}
+        {error ? (
+          <div className="text-sm text-red-600" role="alert" aria-live="assertive">
+            {error}
+          </div>
+        ) : null}
       </div>
     </div>
   )

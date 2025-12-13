@@ -1,6 +1,7 @@
 import { Navigate, Route, Routes } from 'react-router-dom'
 import { useApp } from './state/AppContext'
 import { MobileShell } from './components/MobileShell'
+import { t } from './utils/i18n'
 import { HomeRoute } from './routes/HomeRoute'
 import { OnboardingRoute } from './routes/OnboardingRoute'
 import { ManualEntryRoute } from './routes/ManualEntryRoute'
@@ -15,14 +16,14 @@ export default function App() {
 
   if (!isHydrated) {
     return (
-      <MobileShell title="AI Nutritionist">
+      <MobileShell title={t('app_title')}>
         <div className="text-sm text-slate-600">Loading…</div>
       </MobileShell>
     )
   }
 
   return (
-    <MobileShell title="AI Nutritionist">
+    <MobileShell title={t('app_title')}>
       <Routes>
         <Route path="/onboarding" element={<OnboardingRoute />} />
         <Route

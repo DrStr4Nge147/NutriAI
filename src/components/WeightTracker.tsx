@@ -10,6 +10,15 @@ function isoDay(value: string) {
   return value.slice(0, 10)
 }
 
+function clamp(value: number, min: number, max: number) {
+  return Math.min(max, Math.max(min, value))
+}
+
+function linePath(points: { x: number; y: number }[]) {
+  if (points.length === 0) return ''
+  return points.map((p, idx) => `${idx === 0 ? 'M' : 'L'} ${p.x} ${p.y}`).join(' ')
+}
+
 export function WeightTracker(props: {
   profile: UserProfile
   onSaveProfile: (profile: UserProfile) => Promise<void>
@@ -33,6 +42,44 @@ export function WeightTracker(props: {
   }, [props.profile.weightHistory])
 
   const latest = entries[0] ?? null
+
+  const graph = useMemo(() => {
+    const history = [...(props.profile.weightHistory ?? [])]
+      .sort((a, b) => a.date.localeCompare(b.date))
+      .slice(-14)
+
+    if (history.length < 2) return null
+
+    const values = history.map((e) => e.weightKg).filter((w) => Number.isFinite(w) && w > 0)
+    if (values.length < 2) return null
+
+    const minW = Math.min(...values)
+    const maxW = Math.max(...values)
+    const span = Math.max(0.1, maxW - minW)
+
+    const width = 320
+    const height = 96
+    const padX = 8
+    const padY = 10
+
+    const points = history.map((e, idx) => {
+      const x = padX + (idx / (history.length - 1)) * (width - padX * 2)
+      const yNorm = (e.weightKg - minW) / span
+      const y = padY + (1 - clamp(yNorm, 0, 1)) * (height - padY * 2)
+      return { x: Math.round(x * 10) / 10, y: Math.round(y * 10) / 10 }
+    })
+
+    return {
+      width,
+      height,
+      minW,
+      maxW,
+      points,
+      path: linePath(points),
+      startLabel: isoDay(history[0].date),
+      endLabel: isoDay(history[history.length - 1].date),
+    }
+  }, [props.profile.weightHistory])
 
   async function save(nextEntries: WeightEntry[], nextBodyWeightKg: number) {
     setBusy(true)
@@ -117,6 +164,30 @@ export function WeightTracker(props: {
 
       {entries.length > 0 ? (
         <div className="space-y-2">
+          {graph ? (
+            <div className="rounded-md border border-slate-200 bg-white p-3">
+              <div className="flex items-center justify-between text-xs text-slate-600">
+                <div>
+                  {graph.minW.toFixed(1)}–{graph.maxW.toFixed(1)} kg
+                </div>
+                <div>
+                  {graph.startLabel} → {graph.endLabel}
+                </div>
+              </div>
+              <svg
+                viewBox={`0 0 ${graph.width} ${graph.height}`}
+                className="mt-2 h-24 w-full"
+                role="img"
+                aria-label="Weight trend"
+              >
+                <path d={graph.path} fill="none" stroke="#0f172a" strokeWidth="2" />
+                {graph.points.map((p, idx) => (
+                  <circle key={idx} cx={p.x} cy={p.y} r={2.5} fill="#0f172a" />
+                ))}
+              </svg>
+            </div>
+          ) : null}
+
           {entries.slice(0, 10).map((e, idx) => (
             <div
               key={`${e.date}-${e.weightKg}-${idx}`}
@@ -140,8 +211,16 @@ export function WeightTracker(props: {
         </div>
       ) : null}
 
-      {message ? <div className="text-sm text-green-700">{message}</div> : null}
-      {error ? <div className="text-sm text-red-600">{error}</div> : null}
+      {message ? (
+        <div className="text-sm text-green-700" role="status" aria-live="polite">
+          {message}
+        </div>
+      ) : null}
+      {error ? (
+        <div className="text-sm text-red-600" role="alert" aria-live="assertive">
+          {error}
+        </div>
+      ) : null}
     </div>
   )
 }

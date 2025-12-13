@@ -7,11 +7,15 @@ export type ActivityLevel =
   | 'active'
   | 'very_active'
 
+export type Goal = 'maintain' | 'lose' | 'gain'
+
 export type MacroNutrients = {
   calories: number
   carbs_g: number
   protein_g: number
   fat_g: number
+  sugar_g?: number
+  sodium_mg?: number
 }
 
 export type BodyMetrics = {
@@ -37,6 +41,8 @@ export type UserProfile = {
   name: string
   body: BodyMetrics
   medical: MedicalInfo
+  goal?: Goal
+  targetCaloriesKcal?: number | null
   weightHistory?: WeightEntry[]
 }
 

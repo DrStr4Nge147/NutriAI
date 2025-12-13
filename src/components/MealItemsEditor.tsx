@@ -33,6 +33,8 @@ export function MealItemsEditor(props: {
       carbs_g: round1(item.macros.carbs_g * factor),
       protein_g: round1(item.macros.protein_g * factor),
       fat_g: round1(item.macros.fat_g * factor),
+      sugar_g: item.macros.sugar_g != null ? round1(item.macros.sugar_g * factor) : undefined,
+      sodium_mg: item.macros.sodium_mg != null ? round1(item.macros.sodium_mg * factor) : undefined,
     }
   }
 
@@ -215,8 +217,16 @@ export function MealItemsEditor(props: {
           </div>
         )}
 
-        {error ? <div className="text-sm text-red-600">{error}</div> : null}
-        {message ? <div className="text-sm text-green-700">{message}</div> : null}
+        {error ? (
+          <div className="text-sm text-red-600" role="alert" aria-live="assertive">
+            {error}
+          </div>
+        ) : null}
+        {message ? (
+          <div className="text-sm text-green-700" role="status" aria-live="polite">
+            {message}
+          </div>
+        ) : null}
 
         <button
           className="w-full rounded-md bg-slate-900 px-3 py-2 text-sm font-medium text-white disabled:opacity-50"

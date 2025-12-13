@@ -86,7 +86,11 @@ export function ManualEntryRoute() {
           </label>
         </div>
 
-        {error ? <div className="text-sm text-red-600">{error}</div> : null}
+        {error ? (
+          <div className="text-sm text-red-600" role="alert" aria-live="assertive">
+            {error}
+          </div>
+        ) : null}
 
         <button
           className="w-full rounded-md bg-slate-900 px-3 py-2 text-sm font-medium text-white disabled:opacity-50"

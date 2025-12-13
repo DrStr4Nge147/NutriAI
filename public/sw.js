@@ -1,4 +1,4 @@
-const CACHE_NAME = 'ai-nutritionist-v1'
+const CACHE_NAME = 'ai-nutritionist-v2'
 
 self.addEventListener('install', (event) => {
   event.waitUntil(
@@ -40,7 +40,7 @@ self.addEventListener('fetch', (event) => {
 
       if (request.mode === 'navigate') {
         try {
-          const network = await fetch(request)
+          const network = await fetch('/index.html', { cache: 'no-store' })
           const copy = network.clone()
           if (network.ok && copy.type === 'basic') await cache.put('/index.html', copy)
           return network
