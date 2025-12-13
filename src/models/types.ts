@@ -41,12 +41,21 @@ export type FoodItem = {
   macros: MacroNutrients
 }
 
+export type AiProvider = 'gemini' | 'ollama' | 'openai'
+
+export type MealAiAnalysis = {
+  provider: AiProvider
+  analyzedAt: string
+  rawText?: string
+}
+
 export type Meal = {
   id: string
   profileId: string
   createdAt: string
   eatenAt: string
   photoDataUrl?: string
+  aiAnalysis?: MealAiAnalysis
   items: FoodItem[]
   totalMacros: MacroNutrients
 }

@@ -1,11 +1,15 @@
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
+import { analyzeMealPhoto } from '../ai/analyzePhoto'
 import { useApp } from '../state/AppContext'
 
 export function MealDetailRoute() {
   const navigate = useNavigate()
   const { mealId } = useParams<{ mealId: string }>()
-  const { meals, removeMeal } = useApp()
+  const { meals, removeMeal, updateMeal } = useApp()
+
+  const [analyzing, setAnalyzing] = useState(false)
+  const [analysisError, setAnalysisError] = useState<string | null>(null)
 
   const meal = useMemo(() => meals.find((m) => m.id === mealId) ?? null, [meals, mealId])
 
@@ -15,6 +19,26 @@ export function MealDetailRoute() {
     if (!ok) return
     await removeMeal(meal.id)
     navigate('/meals')
+  }
+
+  async function onAnalyze() {
+    if (!meal?.photoDataUrl) return
+
+    setAnalyzing(true)
+    setAnalysisError(null)
+    try {
+      const result = await analyzeMealPhoto({ photoDataUrl: meal.photoDataUrl })
+      await updateMeal({
+        ...meal,
+        items: result.items,
+        totalMacros: result.totalMacros,
+        aiAnalysis: result.ai,
+      })
+    } catch (e) {
+      setAnalysisError(e instanceof Error ? e.message : 'Failed to analyze photo')
+    } finally {
+      setAnalyzing(false)
+    }
   }
 
   if (!meal) {
@@ -36,7 +60,32 @@ export function MealDetailRoute() {
       </div>
 
       {meal.photoDataUrl ? (
-        <img src={meal.photoDataUrl} className="w-full rounded-lg border border-slate-200" />
+        <div className="space-y-3">
+          <img src={meal.photoDataUrl} className="w-full rounded-lg border border-slate-200" />
+
+          <div className="rounded-lg bg-white p-4 shadow-sm space-y-2">
+            <div className="text-sm font-medium">Photo analysis</div>
+
+            {meal.aiAnalysis ? (
+              <div className="text-xs text-slate-600">
+                Last analyzed: {new Date(meal.aiAnalysis.analyzedAt).toLocaleString()} ({meal.aiAnalysis.provider})
+              </div>
+            ) : (
+              <div className="text-xs text-slate-600">Not analyzed yet.</div>
+            )}
+
+            {analysisError ? <div className="text-sm text-red-600">{analysisError}</div> : null}
+
+            <button
+              className="w-full rounded-md bg-slate-900 px-3 py-2 text-sm font-medium text-white disabled:opacity-50"
+              onClick={() => void onAnalyze()}
+              disabled={analyzing}
+              type="button"
+            >
+              {analyzing ? 'Analyzing…' : 'Analyze photo'}
+            </button>
+          </div>
+        </div>
       ) : null}
 
       <div className="rounded-lg bg-white p-4 shadow-sm">

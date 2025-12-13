@@ -34,6 +34,7 @@ type AppContextValue = {
   deleteProfile: (profileId: string) => Promise<void>
   addManualMeal: (input: { name: string; grams: number; eatenAt: string }) => Promise<Meal>
   addPhotoMeal: (input: { photoDataUrl: string; eatenAt: string }) => Promise<Meal>
+  updateMeal: (meal: Meal) => Promise<void>
   removeMeal: (mealId: string) => Promise<void>
 }
 
@@ -139,6 +140,11 @@ export function AppProvider(props: { children: ReactNode }) {
     [currentProfileId],
   )
 
+  const updateMeal = useCallback(async (meal: Meal) => {
+    await putMeal(meal)
+    setMeals((prev) => prev.map((m) => (m.id === meal.id ? meal : m)))
+  }, [])
+
   const addManualMeal = useCallback(
     async (input: { name: string; grams: number; eatenAt: string }) => {
       if (!currentProfileId) throw new Error('No profile selected')
@@ -213,6 +219,7 @@ export function AppProvider(props: { children: ReactNode }) {
     deleteProfile,
     addManualMeal,
     addPhotoMeal,
+    updateMeal,
     removeMeal,
   }
 

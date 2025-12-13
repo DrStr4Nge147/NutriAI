@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
+import { getAiSettings, setAiSettings } from '../ai/settings'
 import { exportAllData, importAllData } from '../storage/exportImport'
 import { clearAllData } from '../storage/db'
 import { useApp } from '../state/AppContext'
@@ -9,6 +10,7 @@ export function SettingsRoute() {
   const [busy, setBusy] = useState(false)
   const [message, setMessage] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const [aiSettings, setAiSettingsState] = useState(() => getAiSettings())
 
   async function onExport() {
     setBusy(true)
@@ -71,11 +73,104 @@ export function SettingsRoute() {
     }
   }
 
+  function saveAiSettings(next: typeof aiSettings) {
+    setAiSettings(next)
+    setAiSettingsState(next)
+    setMessage('AI settings saved')
+  }
+
   return (
     <div className="space-y-4">
       <div className="rounded-lg bg-white p-4 shadow-sm">
         <div className="text-base font-semibold">Settings</div>
         <div className="mt-1 text-sm text-slate-600">Export/import your local data.</div>
+      </div>
+
+      <div className="rounded-lg bg-white p-4 shadow-sm space-y-3">
+        <div className="text-sm font-medium">AI</div>
+
+        <label className="block text-sm">
+          <div className="font-medium">Provider</div>
+          <select
+            className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
+            value={aiSettings.provider}
+            onChange={(e) => {
+              const provider = e.target.value === 'ollama' ? 'ollama' : 'gemini'
+              saveAiSettings({ ...aiSettings, provider })
+            }}
+            disabled={busy}
+          >
+            <option value="gemini">Gemini (online)</option>
+            <option value="ollama">Ollama (local)</option>
+          </select>
+        </label>
+
+        <div className="rounded-md border border-slate-200 p-3 space-y-3">
+          <div className="text-sm font-medium">Gemini</div>
+          <label className="block text-sm">
+            <div className="font-medium">API key</div>
+            <input
+              className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
+              value={aiSettings.gemini.apiKey}
+              onChange={(e) => setAiSettingsState({
+                ...aiSettings,
+                gemini: { ...aiSettings.gemini, apiKey: e.target.value },
+              })}
+              disabled={busy}
+              type="password"
+              autoComplete="off"
+            />
+          </label>
+          <label className="block text-sm">
+            <div className="font-medium">Model</div>
+            <input
+              className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
+              value={aiSettings.gemini.model}
+              onChange={(e) => setAiSettingsState({
+                ...aiSettings,
+                gemini: { ...aiSettings.gemini, model: e.target.value },
+              })}
+              disabled={busy}
+            />
+          </label>
+        </div>
+
+        <div className="rounded-md border border-slate-200 p-3 space-y-3">
+          <div className="text-sm font-medium">Ollama</div>
+          <label className="block text-sm">
+            <div className="font-medium">Base URL</div>
+            <input
+              className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
+              value={aiSettings.ollama.baseUrl}
+              onChange={(e) => setAiSettingsState({
+                ...aiSettings,
+                ollama: { ...aiSettings.ollama, baseUrl: e.target.value },
+              })}
+              disabled={busy}
+            />
+          </label>
+          <label className="block text-sm">
+            <div className="font-medium">Model</div>
+            <input
+              className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
+              value={aiSettings.ollama.model}
+              onChange={(e) => setAiSettingsState({
+                ...aiSettings,
+                ollama: { ...aiSettings.ollama, model: e.target.value },
+              })}
+              disabled={busy}
+            />
+          </label>
+        </div>
+
+        <button
+          className="w-full rounded-md bg-slate-900 px-3 py-2 text-sm font-medium text-white disabled:opacity-50"
+          onClick={() => saveAiSettings(aiSettings)}
+          disabled={busy}
+          type="button"
+        >
+          Save AI settings
+        </button>
       </div>
 
       <div className="rounded-lg bg-white p-4 shadow-sm space-y-3">
