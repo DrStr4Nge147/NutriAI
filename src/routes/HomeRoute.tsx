@@ -1,6 +1,7 @@
 import { useMemo } from 'react'
 import { Link } from 'react-router-dom'
 import { estimateTdee } from '../nutrition/dailyNeeds'
+import { buildHealthInsights } from '../nutrition/health'
 import { sumMacroNutrients } from '../nutrition/macros'
 import { useApp } from '../state/AppContext'
 
@@ -31,6 +32,16 @@ export function HomeRoute() {
     if (!currentProfile) return null
     return estimateTdee(currentProfile.body)
   }, [currentProfile])
+
+  const healthInsights = useMemo(() => {
+    if (!currentProfile) return []
+    return buildHealthInsights({
+      body: currentProfile.body,
+      medical: currentProfile.medical,
+      totals: todaySummary.totals,
+      tdeeKcal: dailyNeeds?.tdee ?? null,
+    })
+  }, [currentProfile, todaySummary.totals, dailyNeeds?.tdee])
 
   return (
     <div className="space-y-4">
@@ -79,6 +90,26 @@ export function HomeRoute() {
           </div>
         ) : null}
       </div>
+
+      {healthInsights.length > 0 ? (
+        <div className="rounded-lg bg-white p-4 shadow-sm space-y-2">
+          <div className="text-sm font-medium">Health</div>
+          <div className="space-y-2">
+            {healthInsights.map((i) => (
+              <div
+                key={i.id}
+                className={
+                  i.severity === 'warning'
+                    ? 'rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900'
+                    : 'rounded-md border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900'
+                }
+              >
+                {i.text}
+              </div>
+            ))}
+          </div>
+        </div>
+      ) : null}
 
       <div className="grid grid-cols-2 gap-2">
         <Link

@@ -1,0 +1,203 @@
+import { useEffect, useMemo, useState } from 'react'
+import { Link, useNavigate } from 'react-router-dom'
+import type { ActivityLevel, Sex } from '../models/types'
+import { useApp } from '../state/AppContext'
+import { clampNumber, safeNumber } from '../utils/numbers'
+
+export function ProfileRoute() {
+  const navigate = useNavigate()
+  const { currentProfile, saveProfile } = useApp()
+
+  const [busy, setBusy] = useState(false)
+  const [message, setMessage] = useState<string | null>(null)
+  const [error, setError] = useState<string | null>(null)
+
+  const [name, setName] = useState('')
+  const [heightCm, setHeightCm] = useState('')
+  const [weightKg, setWeightKg] = useState('')
+  const [age, setAge] = useState('')
+  const [sex, setSex] = useState<Sex>('prefer_not_say')
+  const [activityLevel, setActivityLevel] = useState<ActivityLevel>('moderate')
+  const [conditionsText, setConditionsText] = useState('')
+
+  useEffect(() => {
+    setMessage(null)
+    setError(null)
+
+    if (!currentProfile) return
+
+    setName(currentProfile.name)
+    setHeightCm(String(currentProfile.body.heightCm))
+    setWeightKg(String(currentProfile.body.weightKg))
+    setAge(String(currentProfile.body.age))
+    setSex(currentProfile.body.sex)
+    setActivityLevel(currentProfile.body.activityLevel)
+    setConditionsText((currentProfile.medical.conditions ?? []).join(', '))
+  }, [currentProfile?.id])
+
+  const parsedConditions = useMemo(() => {
+    return conditionsText
+      .split(',')
+      .map((s) => s.trim())
+      .filter(Boolean)
+  }, [conditionsText])
+
+  async function onSave() {
+    if (!currentProfile) return
+
+    setBusy(true)
+    setMessage(null)
+    setError(null)
+
+    try {
+      const nextProfile = {
+        ...currentProfile,
+        name: name.trim() || currentProfile.name,
+        body: {
+          heightCm: clampNumber(safeNumber(heightCm, currentProfile.body.heightCm), 50, 250),
+          weightKg: clampNumber(safeNumber(weightKg, currentProfile.body.weightKg), 20, 400),
+          age: clampNumber(safeNumber(age, currentProfile.body.age), 1, 120),
+          sex,
+          activityLevel,
+        },
+        medical: {
+          conditions: parsedConditions,
+        },
+      }
+
+      await saveProfile(nextProfile)
+      setMessage('Saved')
+      navigate('/settings')
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Failed to save')
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  if (!currentProfile) {
+    return (
+      <div className="space-y-4">
+        <div className="rounded-lg bg-white p-4 shadow-sm text-sm text-slate-600">No profile selected.</div>
+        <Link to="/settings" className="inline-block text-sm text-slate-900 underline">
+          Back to settings
+        </Link>
+      </div>
+    )
+  }
+
+  return (
+    <div className="space-y-4">
+      <div className="rounded-lg bg-white p-4 shadow-sm">
+        <div className="text-base font-semibold">Edit profile</div>
+        <div className="mt-1 text-sm text-slate-600">Update details used for daily needs and health insights.</div>
+      </div>
+
+      <div className="rounded-lg bg-white p-4 shadow-sm space-y-3">
+        <label className="block text-sm">
+          <div className="font-medium">Name</div>
+          <input
+            className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            disabled={busy}
+            placeholder="Me"
+          />
+        </label>
+
+        <div className="grid grid-cols-2 gap-3">
+          <label className="block text-sm">
+            <div className="font-medium">Height (cm)</div>
+            <input
+              className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
+              value={heightCm}
+              onChange={(e) => setHeightCm(e.target.value)}
+              inputMode="numeric"
+              disabled={busy}
+            />
+          </label>
+
+          <label className="block text-sm">
+            <div className="font-medium">Weight (kg)</div>
+            <input
+              className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
+              value={weightKg}
+              onChange={(e) => setWeightKg(e.target.value)}
+              inputMode="decimal"
+              disabled={busy}
+            />
+          </label>
+
+          <label className="block text-sm">
+            <div className="font-medium">Age</div>
+            <input
+              className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
+              value={age}
+              onChange={(e) => setAge(e.target.value)}
+              inputMode="numeric"
+              disabled={busy}
+            />
+          </label>
+
+          <label className="block text-sm">
+            <div className="font-medium">Sex</div>
+            <select
+              className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
+              value={sex}
+              onChange={(e) => setSex(e.target.value as Sex)}
+              disabled={busy}
+            >
+              <option value="prefer_not_say">Prefer not to say</option>
+              <option value="male">Male</option>
+              <option value="female">Female</option>
+              <option value="other">Other</option>
+            </select>
+          </label>
+
+          <label className="col-span-2 block text-sm">
+            <div className="font-medium">Activity level</div>
+            <select
+              className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
+              value={activityLevel}
+              onChange={(e) => setActivityLevel(e.target.value as ActivityLevel)}
+              disabled={busy}
+            >
+              <option value="sedentary">Sedentary</option>
+              <option value="light">Light</option>
+              <option value="moderate">Moderate</option>
+              <option value="active">Active</option>
+              <option value="very_active">Very active</option>
+            </select>
+          </label>
+        </div>
+
+        <label className="block text-sm">
+          <div className="font-medium">Medical conditions (optional)</div>
+          <input
+            className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
+            value={conditionsText}
+            onChange={(e) => setConditionsText(e.target.value)}
+            placeholder="diabetes, hypertension"
+            disabled={busy}
+          />
+        </label>
+
+        <button
+          className="w-full rounded-md bg-slate-900 px-3 py-2 text-sm font-medium text-white disabled:opacity-50"
+          onClick={() => void onSave()}
+          disabled={busy}
+          type="button"
+        >
+          Save profile
+        </button>
+
+        <Link to="/settings" className="inline-block text-sm text-slate-900 underline">
+          Cancel
+        </Link>
+
+        {message ? <div className="text-sm text-green-700">{message}</div> : null}
+        {error ? <div className="text-sm text-red-600">{error}</div> : null}
+      </div>
+    </div>
+  )
+}

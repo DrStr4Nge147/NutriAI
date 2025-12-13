@@ -8,6 +8,7 @@ import { MealsRoute } from './routes/MealsRoute'
 import { MealDetailRoute } from './routes/MealDetailRoute'
 import { SettingsRoute } from './routes/SettingsRoute'
 import { CaptureMealRoute } from './routes/CaptureMealRoute'
+import { ProfileRoute } from './routes/ProfileRoute'
 
 export default function App() {
   const { isHydrated, currentProfileId } = useApp()
@@ -71,6 +72,16 @@ export default function App() {
           element={
             currentProfileId ? (
               <SettingsRoute />
+            ) : (
+              <Navigate to="/onboarding" replace />
+            )
+          }
+        />
+        <Route
+          path="/profile"
+          element={
+            currentProfileId ? (
+              <ProfileRoute />
             ) : (
               <Navigate to="/onboarding" replace />
             )

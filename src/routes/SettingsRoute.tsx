@@ -241,6 +241,15 @@ export function SettingsRoute() {
           Create new profile
         </Link>
 
+        {currentProfile ? (
+          <Link
+            to="/profile"
+            className="inline-block rounded-md border border-slate-300 bg-white px-3 py-2 text-sm"
+          >
+            Edit current profile
+          </Link>
+        ) : null}
+
         {currentProfile ? <WeightTracker profile={currentProfile} onSaveProfile={saveProfile} /> : null}
 
         <hr className="my-2 border-slate-200" />
