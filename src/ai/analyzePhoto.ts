@@ -71,6 +71,9 @@ export async function analyzeMealPhoto(input: {
   const settings = getAiSettings()
 
   if (settings.provider === 'gemini') {
+    if (!settings.gemini.consentToSendData) {
+      throw new Error('Gemini is an online AI provider. Enable consent in Settings before sending photos.')
+    }
     const { mimeType, base64 } = parsePhotoDataUrl(input.photoDataUrl)
     const apiKey = settings.gemini.apiKey.trim()
     if (!apiKey) throw new Error('Gemini API key is not set')

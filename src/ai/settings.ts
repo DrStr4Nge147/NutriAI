@@ -7,6 +7,7 @@ export type AiSettings = {
   gemini: {
     apiKey: string
     model: string
+    consentToSendData: boolean
   }
   ollama: {
     baseUrl: string
@@ -30,6 +31,7 @@ function defaultSettings(): AiSettings {
     gemini: {
       apiKey: env.VITE_GEMINI_API_KEY ?? '',
       model: env.VITE_GEMINI_MODEL ?? 'gemini-2.0-flash',
+      consentToSendData: false,
     },
     ollama: {
       baseUrl: env.VITE_OLLAMA_BASE_URL ?? 'http://localhost:11434',
@@ -53,6 +55,7 @@ export function getAiSettings(): AiSettings {
       gemini: {
         apiKey: parsed.gemini?.apiKey ?? d.gemini.apiKey,
         model: parsed.gemini?.model ?? d.gemini.model,
+        consentToSendData: Boolean((parsed.gemini as any)?.consentToSendData ?? d.gemini.consentToSendData),
       },
       ollama: {
         baseUrl: parsed.ollama?.baseUrl ?? d.ollama.baseUrl,

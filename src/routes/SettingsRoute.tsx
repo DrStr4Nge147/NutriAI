@@ -168,6 +168,19 @@ export function SettingsRoute() {
               disabled={busy}
             />
           </label>
+
+          <label className="flex items-center gap-2 text-sm">
+            <input
+              type="checkbox"
+              checked={aiSettings.gemini.consentToSendData}
+              onChange={(e) => setAiSettingsState({
+                ...aiSettings,
+                gemini: { ...aiSettings.gemini, consentToSendData: e.target.checked },
+              })}
+              disabled={busy}
+            />
+            Allow sending meal photos to Gemini (online)
+          </label>
         </div>
 
         <div className="rounded-md border border-slate-200 p-3 space-y-3">

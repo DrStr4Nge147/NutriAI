@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { parseAiJsonToFoodItems, parsePhotoDataUrl } from './analyzePhoto'
+import { analyzeMealPhoto, parseAiJsonToFoodItems, parsePhotoDataUrl } from './analyzePhoto'
 
 describe('ai/analyzePhoto', () => {
   it('parses photo data url', () => {
@@ -56,5 +56,20 @@ describe('ai/analyzePhoto', () => {
     expect(items).toHaveLength(1)
     expect(items[0].quantityGrams).toBe(100)
     expect(items[0].macros.calories).toBe(143)
+  })
+
+  it('requires explicit consent before using Gemini', async () => {
+    localStorage.setItem(
+      'ai-nutritionist.aiSettings',
+      JSON.stringify({
+        provider: 'gemini',
+        gemini: { apiKey: '', model: 'gemini-2.0-flash', consentToSendData: false },
+        ollama: { baseUrl: 'http://localhost:11434', model: 'qwen3-vl:8b' },
+      }),
+    )
+
+    await expect(analyzeMealPhoto({ photoDataUrl: 'data:image/jpeg;base64,AAA' })).rejects.toThrow(
+      /Enable consent in Settings/i,
+    )
   })
 })
