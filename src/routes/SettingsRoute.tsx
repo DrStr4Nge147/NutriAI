@@ -2,6 +2,12 @@ import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { getAiSettings, setAiSettings } from '../ai/settings'
 import { WeightTracker } from '../components/WeightTracker'
+import {
+  getReminderSettings,
+  refreshReminderScheduler,
+  requestNotificationPermission,
+  setReminderSettings,
+} from '../notifications/reminders'
 import { exportAllData, importAllData } from '../storage/exportImport'
 import { clearAllData } from '../storage/db'
 import { useApp } from '../state/AppContext'
@@ -12,6 +18,13 @@ export function SettingsRoute() {
   const [message, setMessage] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [aiSettings, setAiSettingsState] = useState(() => getAiSettings())
+  const [reminders, setRemindersState] = useState(() => getReminderSettings())
+  const [notificationPermission, setNotificationPermission] = useState<
+    NotificationPermission | 'unsupported'
+  >(() => {
+    if (typeof Notification === 'undefined') return 'unsupported'
+    return Notification.permission
+  })
 
   async function onExport() {
     setBusy(true)
@@ -78,6 +91,27 @@ export function SettingsRoute() {
     setAiSettings(next)
     setAiSettingsState(next)
     setMessage('AI settings saved')
+  }
+
+  async function onEnableNotifications() {
+    setError(null)
+    setMessage(null)
+    const p = await requestNotificationPermission()
+    if (p === 'unsupported') {
+      setNotificationPermission('unsupported')
+      setError('Notifications are not supported in this browser.')
+      return
+    }
+    setNotificationPermission(p)
+    if (p !== 'granted') setError('Notifications permission not granted.')
+    else setMessage('Notifications enabled')
+  }
+
+  function saveReminders(next: typeof reminders) {
+    setReminderSettings(next)
+    setRemindersState(next)
+    refreshReminderScheduler()
+    setMessage('Reminder settings saved')
   }
 
   return (
@@ -171,6 +205,103 @@ export function SettingsRoute() {
           type="button"
         >
           Save AI settings
+        </button>
+      </div>
+
+      <div className="rounded-lg bg-white p-4 shadow-sm space-y-3">
+        <div className="text-sm font-medium">Reminders (optional)</div>
+        <div className="text-xs text-slate-600">
+          Reminders use the browser Notifications API and work best when the app is open or installed as a PWA.
+        </div>
+
+        <div className="text-xs text-slate-600">
+          Notifications: {notificationPermission === 'unsupported' ? 'unsupported' : notificationPermission}
+        </div>
+
+        <button
+          className="w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm"
+          onClick={() => void onEnableNotifications()}
+          disabled={busy || notificationPermission === 'granted'}
+          type="button"
+        >
+          {notificationPermission === 'granted' ? 'Notifications enabled' : 'Enable notifications'}
+        </button>
+
+        <div className="rounded-md border border-slate-200 p-3 space-y-3">
+          <div className="text-sm font-medium">Meal logging</div>
+          <div className="flex items-center justify-between gap-3">
+            <label className="flex items-center gap-2 text-sm">
+              <input
+                type="checkbox"
+                checked={reminders.mealLog.enabled}
+                onChange={(e) => setRemindersState({
+                  ...reminders,
+                  mealLog: { ...reminders.mealLog, enabled: e.target.checked },
+                })}
+                disabled={busy}
+              />
+              Enable
+            </label>
+            <label className="text-sm">
+              <span className="sr-only">Meal reminder time</span>
+              <input
+                type="time"
+                className="rounded-md border border-slate-300 px-2 py-1 text-sm"
+                value={reminders.mealLog.time}
+                onChange={(e) => setRemindersState({
+                  ...reminders,
+                  mealLog: { ...reminders.mealLog, time: e.target.value },
+                })}
+                disabled={busy}
+              />
+            </label>
+          </div>
+        </div>
+
+        <div className="rounded-md border border-slate-200 p-3 space-y-3">
+          <div className="text-sm font-medium">Weigh-in</div>
+          <div className="flex items-center justify-between gap-3">
+            <label className="flex items-center gap-2 text-sm">
+              <input
+                type="checkbox"
+                checked={reminders.weighIn.enabled}
+                onChange={(e) => setRemindersState({
+                  ...reminders,
+                  weighIn: { ...reminders.weighIn, enabled: e.target.checked },
+                })}
+                disabled={busy}
+              />
+              Enable
+            </label>
+            <label className="text-sm">
+              <span className="sr-only">Weigh-in reminder time</span>
+              <input
+                type="time"
+                className="rounded-md border border-slate-300 px-2 py-1 text-sm"
+                value={reminders.weighIn.time}
+                onChange={(e) => setRemindersState({
+                  ...reminders,
+                  weighIn: { ...reminders.weighIn, time: e.target.value },
+                })}
+                disabled={busy}
+              />
+            </label>
+          </div>
+        </div>
+
+        {notificationPermission !== 'granted' && (reminders.mealLog.enabled || reminders.weighIn.enabled) ? (
+          <div className="text-sm text-amber-700">
+            Enable notifications to receive reminders.
+          </div>
+        ) : null}
+
+        <button
+          className="w-full rounded-md bg-slate-900 px-3 py-2 text-sm font-medium text-white disabled:opacity-50"
+          onClick={() => saveReminders(reminders)}
+          disabled={busy}
+          type="button"
+        >
+          Save reminders
         </button>
       </div>
 
