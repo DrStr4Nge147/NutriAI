@@ -1,5 +1,6 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import { AppProvider, useApp } from './context/AppContext';
+import { AppProvider } from './context/AppProvider';
+import { useApp } from './context/useApp';
 import Home from './pages/Home';
 import Onboarding from './pages/Onboarding';
 import Capture from './pages/Capture';
@@ -17,9 +18,9 @@ function AppRoutes() {
     <Routes>
       <Route path="/onboarding" element={<Onboarding />} />
       <Route path="/" element={user ? <Home /> : <Navigate to="/onboarding" replace />} />
-      <Route path="/capture" element={<Capture />} />
-      <Route path="/manual-entry" element={<ManualEntry />} />
-      <Route path="/history" element={<History />} />
+      <Route path="/capture" element={user ? <Capture /> : <Navigate to="/onboarding" replace />} />
+      <Route path="/manual-entry" element={user ? <ManualEntry /> : <Navigate to="/onboarding" replace />} />
+      <Route path="/history" element={user ? <History /> : <Navigate to="/onboarding" replace />} />
     </Routes>
   );
 }
