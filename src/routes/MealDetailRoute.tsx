@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { analyzeMealPhoto } from '../ai/analyzePhoto'
+import { MealItemsEditor } from '../components/MealItemsEditor'
 import { useApp } from '../state/AppContext'
 
 export function MealDetailRoute() {
@@ -61,7 +62,7 @@ export function MealDetailRoute() {
 
       {meal.photoDataUrl ? (
         <div className="space-y-3">
-          <img src={meal.photoDataUrl} className="w-full rounded-lg border border-slate-200" />
+          <img src={meal.photoDataUrl} alt="Meal photo" className="w-full rounded-lg border border-slate-200" />
 
           <div className="rounded-lg bg-white p-4 shadow-sm space-y-2">
             <div className="text-sm font-medium">Photo analysis</div>
@@ -88,37 +89,12 @@ export function MealDetailRoute() {
         </div>
       ) : null}
 
-      <div className="rounded-lg bg-white p-4 shadow-sm">
-        <div className="text-sm font-medium">Totals</div>
-        <div className="mt-2 text-sm">
-          <div>{meal.totalMacros.calories} kcal</div>
-          <div>Protein: {meal.totalMacros.protein_g}g</div>
-          <div>Carbs: {meal.totalMacros.carbs_g}g</div>
-          <div>Fat: {meal.totalMacros.fat_g}g</div>
-        </div>
-      </div>
-
-      <div className="rounded-lg bg-white p-4 shadow-sm">
-        <div className="text-sm font-medium">Items</div>
-        {meal.items.length === 0 ? (
-          <div className="mt-2 text-sm text-slate-600">No items yet.</div>
-        ) : (
-          <div className="mt-2 space-y-2">
-            {meal.items.map((i) => (
-              <div key={i.id} className="rounded-md border border-slate-200 px-3 py-2">
-                <div className="text-sm font-medium">{i.name}</div>
-                <div className="text-xs text-slate-600">
-                  {i.quantityGrams}g · {i.macros.calories} kcal
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
+      <MealItemsEditor meal={meal} onSaveMeal={updateMeal} />
 
       <button
         className="w-full rounded-md border border-red-300 bg-white px-3 py-2 text-sm text-red-700"
         onClick={() => void onDelete()}
+        type="button"
       >
         Delete meal
       </button>

@@ -187,7 +187,7 @@ export function CaptureMealRoute() {
         />
 
         {photoPreview ? (
-          <img src={photoPreview} className="w-full rounded-md border border-slate-200" />
+          <img src={photoPreview} alt="Meal photo preview" className="w-full rounded-md border border-slate-200" />
         ) : null}
 
         {error ? <div className="text-sm text-red-600">{error}</div> : null}
@@ -196,6 +196,7 @@ export function CaptureMealRoute() {
           className="w-full rounded-md bg-slate-900 px-3 py-2 text-sm font-medium text-white disabled:opacity-50"
           onClick={() => void save()}
           disabled={submitting || !photoPreview}
+          type="button"
         >
           Save photo meal
         </button>

@@ -50,6 +50,15 @@ export function macrosForGrams(per100g: MacroNutrients, grams: number): MacroNut
   }
 }
 
+export function estimateFromLocalFoods(
+  query: string,
+  grams: number,
+): { name: string; macros: MacroNutrients } | null {
+  const match = findFoods(query)[0]
+  if (!match) return null
+  return { name: match.name, macros: macrosForGrams(match.per100g, grams) }
+}
+
 function round1(value: number) {
   return Math.round(value * 10) / 10
 }

@@ -77,6 +77,17 @@ function parseProfile(value: unknown): UserProfile {
   if (!v.body) throw new Error('Invalid profile')
   if (!v.medical) throw new Error('Invalid profile')
   if (!Array.isArray(v.medical.conditions)) throw new Error('Invalid profile')
+
+  if (typeof (v as any).weightHistory !== 'undefined') {
+    const wh = (v as any).weightHistory
+    if (!Array.isArray(wh)) throw new Error('Invalid profile')
+    for (const e of wh) {
+      if (!e || typeof e !== 'object') throw new Error('Invalid profile')
+      if (typeof (e as any).date !== 'string') throw new Error('Invalid profile')
+      if (typeof (e as any).weightKg !== 'number') throw new Error('Invalid profile')
+    }
+  }
+
   return v
 }
 

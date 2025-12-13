@@ -1,12 +1,13 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { getAiSettings, setAiSettings } from '../ai/settings'
+import { WeightTracker } from '../components/WeightTracker'
 import { exportAllData, importAllData } from '../storage/exportImport'
 import { clearAllData } from '../storage/db'
 import { useApp } from '../state/AppContext'
 
 export function SettingsRoute() {
-  const { refresh, profiles, currentProfileId, selectProfile, deleteProfile } = useApp()
+  const { refresh, profiles, currentProfile, currentProfileId, selectProfile, saveProfile, deleteProfile } = useApp()
   const [busy, setBusy] = useState(false)
   const [message, setMessage] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
@@ -239,6 +240,8 @@ export function SettingsRoute() {
         >
           Create new profile
         </Link>
+
+        {currentProfile ? <WeightTracker profile={currentProfile} onSaveProfile={saveProfile} /> : null}
 
         <hr className="my-2 border-slate-200" />
 

@@ -26,12 +26,18 @@ export type MedicalInfo = {
   conditions: string[]
 }
 
+export type WeightEntry = {
+  date: string
+  weightKg: number
+}
+
 export type UserProfile = {
   id: string
   createdAt: string
   name: string
   body: BodyMetrics
   medical: MedicalInfo
+  weightHistory?: WeightEntry[]
 }
 
 export type FoodItem = {

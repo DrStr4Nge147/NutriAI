@@ -92,6 +92,7 @@ export function ManualEntryRoute() {
           className="w-full rounded-md bg-slate-900 px-3 py-2 text-sm font-medium text-white disabled:opacity-50"
           onClick={() => void submit()}
           disabled={submitting || !name.trim()}
+          type="button"
         >
           Save meal
         </button>

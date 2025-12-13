@@ -16,3 +16,16 @@ export function sumMacros(items: FoodItem[]): MacroNutrients {
     emptyMacros(),
   )
 }
+
+export function sumMacroNutrients(list: MacroNutrients[]): MacroNutrients {
+  return list.reduce(
+    (acc, m) => {
+      acc.calories += m.calories
+      acc.carbs_g += m.carbs_g
+      acc.protein_g += m.protein_g
+      acc.fat_g += m.fat_g
+      return acc
+    },
+    emptyMacros(),
+  )
+}

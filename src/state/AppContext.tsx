@@ -9,7 +9,7 @@ import {
 } from 'react'
 import type { Meal, UserProfile } from '../models/types'
 import { emptyMacros, sumMacros } from '../nutrition/macros'
-import { findFoods, macrosForGrams } from '../nutrition/localFoods'
+import { estimateFromLocalFoods } from '../nutrition/localFoods'
 import {
   deleteMeal,
   deleteProfile as deleteProfileFromDb,
@@ -81,10 +81,12 @@ export function AppProvider(props: { children: ReactNode }) {
 
   const createProfile = useCallback(
     async (profileInput: Omit<UserProfile, 'id' | 'createdAt'>) => {
+      const createdAt = new Date().toISOString()
       const profile: UserProfile = {
         ...profileInput,
         id: newId(),
-        createdAt: new Date().toISOString(),
+        createdAt,
+        weightHistory: [{ date: createdAt, weightKg: profileInput.body.weightKg }],
       }
       await putProfile(profile)
 
@@ -149,12 +151,12 @@ export function AppProvider(props: { children: ReactNode }) {
     async (input: { name: string; grams: number; eatenAt: string }) => {
       if (!currentProfileId) throw new Error('No profile selected')
 
-      const match = findFoods(input.name)[0]
-      const macros = match ? macrosForGrams(match.per100g, input.grams) : emptyMacros()
+      const est = estimateFromLocalFoods(input.name, input.grams)
+      const macros = est ? est.macros : emptyMacros()
 
       const item = {
         id: newId(),
-        name: match?.name ?? input.name,
+        name: est?.name ?? input.name,
         quantityGrams: input.grams,
         macros,
       }
