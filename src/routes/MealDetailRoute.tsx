@@ -1,10 +1,10 @@
-import { useMemo, useState } from 'react'
+import { useMemo } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
-import { analyzeMealPhoto } from '../ai/analyzePhoto'
 import { MealItemsEditor } from '../components/MealItemsEditor'
 import { buildHealthInsights } from '../nutrition/health'
 import { useApp } from '../state/AppContext'
 import { useUiFeedback } from '../state/UiFeedbackContext'
+import { useMealPhotoAnalysis } from '../state/MealPhotoAnalysisContext'
 
 export function MealDetailRoute() {
   const navigate = useNavigate()
@@ -12,8 +12,7 @@ export function MealDetailRoute() {
   const { meals, removeMeal, updateMeal, currentProfile } = useApp()
   const { toast, confirm } = useUiFeedback()
 
-  const [analyzing, setAnalyzing] = useState(false)
-  const [analysisError, setAnalysisError] = useState<string | null>(null)
+  const { enqueueMealPhotoAnalysis, isMealRunning, isMealQueued, getMealError } = useMealPhotoAnalysis()
 
   const meal = useMemo(() => meals.find((m) => m.id === mealId) ?? null, [meals, mealId])
 
@@ -51,20 +50,10 @@ export function MealDetailRoute() {
   async function onAnalyze() {
     if (!meal?.photoDataUrl) return
 
-    setAnalyzing(true)
-    setAnalysisError(null)
     try {
-      const result = await analyzeMealPhoto({ photoDataUrl: meal.photoDataUrl })
-      await updateMeal({
-        ...meal,
-        items: result.items,
-        totalMacros: result.totalMacros,
-        aiAnalysis: result.ai,
-      })
+      enqueueMealPhotoAnalysis(meal.id)
     } catch (e) {
-      setAnalysisError(e instanceof Error ? e.message : 'Failed to analyze photo')
-    } finally {
-      setAnalyzing(false)
+      toast({ kind: 'error', message: e instanceof Error ? e.message : 'Failed to start analysis' })
     }
   }
 
@@ -108,19 +97,23 @@ export function MealDetailRoute() {
               <div className="text-xs text-slate-600">Not analyzed yet.</div>
             )}
 
-            {analysisError ? (
+            {getMealError(meal.id) ? (
               <div className="text-sm text-red-600" role="alert" aria-live="assertive">
-                {analysisError}
+                {getMealError(meal.id)}
               </div>
+            ) : null}
+
+            {isMealRunning(meal.id) || isMealQueued(meal.id) ? (
+              <div className="text-xs text-slate-600">Analyzing in background…</div>
             ) : null}
 
             <button
               className="w-full rounded-xl bg-gradient-to-r from-emerald-600 via-teal-500 to-sky-500 px-3 py-2 text-sm font-medium text-white transition hover:brightness-110 active:brightness-95 disabled:opacity-50"
               onClick={() => void onAnalyze()}
-              disabled={analyzing}
+              disabled={isMealRunning(meal.id) || isMealQueued(meal.id)}
               type="button"
             >
-              {analyzing ? 'Analyzing…' : 'Analyze photo'}
+              {isMealRunning(meal.id) || isMealQueued(meal.id) ? 'Analyzing…' : 'Analyze photo'}
             </button>
           </div>
         </div>

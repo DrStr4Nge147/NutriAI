@@ -2,6 +2,7 @@ import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { t } from '../utils/i18n'
 import { readFileAsDataUrl } from '../utils/files'
+import { useMealPhotoAnalysis } from '../state/MealPhotoAnalysisContext'
 
 function NavIcon(props: { name: 'home' | 'scan' | 'manual' | 'history' | 'settings'; active: boolean }) {
   const stroke = props.active ? '#ffffff' : '#0f172a'
@@ -74,6 +75,8 @@ export function MobileShell(props: { title: string; children: ReactNode }) {
   const [isOnline, setIsOnline] = useState(() => (typeof navigator !== 'undefined' ? navigator.onLine : true))
   const location = useLocation()
   const navigate = useNavigate()
+
+  const { activeMealId, queuedMealIds } = useMealPhotoAnalysis()
 
   const scanInputRef = useRef<HTMLInputElement | null>(null)
   const scanGalleryInputRef = useRef<HTMLInputElement | null>(null)
@@ -236,6 +239,27 @@ export function MobileShell(props: { title: string; children: ReactNode }) {
               >
                 {t('offline_banner')}
               </div>
+            ) : null}
+
+            {activeMealId || queuedMealIds.length > 0 ? (
+              <button
+                className="mb-3 flex w-full items-center justify-between gap-3 rounded-xl border border-slate-200 bg-white px-3 py-2 text-left text-sm shadow-sm hover:bg-slate-50"
+                onClick={() => {
+                  const target = activeMealId ?? queuedMealIds[0] ?? null
+                  if (!target) return
+                  navigate(`/meals/${target}`)
+                }}
+                type="button"
+              >
+                <div className="min-w-0">
+                  <div className="text-xs font-medium text-slate-700">Analyzing in background</div>
+                  <div className="truncate text-xs text-slate-600">
+                    {activeMealId ? 'Running now' : 'Waiting to start'}
+                    {queuedMealIds.length > 0 ? ` • ${queuedMealIds.length} queued` : ''}
+                  </div>
+                </div>
+                <div className="shrink-0 rounded-md bg-slate-100 px-2 py-1 text-[11px] text-slate-700">View</div>
+              </button>
             ) : null}
 
             <main className="pb-24 lg:pb-0">

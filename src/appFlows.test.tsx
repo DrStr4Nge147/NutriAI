@@ -1,8 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { fireEvent, render, screen } from '@testing-library/react'
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 import App from './App'
 import { AppProvider } from './state/AppContext'
+import { MealPhotoAnalysisProvider } from './state/MealPhotoAnalysisContext'
 import { UiFeedbackProvider } from './state/UiFeedbackContext'
 import { clearAllData } from './storage/db'
 
@@ -17,7 +18,9 @@ async function renderApp(initialEntries: string[] = ['/']) {
     <MemoryRouter initialEntries={initialEntries}>
       <UiFeedbackProvider>
         <AppProvider>
-          <App />
+          <MealPhotoAnalysisProvider>
+            <App />
+          </MealPhotoAnalysisProvider>
         </AppProvider>
       </UiFeedbackProvider>
     </MemoryRouter>,
@@ -112,6 +115,115 @@ describe('app flows', () => {
       const pickedMs = new Date(eatenAtInput.value).getTime()
       expect(Math.abs(pickedMs - beforePickMs)).toBeLessThanOrEqual(60_000)
     } finally {
+      ;(globalThis as any).FileReader = prevFileReader
+    }
+  })
+
+  it('runs photo analysis in background across navigation and processes jobs sequentially', async () => {
+    const prevFetch = (globalThis as any).fetch
+    const prevFileReader = (globalThis as any).FileReader
+
+    function deferred<T>() {
+      let resolve: (value: T) => void = () => {}
+      let reject: (reason?: any) => void = () => {}
+      const promise = new Promise<T>((res, rej) => {
+        resolve = res
+        reject = rej
+      })
+      return { promise, resolve, reject }
+    }
+
+    const fetchDefers: Array<ReturnType<typeof deferred<any>>> = []
+    ;(globalThis as any).fetch = vi.fn(() => {
+      const d = deferred<any>()
+      fetchDefers.push(d)
+      return d.promise
+    })
+
+    class FileReaderStub {
+      result: string | ArrayBuffer | null = null
+      onload: null | (() => void) = null
+      onerror: null | (() => void) = null
+
+      readAsDataURL() {
+        this.result = 'data:image/jpeg;base64,AAA'
+        this.onload?.()
+      }
+    }
+    ;(globalThis as any).FileReader = FileReaderStub
+
+    localStorage.setItem(
+      'ai-nutritionist.aiSettings',
+      JSON.stringify({
+        provider: 'ollama',
+        gemini: { apiKey: '', model: 'gemini-2.0-flash', consentToSendData: false },
+        ollama: { baseUrl: 'http://localhost:11434', model: 'qwen3-vl:8b' },
+      }),
+    )
+
+    try {
+      await renderApp(['/'])
+      await completeOnboarding('Test')
+
+      const scanButton = screen.getByRole('button', { name: 'Scan' })
+      const scanInput = screen.getByTestId('scan-file-input') as HTMLInputElement
+
+      fireEvent.click(scanButton)
+      fireEvent.change(scanInput, { target: { files: [new File(['x'], 'm1.jpg', { type: 'image/jpeg' })] } })
+      await screen.findByText('Scan meal')
+      await screen.findByAltText('Meal photo preview')
+
+      fireEvent.click(screen.getByRole('button', { name: 'Save photo meal' }))
+      await screen.findByText('Photo analysis')
+
+      fireEvent.click(screen.getByRole('button', { name: 'Analyze photo' }))
+      await waitFor(() => expect((globalThis as any).fetch).toHaveBeenCalledTimes(1))
+
+      fireEvent.click(screen.getByRole('link', { name: 'Back' }))
+      await screen.findByText('All meals saved on this device.')
+      await screen.findByText('Analyzing in background')
+
+      fireEvent.click(within(screen.getByRole('navigation', { name: 'Primary' })).getByRole('link', { name: 'Scan' }))
+      await screen.findByText('Scan meal')
+      const upload = screen.getByLabelText(/Upload photo/i) as HTMLInputElement
+      fireEvent.change(upload, { target: { files: [new File(['x'], 'm2.jpg', { type: 'image/jpeg' })] } })
+      await screen.findByAltText('Meal photo preview')
+
+      fireEvent.click(screen.getByRole('button', { name: 'Save photo meal' }))
+      await screen.findByText('Photo analysis')
+
+      fireEvent.click(screen.getByRole('button', { name: 'Analyze photo' }))
+      expect((globalThis as any).fetch).toHaveBeenCalledTimes(1)
+
+      fetchDefers[0].resolve({
+        ok: true,
+        json: async () => ({
+          message: {
+            content: JSON.stringify({
+              items: [{ name: 'Item 1', quantityGrams: 100, calories: 100, protein_g: 10, carbs_g: 10, fat_g: 10 }],
+            }),
+          },
+        }),
+      })
+
+      await waitFor(() => expect((globalThis as any).fetch).toHaveBeenCalledTimes(2))
+
+      fetchDefers[1].resolve({
+        ok: true,
+        json: async () => ({
+          message: {
+            content: JSON.stringify({
+              items: [{ name: 'Item 2', quantityGrams: 100, calories: 100, protein_g: 10, carbs_g: 10, fat_g: 10 }],
+            }),
+          },
+        }),
+      })
+
+      await waitFor(() => {
+        expect(screen.getAllByText('Meal photo analysis complete.').length).toBeGreaterThanOrEqual(2)
+      })
+    } finally {
+      ;(globalThis as any).fetch = prevFetch
       ;(globalThis as any).FileReader = prevFileReader
     }
   })

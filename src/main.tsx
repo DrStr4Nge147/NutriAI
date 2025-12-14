@@ -3,6 +3,7 @@ import ReactDOM from 'react-dom/client'
 import { BrowserRouter } from 'react-router-dom'
 import App from './App'
 import { AppProvider } from './state/AppContext'
+import { MealPhotoAnalysisProvider } from './state/MealPhotoAnalysisContext'
 import { UiFeedbackProvider } from './state/UiFeedbackContext'
 import { registerServiceWorker } from './pwa/registerServiceWorker'
 import { initReminderScheduler } from './notifications/reminders'
@@ -13,7 +14,9 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
     <BrowserRouter>
       <UiFeedbackProvider>
         <AppProvider>
-          <App />
+          <MealPhotoAnalysisProvider>
+            <App />
+          </MealPhotoAnalysisProvider>
         </AppProvider>
       </UiFeedbackProvider>
     </BrowserRouter>

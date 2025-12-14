@@ -26,8 +26,41 @@ type AiPayloadJson = {
   items?: unknown
 }
 
+function normalizeAiJsonText(text: string): string {
+  const trimmed = text.trim()
+  if (!trimmed) return trimmed
+
+  const fenced = /^```[a-zA-Z0-9_-]*\n([\s\S]*?)\n```$/.exec(trimmed)
+  if (fenced?.[1]) return fenced[1].trim()
+
+  const braceStart = trimmed.indexOf('{')
+  const bracketStart = trimmed.indexOf('[')
+
+  if (braceStart === -1 && bracketStart === -1) return trimmed
+
+  const useBrace = braceStart !== -1 && (bracketStart === -1 || braceStart < bracketStart)
+
+  const start = useBrace ? braceStart : bracketStart
+  const end = useBrace ? trimmed.lastIndexOf('}') : trimmed.lastIndexOf(']')
+
+  if (end === -1 || end <= start) return trimmed
+
+  return trimmed.slice(start, end + 1).trim()
+}
+
 export function parseAiJsonToFoodItems(jsonText: string): FoodItem[] {
-  const parsed = JSON.parse(jsonText) as unknown
+  let parsed: unknown
+  try {
+    parsed = JSON.parse(jsonText) as unknown
+  } catch {
+    const normalized = normalizeAiJsonText(jsonText)
+    try {
+      parsed = JSON.parse(normalized) as unknown
+    } catch {
+      const preview = jsonText.replace(/\s+/g, ' ').trim().slice(0, 200)
+      throw new Error(`AI response was not valid JSON. Received: ${preview || '(empty)'}`)
+    }
+  }
 
   const itemsRaw = Array.isArray(parsed)
     ? parsed
@@ -128,14 +161,42 @@ export async function analyzeMealPhoto(input: {
     const baseUrl = settings.ollama.baseUrl.replace(/\/+$/, '')
     const url = `${baseUrl}/api/chat`
 
+    const responseSchema = {
+      type: 'object',
+      properties: {
+        items: {
+          type: 'array',
+          items: {
+            type: 'object',
+            properties: {
+              name: { type: 'string' },
+              quantityGrams: { type: 'number' },
+              calories: { type: 'number' },
+              protein_g: { type: 'number' },
+              carbs_g: { type: 'number' },
+              fat_g: { type: 'number' },
+              sugar_g: { type: 'number' },
+              sodium_mg: { type: 'number' },
+            },
+            required: ['name', 'quantityGrams', 'calories', 'protein_g', 'carbs_g', 'fat_g', 'sugar_g', 'sodium_mg'],
+          },
+        },
+      },
+      required: ['items'],
+    } as const
+
     const prompt =
-      'Analyze the meal photo. Return ONLY valid JSON with the shape: {"items": [{"name": string, "quantityGrams": number, "calories": number, "protein_g": number, "carbs_g": number, "fat_g": number, "sugar_g": number, "sodium_mg": number}]}. Use numbers only. If uncertain, make a best guess.'
+      'Analyze the meal photo. Return ONLY valid JSON (no markdown, no backticks, no code fences, no extra text) with the shape: {"items": [{"name": string, "quantityGrams": number, "calories": number, "protein_g": number, "carbs_g": number, "fat_g": number, "sugar_g": number, "sodium_mg": number}]}. Use numbers only. If uncertain, make a best guess.'
 
     const res = await fetch(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         model: settings.ollama.model,
+        format: responseSchema,
+        options: {
+          temperature: 0,
+        },
         stream: false,
         messages: [
           {
@@ -155,7 +216,16 @@ export async function analyzeMealPhoto(input: {
     const data = (await res.json()) as any
     const rawText: string = data?.message?.content ?? ''
 
+    if (!rawText.trim()) {
+      throw new Error('Ollama returned an empty response. Ensure the model supports vision and try again.')
+    }
+
     const items = rawText ? parseAiJsonToFoodItems(rawText) : []
+
+    if (items.length === 0) {
+      throw new Error('AI did not return any items. Try a clearer photo or a different model.')
+    }
+
     const totalMacros = items.length ? sumMacros(items) : emptyMacros()
 
     return {
