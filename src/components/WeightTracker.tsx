@@ -180,9 +180,9 @@ export function WeightTracker(props: {
                 role="img"
                 aria-label="Weight trend"
               >
-                <path d={graph.path} fill="none" stroke="#0f172a" strokeWidth="2" />
+                <path d={graph.path} fill="none" stroke="#059669" strokeWidth="2" />
                 {graph.points.map((p, idx) => (
-                  <circle key={idx} cx={p.x} cy={p.y} r={2.5} fill="#0f172a" />
+                  <circle key={idx} cx={p.x} cy={p.y} r={2.5} fill="#059669" />
                 ))}
               </svg>
             </div>

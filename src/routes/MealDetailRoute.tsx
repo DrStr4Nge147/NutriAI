@@ -58,7 +58,7 @@ export function MealDetailRoute() {
   if (!meal) {
     return (
       <div className="space-y-4">
-        <div className="rounded-lg bg-white p-4 shadow-sm text-sm text-slate-600">Meal not found.</div>
+        <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm text-sm text-slate-600">Meal not found.</div>
         <Link to="/meals" className="inline-block text-sm text-slate-900 underline">
           Back to meals
         </Link>
@@ -68,16 +68,23 @@ export function MealDetailRoute() {
 
   return (
     <div className="space-y-4">
-      <div className="rounded-lg bg-white p-4 shadow-sm">
-        <div className="text-base font-semibold">Meal</div>
-        <div className="mt-1 text-sm text-slate-600">{new Date(meal.eatenAt).toLocaleString()}</div>
+      <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <div className="text-base font-semibold">Meal</div>
+            <div className="mt-1 text-sm text-slate-600">{new Date(meal.eatenAt).toLocaleString()}</div>
+          </div>
+          <Link to="/meals" className="text-sm text-slate-900 underline">
+            Back
+          </Link>
+        </div>
       </div>
 
       {meal.photoDataUrl ? (
         <div className="space-y-3">
-          <img src={meal.photoDataUrl} alt="Meal photo" className="w-full rounded-lg border border-slate-200" />
+          <img src={meal.photoDataUrl} alt="Meal photo" className="w-full rounded-2xl border border-slate-200" />
 
-          <div className="rounded-lg bg-white p-4 shadow-sm space-y-2">
+          <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm space-y-2">
             <div className="text-sm font-medium">Photo analysis</div>
 
             {meal.aiAnalysis ? (
@@ -95,7 +102,7 @@ export function MealDetailRoute() {
             ) : null}
 
             <button
-              className="w-full rounded-md bg-slate-900 px-3 py-2 text-sm font-medium text-white disabled:opacity-50"
+              className="w-full rounded-xl bg-emerald-600 px-3 py-2 text-sm font-medium text-white hover:bg-emerald-700 disabled:opacity-50"
               onClick={() => void onAnalyze()}
               disabled={analyzing}
               type="button"
@@ -107,7 +114,7 @@ export function MealDetailRoute() {
       ) : null}
 
       {mealInsights.length > 0 ? (
-        <div className="rounded-lg bg-white p-4 shadow-sm space-y-2">
+        <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm space-y-2">
           <div className="text-sm font-medium">Warnings</div>
           <div className="space-y-2">
             {mealInsights.map((i) => (

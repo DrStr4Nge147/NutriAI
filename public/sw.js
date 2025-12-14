@@ -1,4 +1,4 @@
-const CACHE_NAME = 'ai-nutritionist-v2'
+const CACHE_NAME = 'nutriai-v1'
 
 self.addEventListener('install', (event) => {
   event.waitUntil(

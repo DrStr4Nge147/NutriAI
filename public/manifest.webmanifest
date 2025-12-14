@@ -1,11 +1,11 @@
 {
-  "name": "AI Nutritionist",
-  "short_name": "Nutritionist",
+  "name": "NutriAI",
+  "short_name": "NutriAI",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
   "background_color": "#ffffff",
-  "theme_color": "#0f172a",
+  "theme_color": "#059669",
   "icons": [
     {
       "src": "/icons/icon-192.svg",

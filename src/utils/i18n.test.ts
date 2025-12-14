@@ -10,7 +10,7 @@ describe('i18n', () => {
   })
 
   it('returns translations for a given locale', () => {
-    expect(t('app_title', { locale: 'en' })).toBe('AI Nutritionist')
+    expect(t('app_title', { locale: 'en' })).toBe('NutriAI')
     expect(t('offline_banner', { locale: 'fil' })).toContain('Offline')
   })
 })

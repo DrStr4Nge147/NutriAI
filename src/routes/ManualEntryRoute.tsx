@@ -33,16 +33,16 @@ export function ManualEntryRoute() {
 
   return (
     <div className="space-y-4">
-      <div className="rounded-lg bg-white p-4 shadow-sm">
+      <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
         <div className="text-base font-semibold">Manual meal entry</div>
         <div className="mt-1 text-sm text-slate-600">Type a food and grams. We’ll estimate macros.</div>
       </div>
 
-      <div className="rounded-lg bg-white p-4 shadow-sm space-y-3">
+      <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm space-y-4">
         <label className="block text-sm">
           <div className="font-medium">Food</div>
           <input
-            className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
+            className="mt-1 w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm"
             value={name}
             onChange={(e) => setName(e.target.value)}
             placeholder="e.g., White rice"
@@ -54,7 +54,7 @@ export function ManualEntryRoute() {
             {suggestions.map((s) => (
               <button
                 key={s.id}
-                className="rounded-full border border-slate-300 bg-white px-3 py-1 text-xs"
+                className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs text-slate-900 hover:bg-slate-100"
                 onClick={() => setName(s.name)}
                 type="button"
               >
@@ -68,7 +68,7 @@ export function ManualEntryRoute() {
           <label className="block text-sm">
             <div className="font-medium">Grams</div>
             <input
-              className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
+              className="mt-1 w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm"
               value={grams}
               onChange={(e) => setGrams(e.target.value)}
               inputMode="numeric"
@@ -78,7 +78,7 @@ export function ManualEntryRoute() {
           <label className="block text-sm">
             <div className="font-medium">Eaten at</div>
             <input
-              className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
+              className="mt-1 w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm"
               value={eatenAt}
               onChange={(e) => setEatenAt(e.target.value)}
               type="datetime-local"
@@ -93,7 +93,7 @@ export function ManualEntryRoute() {
         ) : null}
 
         <button
-          className="w-full rounded-md bg-slate-900 px-3 py-2 text-sm font-medium text-white disabled:opacity-50"
+          className="w-full rounded-xl bg-emerald-600 px-3 py-2 text-sm font-medium text-white hover:bg-emerald-700 disabled:opacity-50"
           onClick={() => void submit()}
           disabled={submitting || !name.trim()}
           type="button"

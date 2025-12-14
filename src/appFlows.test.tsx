@@ -32,7 +32,8 @@ async function completeOnboarding(name: string) {
   await screen.findByText('Privacy & storage')
   fireEvent.click(screen.getByRole('button', { name: 'Finish' }))
 
-  await screen.findByText(`Hi, ${name}`)
+  await screen.findByText('Calories left')
+  expect(screen.getByText(name)).toBeInTheDocument()
 }
 
 describe('app flows', () => {
@@ -44,14 +45,14 @@ describe('app flows', () => {
   it('onboarding creates a profile and lands on home', async () => {
     await renderApp(['/'])
     await completeOnboarding('Nick')
-    expect(screen.getByText('Settings')).toBeInTheDocument()
+    expect(screen.getAllByRole('link', { name: 'Settings' }).length).toBeGreaterThan(0)
   })
 
   it('manual meal entry creates a meal and shows totals', async () => {
     await renderApp(['/'])
     await completeOnboarding('Test')
 
-    fireEvent.click(screen.getByRole('link', { name: 'Manual entry' }))
+    fireEvent.click(screen.getAllByRole('link', { name: 'Manual' })[0])
 
     await screen.findByText('Manual meal entry')
 
