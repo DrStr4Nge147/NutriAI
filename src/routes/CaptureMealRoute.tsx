@@ -1,14 +1,35 @@
 import { useEffect, useRef, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useLocation, useNavigate } from 'react-router-dom'
 import { readFileAsDataUrl } from '../utils/files'
 import { useApp } from '../state/AppContext'
 
+function formatDatetimeLocalValue(date: Date) {
+  const tzOffsetMs = date.getTimezoneOffset() * 60_000
+  const local = new Date(date.getTime() - tzOffsetMs)
+  return local.toISOString().slice(0, 16)
+}
+
 export function CaptureMealRoute() {
   const navigate = useNavigate()
+  const location = useLocation()
   const { addPhotoMeal } = useApp()
 
-  const [eatenAt, setEatenAt] = useState(() => new Date().toISOString().slice(0, 16))
-  const [photoPreview, setPhotoPreview] = useState<string | null>(null)
+  const scanFileInputRef = useRef<HTMLInputElement | null>(null)
+  const uploadFileInputRef = useRef<HTMLInputElement | null>(null)
+
+  const isCoarsePointer =
+    typeof window !== 'undefined' && typeof window.matchMedia === 'function'
+      ? window.matchMedia('(pointer: coarse)').matches
+      : false
+
+  const [eatenAt, setEatenAt] = useState(() => {
+    const s = location.state as any
+    return typeof s?.eatenAtLocal === 'string' ? s.eatenAtLocal : formatDatetimeLocalValue(new Date())
+  })
+  const [photoPreview, setPhotoPreview] = useState<string | null>(() => {
+    const s = location.state as any
+    return typeof s?.photoDataUrl === 'string' ? s.photoDataUrl : null
+  })
   const [cameraActive, setCameraActive] = useState(false)
   const [stream, setStream] = useState<MediaStream | null>(null)
   const [submitting, setSubmitting] = useState(false)
@@ -33,9 +54,16 @@ export function CaptureMealRoute() {
     }
   }, [stream])
 
+  useEffect(() => {
+    const s = location.state as any
+    if (typeof s?.photoDataUrl === 'string') setPhotoPreview(s.photoDataUrl)
+    if (typeof s?.eatenAtLocal === 'string') setEatenAt(s.eatenAtLocal)
+  }, [location.state])
+
   async function onPickFile(file: File | null) {
     setError(null)
     if (!file) return
+    setEatenAt(formatDatetimeLocalValue(new Date()))
     try {
       const dataUrl = await readFileAsDataUrl(file)
       setPhotoPreview(dataUrl)
@@ -77,6 +105,8 @@ export function CaptureMealRoute() {
     const video = videoRef.current
     if (!video) return
 
+    setEatenAt(formatDatetimeLocalValue(new Date()))
+
     const w = video.videoWidth
     const h = video.videoHeight
     if (!w || !h) {
@@ -100,6 +130,14 @@ export function CaptureMealRoute() {
     stopCamera()
   }
 
+  function openFilePicker() {
+    setError(null)
+    const el = scanFileInputRef.current
+    if (!el) return
+    el.value = ''
+    el.click()
+  }
+
   async function save() {
     if (!photoPreview) return
     setSubmitting(true)
@@ -117,12 +155,21 @@ export function CaptureMealRoute() {
 
   return (
     <div className="space-y-4">
-      <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-        <div className="text-base font-semibold">Scan meal</div>
-        <div className="mt-1 text-sm text-slate-600">Capture a photo or upload an image to analyze later.</div>
-      </div>
-
       <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm space-y-4">
+        <div>
+          <div className="text-base font-semibold">Scan meal</div>
+          <div className="mt-1 text-sm text-slate-600">Take a photo or upload an image to estimate nutrition.</div>
+        </div>
+
+        <input
+          ref={scanFileInputRef}
+          className="sr-only"
+          type="file"
+          accept="image/*"
+          capture="environment"
+          onChange={(e) => void onPickFile(e.target.files?.[0] ?? null)}
+        />
+
         <label className="block text-sm">
           <div className="font-medium">Eaten at</div>
           <input
@@ -133,53 +180,66 @@ export function CaptureMealRoute() {
           />
         </label>
 
-        <div className="flex gap-2">
-          {!cameraActive ? (
-            <button
-              className="flex-1 rounded-xl bg-emerald-600 px-3 py-2 text-sm font-medium text-white hover:bg-emerald-700 disabled:opacity-50"
-              onClick={() => void startCamera()}
-              disabled={submitting}
-              type="button"
-            >
-              Open camera
-            </button>
-          ) : (
-            <>
-              <button
-                className="flex-1 rounded-xl bg-emerald-600 px-3 py-2 text-sm font-medium text-white hover:bg-emerald-700"
-                onClick={() => captureFromCamera()}
-                type="button"
-              >
-                Capture
-              </button>
-              <button
-                className="rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm hover:bg-slate-50"
-                onClick={() => stopCamera()}
-                type="button"
-              >
-                Close
-              </button>
-            </>
-          )}
-        </div>
+        {isCoarsePointer ? (
+          <button
+            className="w-full rounded-xl bg-gradient-to-r from-emerald-600 via-teal-500 to-sky-500 px-3 py-2 text-sm font-medium text-white transition hover:brightness-110 active:brightness-95 disabled:opacity-50"
+            onClick={() => openFilePicker()}
+            disabled={submitting}
+            type="button"
+          >
+            Scan
+          </button>
+        ) : (
+          <>
+            <div className="flex gap-2">
+              {!cameraActive ? (
+                <button
+                  className="flex-1 rounded-xl bg-gradient-to-r from-emerald-600 via-teal-500 to-sky-500 px-3 py-2 text-sm font-medium text-white transition hover:brightness-110 active:brightness-95 disabled:opacity-50"
+                  onClick={() => void startCamera()}
+                  disabled={submitting}
+                  type="button"
+                >
+                  Open camera
+                </button>
+              ) : (
+                <>
+                  <button
+                    className="flex-1 rounded-xl bg-gradient-to-r from-emerald-600 via-teal-500 to-sky-500 px-3 py-2 text-sm font-medium text-white transition hover:brightness-110 active:brightness-95"
+                    onClick={() => captureFromCamera()}
+                    type="button"
+                  >
+                    Capture
+                  </button>
+                  <button
+                    className="rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm hover:bg-slate-50"
+                    onClick={() => stopCamera()}
+                    type="button"
+                  >
+                    Close
+                  </button>
+                </>
+              )}
+            </div>
 
-        {cameraActive ? (
-          <video
-            ref={videoRef}
-            className="w-full rounded-xl border border-slate-200"
-            autoPlay
-            playsInline
-            muted
-          />
-        ) : null}
+            {cameraActive ? (
+              <video
+                ref={videoRef}
+                className="w-full rounded-xl border border-slate-200"
+                autoPlay
+                playsInline
+                muted
+              />
+            ) : null}
+          </>
+        )}
 
         <label className="block text-sm">
           <div className="font-medium">Upload photo</div>
           <input
             className="mt-2 block w-full text-sm text-slate-600 file:mr-3 file:rounded-xl file:border-0 file:bg-slate-100 file:px-3 file:py-2 file:text-sm file:font-medium file:text-slate-900 hover:file:bg-slate-200"
+            ref={uploadFileInputRef}
             type="file"
             accept="image/*"
-            capture="environment"
             onChange={(e) => void onPickFile(e.target.files?.[0] ?? null)}
           />
           <div className="mt-2 text-xs text-slate-600">
@@ -198,7 +258,7 @@ export function CaptureMealRoute() {
         ) : null}
 
         <button
-          className="w-full rounded-xl bg-emerald-600 px-3 py-2 text-sm font-medium text-white hover:bg-emerald-700 disabled:opacity-50"
+          className="w-full rounded-xl bg-gradient-to-r from-emerald-600 via-teal-500 to-sky-500 px-3 py-2 text-sm font-medium text-white transition hover:brightness-110 active:brightness-95 disabled:opacity-50"
           onClick={() => void save()}
           disabled={submitting || !photoPreview}
           type="button"

@@ -4,11 +4,13 @@ import { analyzeMealPhoto } from '../ai/analyzePhoto'
 import { MealItemsEditor } from '../components/MealItemsEditor'
 import { buildHealthInsights } from '../nutrition/health'
 import { useApp } from '../state/AppContext'
+import { useUiFeedback } from '../state/UiFeedbackContext'
 
 export function MealDetailRoute() {
   const navigate = useNavigate()
   const { mealId } = useParams<{ mealId: string }>()
   const { meals, removeMeal, updateMeal, currentProfile } = useApp()
+  const { toast, confirm } = useUiFeedback()
 
   const [analyzing, setAnalyzing] = useState(false)
   const [analysisError, setAnalysisError] = useState<string | null>(null)
@@ -29,10 +31,21 @@ export function MealDetailRoute() {
 
   async function onDelete() {
     if (!meal) return
-    const ok = window.confirm('Delete this meal?')
+    const ok = await confirm({
+      title: 'Delete meal',
+      message: 'Delete this meal?',
+      confirmText: 'Delete',
+      cancelText: 'Cancel',
+      destructive: true,
+    })
     if (!ok) return
-    await removeMeal(meal.id)
-    navigate('/meals')
+    try {
+      await removeMeal(meal.id)
+      toast({ kind: 'success', message: 'Meal deleted' })
+      navigate('/meals')
+    } catch (e) {
+      toast({ kind: 'error', message: e instanceof Error ? e.message : 'Failed to delete meal' })
+    }
   }
 
   async function onAnalyze() {
@@ -102,7 +115,7 @@ export function MealDetailRoute() {
             ) : null}
 
             <button
-              className="w-full rounded-xl bg-emerald-600 px-3 py-2 text-sm font-medium text-white hover:bg-emerald-700 disabled:opacity-50"
+              className="w-full rounded-xl bg-gradient-to-r from-emerald-600 via-teal-500 to-sky-500 px-3 py-2 text-sm font-medium text-white transition hover:brightness-110 active:brightness-95 disabled:opacity-50"
               onClick={() => void onAnalyze()}
               disabled={analyzing}
               type="button"

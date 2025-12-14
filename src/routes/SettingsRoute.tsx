@@ -11,12 +11,12 @@ import {
 import { exportAllData, importAllData } from '../storage/exportImport'
 import { clearAllData } from '../storage/db'
 import { useApp } from '../state/AppContext'
+import { useUiFeedback } from '../state/UiFeedbackContext'
 
 export function SettingsRoute() {
   const { refresh, profiles, currentProfile, currentProfileId, selectProfile, saveProfile, deleteProfile } = useApp()
+  const { toast, confirm } = useUiFeedback()
   const [busy, setBusy] = useState(false)
-  const [message, setMessage] = useState<string | null>(null)
-  const [error, setError] = useState<string | null>(null)
   const [aiSettings, setAiSettingsState] = useState(() => getAiSettings())
   const [reminders, setRemindersState] = useState(() => getReminderSettings())
   const [notificationPermission, setNotificationPermission] = useState<
@@ -28,8 +28,6 @@ export function SettingsRoute() {
 
   async function onExport() {
     setBusy(true)
-    setMessage(null)
-    setError(null)
     try {
       const payload = await exportAllData()
       const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' })
@@ -39,9 +37,9 @@ export function SettingsRoute() {
       a.download = `nutriai-export-${new Date().toISOString().slice(0, 10)}.json`
       a.click()
       URL.revokeObjectURL(url)
-      setMessage('Export downloaded')
+      toast({ kind: 'success', message: 'Export downloaded' })
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Export failed')
+      toast({ kind: 'error', message: e instanceof Error ? e.message : 'Export failed' })
     } finally {
       setBusy(false)
     }
@@ -49,8 +47,6 @@ export function SettingsRoute() {
 
   async function onImport(file: File | null) {
     setBusy(true)
-    setMessage(null)
-    setError(null)
     if (!file) {
       setBusy(false)
       return
@@ -61,27 +57,31 @@ export function SettingsRoute() {
       const parsed = JSON.parse(text) as unknown
       const result = await importAllData(parsed)
       await refresh()
-      setMessage(`Imported ${result.profiles} profiles and ${result.meals} meals`)
+      toast({ kind: 'success', message: `Imported ${result.profiles} profiles and ${result.meals} meals` })
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Import failed')
+      toast({ kind: 'error', message: e instanceof Error ? e.message : 'Import failed' })
     } finally {
       setBusy(false)
     }
   }
 
   async function onClear() {
-    const ok = window.confirm('Clear all local data? This cannot be undone.')
+    const ok = await confirm({
+      title: 'Clear local data',
+      message: 'Clear all local data? This cannot be undone.',
+      confirmText: 'Clear',
+      cancelText: 'Cancel',
+      destructive: true,
+    })
     if (!ok) return
 
     setBusy(true)
-    setMessage(null)
-    setError(null)
     try {
       await clearAllData()
       await refresh()
-      setMessage('Local data cleared')
+      toast({ kind: 'success', message: 'Local data cleared' })
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Failed to clear data')
+      toast({ kind: 'error', message: e instanceof Error ? e.message : 'Failed to clear data' })
     } finally {
       setBusy(false)
     }
@@ -90,28 +90,26 @@ export function SettingsRoute() {
   function saveAiSettings(next: typeof aiSettings) {
     setAiSettings(next)
     setAiSettingsState(next)
-    setMessage('AI settings saved')
+    toast({ kind: 'success', message: 'AI settings saved' })
   }
 
   async function onEnableNotifications() {
-    setError(null)
-    setMessage(null)
     const p = await requestNotificationPermission()
     if (p === 'unsupported') {
       setNotificationPermission('unsupported')
-      setError('Notifications are not supported in this browser.')
+      toast({ kind: 'error', message: 'Notifications are not supported in this browser.' })
       return
     }
     setNotificationPermission(p)
-    if (p !== 'granted') setError('Notifications permission not granted.')
-    else setMessage('Notifications enabled')
+    if (p !== 'granted') toast({ kind: 'error', message: 'Notifications permission not granted.' })
+    else toast({ kind: 'success', message: 'Notifications enabled' })
   }
 
   function saveReminders(next: typeof reminders) {
     setReminderSettings(next)
     setRemindersState(next)
     refreshReminderScheduler()
-    setMessage('Reminder settings saved')
+    toast({ kind: 'success', message: 'Reminder settings saved' })
   }
 
   return (
@@ -212,7 +210,7 @@ export function SettingsRoute() {
         </div>
 
         <button
-          className="w-full rounded-xl bg-emerald-600 px-3 py-2 text-sm font-medium text-white hover:bg-emerald-700 disabled:opacity-50"
+          className="w-full rounded-xl bg-gradient-to-r from-emerald-600 via-teal-500 to-sky-500 px-3 py-2 text-sm font-medium text-white transition hover:brightness-110 active:brightness-95 disabled:opacity-50"
           onClick={() => saveAiSettings(aiSettings)}
           disabled={busy}
           type="button"
@@ -309,7 +307,7 @@ export function SettingsRoute() {
         ) : null}
 
         <button
-          className="w-full rounded-xl bg-emerald-600 px-3 py-2 text-sm font-medium text-white hover:bg-emerald-700 disabled:opacity-50"
+          className="w-full rounded-xl bg-gradient-to-r from-emerald-600 via-teal-500 to-sky-500 px-3 py-2 text-sm font-medium text-white transition hover:brightness-110 active:brightness-95 disabled:opacity-50"
           onClick={() => saveReminders(reminders)}
           disabled={busy}
           type="button"
@@ -342,7 +340,10 @@ export function SettingsRoute() {
                 {p.id !== currentProfileId ? (
                   <button
                     className="rounded-xl border border-slate-300 bg-white px-3 py-1 text-xs hover:bg-slate-50"
-                    onClick={() => void selectProfile(p.id)}
+                    onClick={() => void (async () => {
+                      await selectProfile(p.id)
+                      toast({ kind: 'success', message: `Switched to ${p.name}` })
+                    })()}
                     disabled={busy}
                     type="button"
                   >
@@ -352,17 +353,22 @@ export function SettingsRoute() {
                 <button
                   className="rounded-xl border border-red-300 bg-white px-3 py-1 text-xs text-red-700 disabled:opacity-50"
                   onClick={() => {
-                    const ok = window.confirm(`Delete profile "${p.name}"? This deletes its meals.`)
-                    if (!ok) return
                     void (async () => {
+                      const ok = await confirm({
+                        title: 'Delete profile',
+                        message: `Delete profile "${p.name}"? This deletes its meals.`,
+                        confirmText: 'Delete',
+                        cancelText: 'Cancel',
+                        destructive: true,
+                      })
+                      if (!ok) return
+
                       setBusy(true)
-                      setMessage(null)
-                      setError(null)
                       try {
                         await deleteProfile(p.id)
-                        setMessage('Profile deleted')
+                        toast({ kind: 'success', message: 'Profile deleted' })
                       } catch (e) {
-                        setError(e instanceof Error ? e.message : 'Failed to delete profile')
+                        toast({ kind: 'error', message: e instanceof Error ? e.message : 'Failed to delete profile' })
                       } finally {
                         setBusy(false)
                       }
@@ -399,7 +405,7 @@ export function SettingsRoute() {
         <hr className="my-2 border-slate-200" />
 
         <button
-          className="w-full rounded-xl bg-emerald-600 px-3 py-2 text-sm font-medium text-white hover:bg-emerald-700 disabled:opacity-50"
+          className="w-full rounded-xl bg-gradient-to-r from-emerald-600 via-teal-500 to-sky-500 px-3 py-2 text-sm font-medium text-white transition hover:brightness-110 active:brightness-95 disabled:opacity-50"
           onClick={() => void onExport()}
           disabled={busy}
         >
@@ -423,17 +429,6 @@ export function SettingsRoute() {
         >
           Clear local data
         </button>
-
-        {message ? (
-          <div className="text-sm text-green-700" role="status" aria-live="polite">
-            {message}
-          </div>
-        ) : null}
-        {error ? (
-          <div className="text-sm text-red-600" role="alert" aria-live="assertive">
-            {error}
-          </div>
-        ) : null}
       </div>
     </div>
   )

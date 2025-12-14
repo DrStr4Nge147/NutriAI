@@ -128,7 +128,10 @@ export function HomeRoute() {
           </div>
         </div>
         <div className="mt-1 h-2 w-full overflow-hidden rounded-full bg-slate-100">
-          <div className="h-full rounded-full bg-emerald-600" style={{ width: `${Math.round(pct * 100)}%` }} />
+          <div
+            className="h-full rounded-full bg-gradient-to-r from-emerald-600 via-teal-500 to-sky-500"
+            style={{ width: `${Math.round(pct * 100)}%` }}
+          />
         </div>
       </div>
     )

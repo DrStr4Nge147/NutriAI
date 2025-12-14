@@ -22,7 +22,7 @@ export function MealsRoute() {
           <div className="flex gap-2">
             <Link
               to="/capture"
-              className="inline-flex items-center justify-center rounded-xl bg-emerald-600 px-3 py-2 text-sm font-medium text-white hover:bg-emerald-700"
+              className="inline-flex items-center justify-center rounded-xl bg-gradient-to-r from-emerald-600 via-teal-500 to-sky-500 px-3 py-2 text-sm font-medium text-white transition hover:brightness-110 active:brightness-95"
             >
               Scan
             </Link>

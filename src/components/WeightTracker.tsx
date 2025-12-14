@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import type { UserProfile, WeightEntry } from '../models/types'
+import { useUiFeedback } from '../state/UiFeedbackContext'
 import { safeNumber } from '../utils/numbers'
 
 function sortDesc(entries: WeightEntry[]) {
@@ -23,15 +24,14 @@ export function WeightTracker(props: {
   profile: UserProfile
   onSaveProfile: (profile: UserProfile) => Promise<void>
 }) {
+  const { toast, confirm } = useUiFeedback()
   const [busy, setBusy] = useState(false)
-  const [message, setMessage] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
 
   const [date, setDate] = useState(() => new Date().toISOString().slice(0, 10))
   const [weightKg, setWeightKg] = useState('')
 
   useEffect(() => {
-    setMessage(null)
     setError(null)
     setWeightKg(String(props.profile.body.weightKg))
   }, [props.profile.id])
@@ -84,16 +84,17 @@ export function WeightTracker(props: {
   async function save(nextEntries: WeightEntry[], nextBodyWeightKg: number) {
     setBusy(true)
     setError(null)
-    setMessage(null)
     try {
       await props.onSaveProfile({
         ...props.profile,
         body: { ...props.profile.body, weightKg: nextBodyWeightKg },
         weightHistory: sortDesc(nextEntries),
       })
-      setMessage('Saved')
+      toast({ kind: 'success', message: 'Saved' })
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Failed to save')
+      const msg = e instanceof Error ? e.message : 'Failed to save'
+      setError(msg)
+      toast({ kind: 'error', message: msg })
     } finally {
       setBusy(false)
     }
@@ -103,6 +104,7 @@ export function WeightTracker(props: {
     const w = safeNumber(weightKg, 0)
     if (!Number.isFinite(w) || w <= 0) {
       setError('Enter a valid weight')
+      toast({ kind: 'error', message: 'Enter a valid weight' })
       return
     }
 
@@ -112,7 +114,13 @@ export function WeightTracker(props: {
   }
 
   async function removeEntry(entry: WeightEntry) {
-    const ok = window.confirm(`Delete weight entry for ${isoDay(entry.date)}?`)
+    const ok = await confirm({
+      title: 'Delete weight entry',
+      message: `Delete weight entry for ${isoDay(entry.date)}?`,
+      confirmText: 'Delete',
+      cancelText: 'Cancel',
+      destructive: true,
+    })
     if (!ok) return
 
     const remaining = (props.profile.weightHistory ?? []).filter((e) => !(e.date === entry.date && e.weightKg === entry.weightKg))
@@ -211,11 +219,6 @@ export function WeightTracker(props: {
         </div>
       ) : null}
 
-      {message ? (
-        <div className="text-sm text-green-700" role="status" aria-live="polite">
-          {message}
-        </div>
-      ) : null}
       {error ? (
         <div className="text-sm text-red-600" role="alert" aria-live="assertive">
           {error}

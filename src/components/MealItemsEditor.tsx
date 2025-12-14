@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import type { FoodItem, Meal } from '../models/types'
 import { estimateFromLocalFoods } from '../nutrition/localFoods'
 import { emptyMacros, sumMacros } from '../nutrition/macros'
+import { useUiFeedback } from '../state/UiFeedbackContext'
 import { safeNumber } from '../utils/numbers'
 import { newId } from '../utils/id'
 
@@ -9,16 +10,15 @@ export function MealItemsEditor(props: {
   meal: Meal
   onSaveMeal: (meal: Meal) => Promise<void>
 }) {
+  const { toast } = useUiFeedback()
   const [draftItems, setDraftItems] = useState<FoodItem[]>(props.meal.items)
   const [newName, setNewName] = useState('')
   const [newGrams, setNewGrams] = useState('150')
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [message, setMessage] = useState<string | null>(null)
 
   useEffect(() => {
     setDraftItems(props.meal.items)
-    setMessage(null)
     setError(null)
   }, [props.meal.id, props.meal.aiAnalysis?.analyzedAt])
 
@@ -59,7 +59,6 @@ export function MealItemsEditor(props: {
 
   function addItem() {
     setError(null)
-    setMessage(null)
 
     const name = newName.trim()
     if (!name) {
@@ -90,16 +89,17 @@ export function MealItemsEditor(props: {
   async function save() {
     setBusy(true)
     setError(null)
-    setMessage(null)
     try {
       await props.onSaveMeal({
         ...props.meal,
         items: draftItems,
         totalMacros: totals,
       })
-      setMessage('Saved')
+      toast({ kind: 'success', message: 'Meal updated' })
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Failed to save')
+      const msg = e instanceof Error ? e.message : 'Failed to save'
+      setError(msg)
+      toast({ kind: 'error', message: msg })
     } finally {
       setBusy(false)
     }
@@ -141,7 +141,7 @@ export function MealItemsEditor(props: {
         </label>
 
         <button
-          className="w-full rounded-xl bg-emerald-600 px-3 py-2 text-sm font-medium text-white hover:bg-emerald-700 disabled:opacity-50"
+          className="w-full rounded-xl bg-gradient-to-r from-emerald-600 via-teal-500 to-sky-500 px-3 py-2 text-sm font-medium text-white transition hover:brightness-110 active:brightness-95 disabled:opacity-50"
           onClick={() => addItem()}
           disabled={busy}
           type="button"
@@ -222,14 +222,9 @@ export function MealItemsEditor(props: {
             {error}
           </div>
         ) : null}
-        {message ? (
-          <div className="text-sm text-green-700" role="status" aria-live="polite">
-            {message}
-          </div>
-        ) : null}
 
         <button
-          className="w-full rounded-xl bg-emerald-600 px-3 py-2 text-sm font-medium text-white hover:bg-emerald-700 disabled:opacity-50"
+          className="w-full rounded-xl bg-gradient-to-r from-emerald-600 via-teal-500 to-sky-500 px-3 py-2 text-sm font-medium text-white transition hover:brightness-110 active:brightness-95 disabled:opacity-50"
           onClick={() => void save()}
           disabled={busy}
           type="button"

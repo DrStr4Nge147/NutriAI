@@ -1,6 +1,7 @@
-import { useEffect, useState, type ReactNode } from 'react'
-import { Link, useLocation } from 'react-router-dom'
+import { useEffect, useRef, useState, type ReactNode } from 'react'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { t } from '../utils/i18n'
+import { readFileAsDataUrl } from '../utils/files'
 
 function NavIcon(props: { name: 'home' | 'scan' | 'manual' | 'history' | 'settings'; active: boolean }) {
   const stroke = props.active ? '#ffffff' : '#0f172a'
@@ -72,6 +73,57 @@ function NavIcon(props: { name: 'home' | 'scan' | 'manual' | 'history' | 'settin
 export function MobileShell(props: { title: string; children: ReactNode }) {
   const [isOnline, setIsOnline] = useState(() => (typeof navigator !== 'undefined' ? navigator.onLine : true))
   const location = useLocation()
+  const navigate = useNavigate()
+
+  const scanInputRef = useRef<HTMLInputElement | null>(null)
+  const scanGalleryInputRef = useRef<HTMLInputElement | null>(null)
+
+  const [scanSourcePickerOpen, setScanSourcePickerOpen] = useState(false)
+
+  const isAndroid = typeof navigator !== 'undefined' ? /Android/i.test(navigator.userAgent) : false
+
+  function formatDatetimeLocalValue(date: Date) {
+    const tzOffsetMs = date.getTimezoneOffset() * 60_000
+    const local = new Date(date.getTime() - tzOffsetMs)
+    return local.toISOString().slice(0, 16)
+  }
+
+  async function onPickScanPhoto(file: File | null) {
+    if (!file) return
+    try {
+      const eatenAtLocal = formatDatetimeLocalValue(new Date())
+      const photoDataUrl = await readFileAsDataUrl(file)
+      navigate('/capture', { state: { eatenAtLocal, photoDataUrl } })
+    } catch {
+      navigate('/capture')
+    }
+  }
+
+  function openScanPicker() {
+    if (isAndroid) {
+      setScanSourcePickerOpen(true)
+      return
+    }
+
+    const el = scanInputRef.current
+    if (!el) {
+      navigate('/capture')
+      return
+    }
+    el.value = ''
+    el.click()
+  }
+
+  function pickScanSource(source: 'camera' | 'gallery') {
+    const el = source === 'camera' ? scanInputRef.current : scanGalleryInputRef.current
+    setScanSourcePickerOpen(false)
+    if (!el) {
+      navigate('/capture')
+      return
+    }
+    el.value = ''
+    el.click()
+  }
 
   const navItems: Array<{ to: string; label: string; icon: Parameters<typeof NavIcon>[0]['name']; match: (path: string) => boolean }> = [
     { to: '/', label: 'Home', icon: 'home', match: (p) => p === '/' },
@@ -83,7 +135,7 @@ export function MobileShell(props: { title: string; children: ReactNode }) {
 
   function linkClass(active: boolean) {
     return active
-      ? 'flex items-center gap-2 rounded-md bg-emerald-600 px-3 py-2 text-sm font-medium text-white'
+      ? 'flex items-center gap-2 rounded-md bg-gradient-to-r from-emerald-600 via-teal-500 to-sky-500 px-3 py-2 text-sm font-medium text-white'
       : 'flex items-center gap-2 rounded-md px-3 py-2 text-sm text-slate-700 hover:bg-slate-100'
   }
 
@@ -109,7 +161,23 @@ export function MobileShell(props: { title: string; children: ReactNode }) {
   }, [])
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-900">
+    <div className="min-h-screen bg-gradient-to-br from-white via-slate-50 to-sky-50 text-slate-900">
+      <input
+        ref={scanInputRef}
+        className="sr-only"
+        data-testid="scan-file-input"
+        type="file"
+        accept="image/*"
+        capture="environment"
+        onChange={(e) => void onPickScanPhoto(e.target.files?.[0] ?? null)}
+      />
+      <input
+        ref={scanGalleryInputRef}
+        className="sr-only"
+        type="file"
+        accept="image/*"
+        onChange={(e) => void onPickScanPhoto(e.target.files?.[0] ?? null)}
+      />
       <div className="mx-auto max-w-6xl px-4 py-4 lg:px-6">
         <div className="lg:grid lg:grid-cols-[260px_1fr] lg:gap-6">
           <aside className="hidden lg:block">
@@ -133,7 +201,7 @@ export function MobileShell(props: { title: string; children: ReactNode }) {
 
               <Link
                 to="/capture"
-                className="inline-flex items-center justify-center gap-2 rounded-xl bg-emerald-600 px-4 py-3 text-sm font-medium text-white shadow-sm hover:bg-emerald-700"
+                className="inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-emerald-600 via-teal-500 to-sky-500 px-4 py-3 text-sm font-medium text-white shadow-sm transition hover:brightness-110 active:brightness-95"
               >
                 <NavIcon name="scan" active={true} />
                 Scan Meal
@@ -190,13 +258,14 @@ export function MobileShell(props: { title: string; children: ReactNode }) {
               if (item.to === '/capture') {
                 return (
                   <div key={item.to} className="relative">
-                    <Link
-                      to={item.to}
-                      className="absolute left-1/2 top-[-22px] flex h-14 w-14 -translate-x-1/2 items-center justify-center rounded-full bg-emerald-600 shadow-lg ring-8 ring-white"
+                    <button
+                      onClick={() => openScanPicker()}
+                      className="absolute left-1/2 top-[-22px] flex h-14 w-14 -translate-x-1/2 items-center justify-center rounded-full bg-gradient-to-r from-emerald-600 via-teal-500 to-sky-500 shadow-lg ring-8 ring-white"
                       aria-label={item.label}
+                      type="button"
                     >
                       <NavIcon name={item.icon} active={true} />
-                    </Link>
+                    </button>
                     <div className="h-10" />
                   </div>
                 )
@@ -208,7 +277,7 @@ export function MobileShell(props: { title: string; children: ReactNode }) {
                   to={item.to}
                   className={
                     active
-                      ? 'rounded-xl bg-emerald-600 px-2 py-2 text-center text-[11px] font-medium text-white'
+                      ? 'rounded-xl bg-gradient-to-r from-emerald-600 via-teal-500 to-sky-500 px-2 py-2 text-center text-[11px] font-medium text-white'
                       : 'rounded-xl px-2 py-2 text-center text-[11px] text-slate-700 hover:bg-slate-100'
                   }
                 >
@@ -222,6 +291,44 @@ export function MobileShell(props: { title: string; children: ReactNode }) {
           </div>
         </div>
       </nav>
+
+      {scanSourcePickerOpen ? (
+        <div className="fixed inset-0 z-50 lg:hidden" role="dialog" aria-modal="true">
+          <button
+            className="absolute inset-0 bg-black/40"
+            onClick={() => setScanSourcePickerOpen(false)}
+            type="button"
+            aria-label="Close"
+          />
+          <div className="absolute bottom-0 left-0 right-0 rounded-t-2xl bg-white p-4 shadow-2xl">
+            <div className="text-sm font-semibold text-slate-900">Scan</div>
+            <div className="mt-1 text-xs text-slate-600">Choose camera or gallery.</div>
+            <div className="mt-3 grid gap-2">
+              <button
+                className="w-full rounded-xl bg-gradient-to-r from-emerald-600 via-teal-500 to-sky-500 px-3 py-2 text-sm font-medium text-white transition hover:brightness-110 active:brightness-95"
+                onClick={() => pickScanSource('camera')}
+                type="button"
+              >
+                Camera
+              </button>
+              <button
+                className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm hover:bg-slate-50"
+                onClick={() => pickScanSource('gallery')}
+                type="button"
+              >
+                Gallery
+              </button>
+              <button
+                className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm hover:bg-slate-50"
+                onClick={() => setScanSourcePickerOpen(false)}
+                type="button"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </div>
   )
 }

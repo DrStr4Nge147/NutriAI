@@ -2,14 +2,15 @@ import { useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import type { ActivityLevel, Goal, Sex } from '../models/types'
 import { useApp } from '../state/AppContext'
+import { useUiFeedback } from '../state/UiFeedbackContext'
 import { clampNumber, safeNumber } from '../utils/numbers'
 
 export function ProfileRoute() {
   const navigate = useNavigate()
   const { currentProfile, saveProfile } = useApp()
+  const { toast } = useUiFeedback()
 
   const [busy, setBusy] = useState(false)
-  const [message, setMessage] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
 
   const [name, setName] = useState('')
@@ -23,7 +24,6 @@ export function ProfileRoute() {
   const [targetCaloriesKcal, setTargetCaloriesKcal] = useState('')
 
   useEffect(() => {
-    setMessage(null)
     setError(null)
 
     if (!currentProfile) return
@@ -54,7 +54,6 @@ export function ProfileRoute() {
     if (!currentProfile) return
 
     setBusy(true)
-    setMessage(null)
     setError(null)
 
     try {
@@ -77,10 +76,12 @@ export function ProfileRoute() {
       }
 
       await saveProfile(nextProfile)
-      setMessage('Saved')
+      toast({ kind: 'success', message: 'Profile saved' })
       navigate('/settings')
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Failed to save')
+      const msg = e instanceof Error ? e.message : 'Failed to save'
+      setError(msg)
+      toast({ kind: 'error', message: msg })
     } finally {
       setBusy(false)
     }
@@ -234,11 +235,6 @@ export function ProfileRoute() {
           Cancel
         </Link>
 
-        {message ? (
-          <div className="text-sm text-green-700" role="status" aria-live="polite">
-            {message}
-          </div>
-        ) : null}
         {error ? (
           <div className="text-sm text-red-600" role="alert" aria-live="assertive">
             {error}

@@ -93,7 +93,7 @@ export function ManualEntryRoute() {
         ) : null}
 
         <button
-          className="w-full rounded-xl bg-emerald-600 px-3 py-2 text-sm font-medium text-white hover:bg-emerald-700 disabled:opacity-50"
+          className="w-full rounded-xl bg-gradient-to-r from-emerald-600 via-teal-500 to-sky-500 px-3 py-2 text-sm font-medium text-white transition hover:brightness-110 active:brightness-95 disabled:opacity-50"
           onClick={() => void submit()}
           disabled={submitting || !name.trim()}
           type="button"
