@@ -190,12 +190,9 @@ describe('app flows', () => {
       await screen.findByText('Analyzing in background')
 
       fireEvent.click(screen.getByRole('button', { name: 'Scan' }))
-      await screen.findByText('Scan meal')
-      const upload = screen.getByLabelText(/Upload photo/i) as HTMLInputElement
-      fireEvent.change(upload, { target: { files: [new File(['x'], 'm2.jpg', { type: 'image/jpeg' })] } })
-      await screen.findByAltText('Meal photo preview')
-
+      fireEvent.change(scanInput, { target: { files: [new File(['x'], 'm2.jpg', { type: 'image/jpeg' })] } })
       await screen.findByText('Describe this meal')
+      await screen.findByAltText('Meal photo preview')
       fireEvent.click(screen.getByRole('button', { name: 'Analyze Meal →' }))
       expect((globalThis as any).fetch).toHaveBeenCalledTimes(1)
 
@@ -230,5 +227,17 @@ describe('app flows', () => {
       ;(globalThis as any).fetch = prevFetch
       ;(globalThis as any).FileReader = prevFileReader
     }
+  })
+
+  it('mobile scan button does not navigate to scan page until a photo is chosen', async () => {
+    await renderApp(['/'])
+    await completeOnboarding('Test')
+
+    expect(screen.getByText('Calories left')).toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Scan' }))
+
+    expect(screen.getByText('Calories left')).toBeInTheDocument()
+    expect(screen.queryByText('Describe this meal')).not.toBeInTheDocument()
   })
 })

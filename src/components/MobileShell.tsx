@@ -103,17 +103,16 @@ export function MobileShell(props: { title: string; children: ReactNode }) {
   }
 
   function openScanPicker() {
-    if (!location.pathname.startsWith('/capture')) {
-      navigate('/capture')
-    }
-
     if (isAndroid) {
       setScanSourcePickerOpen(true)
       return
     }
 
     const el = scanInputRef.current
-    if (!el) return
+    if (!el) {
+      navigate('/capture')
+      return
+    }
     el.value = ''
     el.click()
   }
@@ -121,10 +120,7 @@ export function MobileShell(props: { title: string; children: ReactNode }) {
   function pickScanSource(source: 'camera' | 'gallery') {
     const el = source === 'camera' ? scanInputRef.current : scanGalleryInputRef.current
     setScanSourcePickerOpen(false)
-    if (!el) {
-      navigate('/capture')
-      return
-    }
+    if (!el) return
     el.value = ''
     el.click()
   }
