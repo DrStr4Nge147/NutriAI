@@ -144,7 +144,10 @@ export function AppProvider(props: { children: ReactNode }) {
 
   const updateMeal = useCallback(async (meal: Meal) => {
     await putMeal(meal)
-    setMeals((prev) => prev.map((m) => (m.id === meal.id ? meal : m)))
+    setMeals((prev) => {
+      const without = prev.filter((m) => m.id !== meal.id)
+      return [meal, ...without].sort((a, b) => b.eatenAt.localeCompare(a.eatenAt))
+    })
   }, [])
 
   const addManualMeal = useCallback(

@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState } from 'react'
 import type { FoodItem, Meal } from '../models/types'
-import { estimateFromLocalFoods } from '../nutrition/localFoods'
+import { estimateFromLocalFoods, findFoods } from '../nutrition/localFoods'
 import { emptyMacros, sumMacros } from '../nutrition/macros'
+import { analyzeFoodItem } from '../ai/analyzeItem'
 import { useUiFeedback } from '../state/UiFeedbackContext'
 import { safeNumber } from '../utils/numbers'
 import { newId } from '../utils/id'
@@ -9,12 +10,16 @@ import { newId } from '../utils/id'
 export function MealItemsEditor(props: {
   meal: Meal
   onSaveMeal: (meal: Meal) => Promise<void>
+  saveLabel?: string
+  successMessage?: string
+  disableSaveWhenEmpty?: boolean
 }) {
   const { toast } = useUiFeedback()
   const [draftItems, setDraftItems] = useState<FoodItem[]>(props.meal.items)
   const [newName, setNewName] = useState('')
   const [newGrams, setNewGrams] = useState('150')
   const [busy, setBusy] = useState(false)
+  const [analyzingItemId, setAnalyzingItemId] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
@@ -23,6 +28,8 @@ export function MealItemsEditor(props: {
   }, [props.meal.id, props.meal.aiAnalysis?.analyzedAt])
 
   const totals = useMemo(() => sumMacros(draftItems), [draftItems])
+
+  const suggestions = useMemo(() => findFoods(newName), [newName])
 
   function scaleMacros(item: FoodItem, nextGrams: number) {
     if (!item.quantityGrams || item.quantityGrams <= 0) return item.macros
@@ -38,10 +45,19 @@ export function MealItemsEditor(props: {
     }
   }
 
-  function estimateFor(name: string, grams: number) {
+  function isZeroMacros(item: FoodItem) {
+    return (
+      item.macros.calories === 0 &&
+      item.macros.protein_g === 0 &&
+      item.macros.carbs_g === 0 &&
+      item.macros.fat_g === 0
+    )
+  }
+
+  function estimateOrEmpty(name: string, grams: number) {
     const est = estimateFromLocalFoods(name, grams)
-    if (!est) return { name: name.trim(), macros: emptyMacros() }
-    return est
+    if (!est) return { name: name.trim(), macros: emptyMacros(), found: false }
+    return { name: est.name, macros: est.macros, found: true }
   }
 
   function updateItem(itemId: string, patch: Partial<Pick<FoodItem, 'name' | 'quantityGrams' | 'macros'>>) {
@@ -67,7 +83,7 @@ export function MealItemsEditor(props: {
     }
 
     const grams = Math.max(1, safeNumber(newGrams, 0))
-    const est = estimateFor(name, grams)
+    const est = estimateOrEmpty(name, grams)
 
     const item: FoodItem = {
       id: newId(),
@@ -80,10 +96,25 @@ export function MealItemsEditor(props: {
     setNewName('')
   }
 
-  function estimateItem(item: FoodItem) {
-    const grams = Math.max(1, safeNumber(String(item.quantityGrams), 0))
-    const est = estimateFor(item.name, grams)
-    updateItem(item.id, { name: est.name || item.name, quantityGrams: grams, macros: est.macros })
+  async function analyzeItem(item: FoodItem) {
+    setError(null)
+    setAnalyzingItemId(item.id)
+    try {
+      const grams = Math.max(1, safeNumber(String(item.quantityGrams), 0))
+      const result = await analyzeFoodItem({ name: item.name, grams })
+      updateItem(item.id, {
+        name: result.name || item.name,
+        quantityGrams: grams,
+        macros: result.macros,
+      })
+      toast({ kind: 'success', message: 'Macros analyzed' })
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : 'Failed to analyze item'
+      setError(msg)
+      toast({ kind: 'error', message: msg })
+    } finally {
+      setAnalyzingItemId(null)
+    }
   }
 
   async function save() {
@@ -95,7 +126,7 @@ export function MealItemsEditor(props: {
         items: draftItems,
         totalMacros: totals,
       })
-      toast({ kind: 'success', message: 'Meal updated' })
+      toast({ kind: 'success', message: props.successMessage ?? 'Meal updated' })
     } catch (e) {
       const msg = e instanceof Error ? e.message : 'Failed to save'
       setError(msg)
@@ -130,6 +161,21 @@ export function MealItemsEditor(props: {
           />
         </label>
 
+        {suggestions.length > 0 ? (
+          <div className="flex flex-wrap gap-2">
+            {suggestions.map((s) => (
+              <button
+                key={s.id}
+                className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs text-slate-900 hover:bg-slate-100"
+                onClick={() => setNewName(s.name)}
+                type="button"
+              >
+                {s.name}
+              </button>
+            ))}
+          </div>
+        ) : null}
+
         <label className="block text-sm">
           <div className="font-medium">Grams</div>
           <input
@@ -143,7 +189,7 @@ export function MealItemsEditor(props: {
         <button
           className="w-full rounded-xl bg-gradient-to-r from-emerald-600 via-teal-500 to-sky-500 px-3 py-2 text-sm font-medium text-white transition hover:brightness-110 active:brightness-95 disabled:opacity-50"
           onClick={() => addItem()}
-          disabled={busy}
+          disabled={busy || analyzingItemId !== null}
           type="button"
         >
           Add item (estimate)
@@ -168,7 +214,12 @@ export function MealItemsEditor(props: {
                   <input
                     className="mt-1 w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm"
                     value={i.name}
-                    onChange={(e) => updateItem(i.id, { name: e.target.value })}
+                    onChange={(e) => {
+                      const nextName = e.target.value
+                      const grams = Math.max(1, safeNumber(String(i.quantityGrams), 0))
+                      const est = estimateOrEmpty(nextName, grams)
+                      updateItem(i.id, { name: est.name || nextName, macros: est.macros })
+                    }}
                   />
                 </label>
 
@@ -180,7 +231,13 @@ export function MealItemsEditor(props: {
                       value={String(i.quantityGrams)}
                       onChange={(e) => {
                         const nextGrams = Math.max(1, safeNumber(e.target.value, i.quantityGrams))
-                        updateItem(i.id, { quantityGrams: nextGrams, macros: scaleMacros(i, nextGrams) })
+                        const est = estimateFromLocalFoods(i.name, nextGrams)
+                        if (est) {
+                          updateItem(i.id, { name: est.name || i.name, quantityGrams: nextGrams, macros: est.macros })
+                        } else {
+                          const nextMacros = isZeroMacros(i) ? i.macros : scaleMacros(i, nextGrams)
+                          updateItem(i.id, { quantityGrams: nextGrams, macros: nextMacros })
+                        }
                       }}
                       inputMode="numeric"
                     />
@@ -195,18 +252,20 @@ export function MealItemsEditor(props: {
                 </div>
 
                 <div className="flex gap-2">
-                  <button
-                    className="flex-1 rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm hover:bg-slate-50"
-                    onClick={() => estimateItem(i)}
-                    disabled={busy}
-                    type="button"
-                  >
-                    Re-estimate
-                  </button>
+                  {isZeroMacros(i) ? (
+                    <button
+                      className="flex-1 rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm hover:bg-slate-50 disabled:opacity-50"
+                      onClick={() => void analyzeItem(i)}
+                      disabled={busy || analyzingItemId !== null}
+                      type="button"
+                    >
+                      {analyzingItemId === i.id ? 'Analyzing…' : 'Analyze (AI)'}
+                    </button>
+                  ) : null}
                   <button
                     className="rounded-xl border border-red-300 bg-white px-3 py-2 text-sm text-red-700 disabled:opacity-50"
                     onClick={() => removeItem(i.id)}
-                    disabled={busy}
+                    disabled={busy || analyzingItemId === i.id}
                     type="button"
                   >
                     Remove
@@ -226,10 +285,10 @@ export function MealItemsEditor(props: {
         <button
           className="w-full rounded-xl bg-gradient-to-r from-emerald-600 via-teal-500 to-sky-500 px-3 py-2 text-sm font-medium text-white transition hover:brightness-110 active:brightness-95 disabled:opacity-50"
           onClick={() => void save()}
-          disabled={busy}
+          disabled={busy || analyzingItemId !== null || (props.disableSaveWhenEmpty && draftItems.length === 0)}
           type="button"
         >
-          Save items
+          {props.saveLabel ?? 'Save items'}
         </button>
       </div>
     </div>

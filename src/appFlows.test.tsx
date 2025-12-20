@@ -66,10 +66,11 @@ describe('app flows', () => {
 
     fireEvent.click(within(screen.getByRole('navigation', { name: 'Primary' })).getByRole('link', { name: 'Manual Entry' }))
 
-    await screen.findByLabelText('Food')
+    await screen.findByText('Add item')
 
     fireEvent.change(screen.getByLabelText('Food'), { target: { value: 'White rice' } })
     fireEvent.change(screen.getByLabelText('Grams'), { target: { value: '100' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Add item (estimate)' }))
 
     fireEvent.click(screen.getByRole('button', { name: 'Save meal' }))
 
