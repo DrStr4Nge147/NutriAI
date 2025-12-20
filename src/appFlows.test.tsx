@@ -64,6 +64,8 @@ describe('app flows', () => {
     await renderApp(['/'])
     await completeOnboarding('Test')
 
+    expect(within(screen.getByRole('navigation', { name: 'Primary' })).getByRole('link', { name: 'Meal History' })).toBeInTheDocument()
+
     fireEvent.click(within(screen.getByRole('navigation', { name: 'Primary' })).getByRole('link', { name: 'Manual Entry' }))
 
     await screen.findByText('Add item')
@@ -75,6 +77,7 @@ describe('app flows', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Save meal' }))
 
     await screen.findByText('Items consumed')
+    expect(screen.getByRole('button', { name: 'Delete meal' })).toBeInTheDocument()
     expect(screen.getAllByText((_, el) => el?.textContent === '130 kcal').length).toBeGreaterThan(0)
   })
 

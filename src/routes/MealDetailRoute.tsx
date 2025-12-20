@@ -101,6 +101,25 @@ function MacroDonut(props: { proteinG: number; carbsG: number; fatG: number }) {
   )
 }
 
+function TrashIcon(props: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" className={props.className ?? 'h-5 w-5'} aria-hidden="true">
+      <path d="M4 7h16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+      <path
+        d="M9 7V5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <path d="M7 7l1 14h8l1-14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M10 11v6" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M14 11v6" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  )
+}
+
 export function MealDetailRoute() {
   const navigate = useNavigate()
   const { mealId } = useParams<{ mealId: string }>()
@@ -193,48 +212,7 @@ export function MealDetailRoute() {
             aria-label="Delete meal"
             type="button"
           >
-            <svg viewBox="0 0 24 24" className="h-5 w-5" aria-hidden="true">
-              <path
-                d="M4 7h16"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-              <path
-                d="M9 7V5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-              <path
-                d="M7 7l1 14h8l1-14"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-              <path
-                d="M10 11v6"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-              <path
-                d="M14 11v6"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-            </svg>
+            <TrashIcon className="h-5 w-5" />
           </button>
           <div className="absolute left-3 top-14 rounded-full bg-emerald-600 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-white">{mealLabel}</div>
           <div className="absolute bottom-3 left-3 right-3">
@@ -254,9 +232,19 @@ export function MealDetailRoute() {
               </div>
               <div className="mt-1 text-sm text-slate-600">{new Date(meal.eatenAt).toLocaleString()}</div>
             </div>
-            <Link to="/meals" className="text-sm text-slate-900 underline" aria-label="Back">
-              Back
-            </Link>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => void onDelete()}
+                className="inline-flex items-center justify-center rounded-xl border border-red-300 bg-white px-3 py-2 text-sm font-medium text-red-700 hover:bg-red-50"
+                aria-label="Delete meal"
+                type="button"
+              >
+                <TrashIcon className="h-4 w-4" />
+              </button>
+              <Link to="/meals" className="text-sm text-slate-900 underline" aria-label="Back">
+                Back
+              </Link>
+            </div>
           </div>
         </div>
       )}
