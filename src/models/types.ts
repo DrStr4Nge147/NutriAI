@@ -26,8 +26,17 @@ export type BodyMetrics = {
   activityLevel: ActivityLevel
 }
 
+export type MedicalLabUpload = {
+  id: string
+  uploadedAt: string
+  name: string
+  mimeType: string
+  dataUrl: string
+}
+
 export type MedicalInfo = {
   conditions: string[]
+  labs?: MedicalLabUpload[]
 }
 
 export type WeightEntry = {

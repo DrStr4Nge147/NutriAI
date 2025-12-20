@@ -1,7 +1,9 @@
 import { useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import type { ActivityLevel, Sex, UserProfile } from '../models/types'
+import type { ActivityLevel, MedicalLabUpload, Sex, UserProfile } from '../models/types'
 import { useApp } from '../state/AppContext'
+import { readFileAsDataUrl } from '../utils/files'
+import { newId } from '../utils/id'
 import { clampNumber, safeNumber } from '../utils/numbers'
 
 type Step = 'welcome' | 'body' | 'medical' | 'privacy'
@@ -72,13 +74,15 @@ export function OnboardingRoute() {
   const { createProfile } = useApp()
 
   const [step, setStep] = useState<Step>('welcome')
-  const [name, setName] = useState(DEFAULTS.name)
+  const [name, setName] = useState('')
   const [heightCm, setHeightCm] = useState(String(DEFAULTS.body.heightCm))
   const [weightKg, setWeightKg] = useState(String(DEFAULTS.body.weightKg))
   const [age, setAge] = useState(String(DEFAULTS.body.age))
   const [sex, setSex] = useState<Sex>(DEFAULTS.body.sex)
   const [activityLevel, setActivityLevel] = useState<ActivityLevel>(DEFAULTS.body.activityLevel)
   const [conditionsText, setConditionsText] = useState('')
+  const [labUploads, setLabUploads] = useState<MedicalLabUpload[]>([])
+  const [labError, setLabError] = useState<string | null>(null)
 
   const conditions = useMemo(() => {
     return conditionsText
@@ -90,7 +94,7 @@ export function OnboardingRoute() {
   async function finish(profileOverrides?: Partial<Omit<UserProfile, 'id' | 'createdAt'>>) {
     const profileInput: Omit<UserProfile, 'id' | 'createdAt'> = {
       ...DEFAULTS,
-      name,
+      name: name.trim() || DEFAULTS.name,
       body: {
         heightCm: clampNumber(safeNumber(heightCm, DEFAULTS.body.heightCm), 50, 250),
         weightKg: clampNumber(safeNumber(weightKg, DEFAULTS.body.weightKg), 20, 400),
@@ -100,6 +104,7 @@ export function OnboardingRoute() {
       },
       medical: {
         conditions,
+        labs: labUploads,
       },
       ...profileOverrides,
     }
@@ -119,6 +124,7 @@ export function OnboardingRoute() {
           : 'Privacy & storage'
 
   if (step === 'welcome') {
+    const canContinue = name.trim().length > 0
     return (
       <OnboardingStepShell stepTitle={stepTitle} stepIndex={stepIndex} animateKey={step}>
         <div className="space-y-5">
@@ -135,7 +141,7 @@ export function OnboardingRoute() {
               className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 shadow-inner shadow-slate-900/5 outline-none ring-0 transition focus:border-emerald-400 focus:ring-2 focus:ring-emerald-200/60"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder="Me"
+              placeholder="Your name"
             />
           </div>
 
@@ -143,6 +149,7 @@ export function OnboardingRoute() {
             <button
               className="inline-flex flex-1 items-center justify-center rounded-xl bg-gradient-to-r from-emerald-600 via-teal-500 to-sky-500 px-4 py-3 text-sm font-semibold text-white shadow-lg shadow-emerald-600/15 transition hover:brightness-110 active:brightness-95"
               onClick={() => setStep('body')}
+              disabled={!canContinue}
             >
               Get started
             </button>
@@ -153,6 +160,8 @@ export function OnboardingRoute() {
               Skip
             </button>
           </div>
+
+          {!canContinue ? <div className="text-xs text-slate-600">Please enter your name to continue.</div> : null}
         </div>
       </OnboardingStepShell>
     )
@@ -244,6 +253,30 @@ export function OnboardingRoute() {
   }
 
   if (step === 'medical') {
+    async function onAddLabs(files: FileList | null) {
+      setLabError(null)
+      if (!files || files.length === 0) return
+
+      try {
+        const picked = Array.from(files)
+        const next: MedicalLabUpload[] = []
+        for (const f of picked) {
+          const dataUrl = await readFileAsDataUrl(f)
+          next.push({
+            id: newId(),
+            uploadedAt: new Date().toISOString(),
+            name: f.name,
+            mimeType: f.type || 'application/octet-stream',
+            dataUrl,
+          })
+        }
+
+        setLabUploads((prev) => [...prev, ...next])
+      } catch (e) {
+        setLabError(e instanceof Error ? e.message : 'Failed to read file')
+      }
+    }
+
     return (
       <OnboardingStepShell stepTitle={stepTitle} stepIndex={stepIndex} animateKey={step}>
         <div className="space-y-6">
@@ -262,6 +295,49 @@ export function OnboardingRoute() {
               onChange={(e) => setConditionsText(e.target.value)}
               placeholder="diabetes, hypertension"
             />
+          </div>
+
+          <div className="rounded-xl border border-slate-200 bg-white p-4">
+            <div className="text-sm font-semibold text-slate-900">Upload lab results (optional)</div>
+            <div className="mt-1 text-xs text-slate-600">
+              Before uploading, it’s suggested to crop out your name and your physician’s name for privacy.
+            </div>
+
+            <div className="mt-3">
+              <label className="inline-flex items-center justify-center rounded-xl bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800">
+                Upload labs
+                <input
+                  className="sr-only"
+                  type="file"
+                  accept="image/*,application/pdf"
+                  multiple
+                  onChange={(e) => void onAddLabs(e.target.files)}
+                />
+              </label>
+            </div>
+
+            {labError ? <div className="mt-2 text-xs text-red-600">{labError}</div> : null}
+
+            {labUploads.length > 0 ? (
+              <div className="mt-3 space-y-2">
+                <div className="text-xs font-medium text-slate-700">Uploaded</div>
+                {labUploads.map((lab) => (
+                  <div key={lab.id} className="flex items-center justify-between gap-2 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2">
+                    <div className="min-w-0">
+                      <div className="truncate text-xs font-medium text-slate-900">{lab.name}</div>
+                      <div className="text-[11px] text-slate-600">{new Date(lab.uploadedAt).toLocaleString()}</div>
+                    </div>
+                    <button
+                      className="shrink-0 rounded-lg border border-slate-300 bg-white px-2 py-1 text-xs hover:bg-slate-50"
+                      onClick={() => setLabUploads((prev) => prev.filter((x) => x.id !== lab.id))}
+                      type="button"
+                    >
+                      Remove
+                    </button>
+                  </div>
+                ))}
+              </div>
+            ) : null}
           </div>
 
           <div className="flex flex-col gap-2 sm:flex-row">

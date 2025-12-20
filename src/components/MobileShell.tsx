@@ -3,6 +3,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { t } from '../utils/i18n'
 import { readFileAsDataUrl } from '../utils/files'
 import { useMealPhotoAnalysis } from '../state/MealPhotoAnalysisContext'
+import { useApp } from '../state/AppContext'
 
 function NavIcon(props: { name: 'home' | 'scan' | 'manual' | 'history' | 'settings'; active: boolean; tone?: 'inverse' }) {
   const stroke = props.tone === 'inverse' ? '#ffffff' : props.active ? '#047857' : '#64748b'
@@ -76,6 +77,8 @@ export function MobileShell(props: { title: string; children: ReactNode }) {
   const location = useLocation()
   const navigate = useNavigate()
 
+  const { isHydrated, currentProfileId } = useApp()
+
   const { activeMealId, queuedMealIds } = useMealPhotoAnalysis()
 
   const scanInputRef = useRef<HTMLInputElement | null>(null)
@@ -83,7 +86,29 @@ export function MobileShell(props: { title: string; children: ReactNode }) {
 
   const [scanSourcePickerOpen, setScanSourcePickerOpen] = useState(false)
 
+  const AI_DISCLAIMER_KEY = 'ai-nutritionist.hideAiCloudDisclaimer'
+  const aiDisclaimerShownRef = useRef(false)
+  const [aiDisclaimerOpen, setAiDisclaimerOpen] = useState(false)
+  const [aiDisclaimerDontShowAgain, setAiDisclaimerDontShowAgain] = useState(false)
+
   const isAndroid = typeof navigator !== 'undefined' ? /Android/i.test(navigator.userAgent) : false
+
+  useEffect(() => {
+    if (!isHydrated) return
+    if (!currentProfileId) return
+    if (aiDisclaimerShownRef.current) return
+    aiDisclaimerShownRef.current = true
+
+    const hidden = typeof window !== 'undefined' ? window.localStorage.getItem(AI_DISCLAIMER_KEY) === '1' : true
+    if (!hidden) setAiDisclaimerOpen(true)
+  }, [isHydrated, currentProfileId])
+
+  function closeAiDisclaimer() {
+    if (aiDisclaimerDontShowAgain && typeof window !== 'undefined') {
+      window.localStorage.setItem(AI_DISCLAIMER_KEY, '1')
+    }
+    setAiDisclaimerOpen(false)
+  }
 
   function formatDatetimeLocalValue(date: Date) {
     const tzOffsetMs = date.getTimezoneOffset() * 60_000
@@ -358,6 +383,53 @@ export function MobileShell(props: { title: string; children: ReactNode }) {
                 type="button"
               >
                 Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
+      {aiDisclaimerOpen ? (
+        <div className="fixed inset-0 z-50" role="dialog" aria-modal="true" aria-label="AI data disclaimer">
+          <button
+            className="absolute inset-0 bg-black/40"
+            onClick={() => closeAiDisclaimer()}
+            type="button"
+            aria-label="Close"
+          />
+          <div className="absolute bottom-0 left-0 right-0 rounded-t-2xl bg-white p-4 shadow-2xl md:left-1/2 md:bottom-auto md:top-1/2 md:max-w-lg md:-translate-x-1/2 md:-translate-y-1/2 md:rounded-2xl">
+            <div className="text-sm font-semibold text-slate-900">AI analysis & cloud processing</div>
+            <div className="mt-2 text-xs leading-5 text-slate-600">
+              When you use AI features (photo analysis, item analysis), the information you provide will be sent for processing and may leave
+              this device. Avoid including sensitive personal information in images or text.
+            </div>
+            <div className="mt-2 text-xs leading-5 text-slate-600">
+              If you upload lab results, it’s suggested to crop out your name and your physician’s name for privacy.
+            </div>
+
+            <label className="mt-4 flex items-center gap-2 text-xs text-slate-700">
+              <input
+                type="checkbox"
+                checked={aiDisclaimerDontShowAgain}
+                onChange={(e) => setAiDisclaimerDontShowAgain(e.target.checked)}
+              />
+              Do not show again
+            </label>
+
+            <div className="mt-4 grid gap-2 sm:grid-cols-2">
+              <button
+                className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm hover:bg-slate-50"
+                onClick={() => closeAiDisclaimer()}
+                type="button"
+              >
+                Close
+              </button>
+              <button
+                className="w-full rounded-xl bg-slate-900 px-3 py-2 text-sm font-medium text-white hover:bg-slate-800"
+                onClick={() => closeAiDisclaimer()}
+                type="button"
+              >
+                I understand
               </button>
             </div>
           </div>

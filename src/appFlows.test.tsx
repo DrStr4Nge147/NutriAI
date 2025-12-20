@@ -13,8 +13,8 @@ function formatDatetimeLocalValue(date: Date) {
   return local.toISOString().slice(0, 16)
 }
 
-async function renderApp(initialEntries: string[] = ['/']) {
-  render(
+async function renderApp(initialEntries: string[] = ['/'], options?: { expectOnboarding?: boolean }) {
+  const r = render(
     <MemoryRouter initialEntries={initialEntries}>
       <UiFeedbackProvider>
         <AppProvider>
@@ -26,11 +26,18 @@ async function renderApp(initialEntries: string[] = ['/']) {
     </MemoryRouter>,
   )
 
-  await screen.findByRole('button', { name: 'Get started' })
+  const expectOnboarding = options?.expectOnboarding ?? true
+  if (expectOnboarding) {
+    await screen.findByRole('button', { name: 'Get started' })
+  } else {
+    await screen.findByText('Calories left')
+  }
+
+  return r
 }
 
 async function completeOnboarding(name: string) {
-  const nameInput = screen.getByPlaceholderText('Me')
+  const nameInput = screen.getByPlaceholderText('Your name')
   fireEvent.change(nameInput, { target: { value: name } })
 
   fireEvent.click(screen.getByRole('button', { name: 'Get started' }))
@@ -43,6 +50,10 @@ async function completeOnboarding(name: string) {
 
   await screen.findByRole('button', { name: 'Finish' })
   fireEvent.click(screen.getByRole('button', { name: 'Finish' }))
+
+  const disclaimer = await screen.findByText('AI analysis & cloud processing')
+  expect(disclaimer).toBeInTheDocument()
+  fireEvent.click(screen.getByRole('button', { name: 'I understand' }))
 
   await screen.findByText('Calories left')
   expect(screen.getByText(name)).toBeInTheDocument()
@@ -58,6 +69,66 @@ describe('app flows', () => {
     await renderApp(['/'])
     await completeOnboarding('Nick')
     expect(screen.getByText('Calories left')).toBeInTheDocument()
+  })
+
+  it('does not allow getting started to proceed when name is blank', async () => {
+    await renderApp(['/'])
+
+    const getStarted = screen.getByRole('button', { name: 'Get started' })
+    expect(getStarted).toBeDisabled()
+    expect(screen.getByText('Please enter your name to continue.')).toBeInTheDocument()
+  })
+
+  it('shows AI cloud disclaimer after onboarding and respects do not show again', async () => {
+    const prevFileReader = (globalThis as any).FileReader
+
+    class FileReaderStub {
+      result: string | ArrayBuffer | null = null
+      onload: null | (() => void) = null
+      onerror: null | (() => void) = null
+
+      readAsDataURL() {
+        this.result = 'data:application/pdf;base64,AAA'
+        this.onload?.()
+      }
+    }
+
+    ;(globalThis as any).FileReader = FileReaderStub
+
+    try {
+      const r1 = await renderApp(['/'])
+
+      const nameInput = screen.getByPlaceholderText('Your name')
+      fireEvent.change(nameInput, { target: { value: 'Test' } })
+      fireEvent.click(screen.getByRole('button', { name: 'Get started' }))
+
+      await screen.findByRole('button', { name: 'Continue' })
+      fireEvent.click(screen.getByRole('button', { name: 'Continue' }))
+
+      await screen.findByText('Medical conditions (optional)')
+      expect(screen.getByText('Upload lab results (optional)')).toBeInTheDocument()
+      expect(
+        screen.getByText("Before uploading, it’s suggested to crop out your name and your physician’s name for privacy."),
+      ).toBeInTheDocument()
+
+      fireEvent.click(screen.getByRole('button', { name: 'Continue' }))
+
+      await screen.findByRole('button', { name: 'Finish' })
+      fireEvent.click(screen.getByRole('button', { name: 'Finish' }))
+
+      await screen.findByText('AI analysis & cloud processing')
+      fireEvent.click(screen.getByLabelText('Do not show again'))
+      fireEvent.click(screen.getByRole('button', { name: 'I understand' }))
+
+      await screen.findByText('Calories left')
+
+      r1.unmount()
+
+      await renderApp(['/'], { expectOnboarding: false })
+      expect(screen.queryByText('AI analysis & cloud processing')).not.toBeInTheDocument()
+    } finally {
+      ;(globalThis as any).FileReader = prevFileReader
+    }
   })
 
   it('manual meal entry creates a meal and shows totals', async () => {

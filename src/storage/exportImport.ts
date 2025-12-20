@@ -78,6 +78,19 @@ function parseProfile(value: unknown): UserProfile {
   if (!v.medical) throw new Error('Invalid profile')
   if (!Array.isArray(v.medical.conditions)) throw new Error('Invalid profile')
 
+  const labs = (v.medical as any).labs
+  if (typeof labs !== 'undefined') {
+    if (!Array.isArray(labs)) throw new Error('Invalid profile')
+    for (const lab of labs) {
+      if (!lab || typeof lab !== 'object') throw new Error('Invalid profile')
+      if (typeof (lab as any).id !== 'string') throw new Error('Invalid profile')
+      if (typeof (lab as any).uploadedAt !== 'string') throw new Error('Invalid profile')
+      if (typeof (lab as any).name !== 'string') throw new Error('Invalid profile')
+      if (typeof (lab as any).mimeType !== 'string') throw new Error('Invalid profile')
+      if (typeof (lab as any).dataUrl !== 'string') throw new Error('Invalid profile')
+    }
+  }
+
   if (typeof (v as any).weightHistory !== 'undefined') {
     const wh = (v as any).weightHistory
     if (!Array.isArray(wh)) throw new Error('Invalid profile')
