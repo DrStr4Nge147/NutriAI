@@ -4,8 +4,8 @@ import { t } from '../utils/i18n'
 import { readFileAsDataUrl } from '../utils/files'
 import { useMealPhotoAnalysis } from '../state/MealPhotoAnalysisContext'
 
-function NavIcon(props: { name: 'home' | 'scan' | 'manual' | 'history' | 'settings'; active: boolean }) {
-  const stroke = props.active ? '#ffffff' : '#0f172a'
+function NavIcon(props: { name: 'home' | 'scan' | 'manual' | 'history' | 'settings'; active: boolean; tone?: 'inverse' }) {
+  const stroke = props.tone === 'inverse' ? '#ffffff' : props.active ? '#047857' : '#64748b'
   const common = { stroke, strokeWidth: 2.2, fill: 'none', strokeLinecap: 'round' as const, strokeLinejoin: 'round' as const }
 
   if (props.name === 'home') {
@@ -103,16 +103,17 @@ export function MobileShell(props: { title: string; children: ReactNode }) {
   }
 
   function openScanPicker() {
+    if (!location.pathname.startsWith('/capture')) {
+      navigate('/capture')
+    }
+
     if (isAndroid) {
       setScanSourcePickerOpen(true)
       return
     }
 
     const el = scanInputRef.current
-    if (!el) {
-      navigate('/capture')
-      return
-    }
+    if (!el) return
     el.value = ''
     el.click()
   }
@@ -129,20 +130,27 @@ export function MobileShell(props: { title: string; children: ReactNode }) {
   }
 
   const navItems: Array<{ to: string; label: string; icon: Parameters<typeof NavIcon>[0]['name']; match: (path: string) => boolean }> = [
-    { to: '/', label: 'Home', icon: 'home', match: (p) => p === '/' },
+    { to: '/', label: 'Dashboard', icon: 'home', match: (p) => p === '/' },
     { to: '/meals', label: 'History', icon: 'history', match: (p) => p.startsWith('/meals') },
-    { to: '/capture', label: 'Scan', icon: 'scan', match: (p) => p.startsWith('/capture') },
-    { to: '/manual', label: 'Manual', icon: 'manual', match: (p) => p.startsWith('/manual') },
+    { to: '/manual', label: 'Manual Entry', icon: 'manual', match: (p) => p.startsWith('/manual') },
     { to: '/settings', label: 'Settings', icon: 'settings', match: (p) => p.startsWith('/settings') || p.startsWith('/profile') },
   ]
 
+  const bottomNavItems: Array<{ to: string; label: string; icon: Parameters<typeof NavIcon>[0]['name']; match: (path: string) => boolean }> = [
+    navItems[0],
+    navItems[1],
+    { to: '/capture', label: 'Scan', icon: 'scan', match: (p) => p.startsWith('/capture') },
+    navItems[2],
+    navItems[3],
+  ]
+
+  const hideBottomNav = location.pathname.startsWith('/capture')
+
   function linkClass(active: boolean) {
     return active
-      ? 'flex items-center gap-2 rounded-md bg-gradient-to-r from-emerald-600 via-teal-500 to-sky-500 px-3 py-2 text-sm font-medium text-white'
-      : 'flex items-center gap-2 rounded-md px-3 py-2 text-sm text-slate-700 hover:bg-slate-100'
+      ? 'flex items-center gap-3 rounded-xl bg-emerald-100 px-3 py-2 text-sm font-semibold text-emerald-900'
+      : 'flex items-center gap-3 rounded-xl px-3 py-2 text-sm font-medium text-slate-600 hover:bg-white/70 hover:text-slate-900'
   }
-
-  const activeLabel = navItems.find((i) => i.match(location.pathname))?.label ?? props.title
 
   useEffect(() => {
     if (typeof window === 'undefined') return
@@ -164,7 +172,7 @@ export function MobileShell(props: { title: string; children: ReactNode }) {
   }, [])
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-white via-slate-50 to-sky-50 text-slate-900">
+    <div className="min-h-screen bg-slate-50 text-slate-900">
       <input
         ref={scanInputRef}
         className="sr-only"
@@ -181,16 +189,35 @@ export function MobileShell(props: { title: string; children: ReactNode }) {
         accept="image/*"
         onChange={(e) => void onPickScanPhoto(e.target.files?.[0] ?? null)}
       />
-      <div className="mx-auto max-w-6xl px-4 py-4 lg:px-6">
-        <div className="lg:grid lg:grid-cols-[260px_1fr] lg:gap-6">
-          <aside className="hidden lg:block">
-            <div className="sticky top-4 space-y-4">
-              <div className="rounded-xl bg-white p-4 shadow-sm border border-slate-200">
-                <div className="text-base font-semibold">{props.title}</div>
-                <div className="mt-1 text-xs text-slate-600">Nutrition tracking dashboard</div>
-              </div>
+      <div className="mx-auto max-w-6xl px-4 py-4 md:px-6">
+        <div className="md:grid md:grid-cols-[260px_1fr] md:gap-8">
+          <aside className="hidden md:block">
+            <div className="sticky top-4 flex min-h-[calc(100vh-2rem)] flex-col rounded-3xl bg-emerald-50/60 p-4">
+              <Link to="/" className="flex items-center gap-3 px-2 py-2">
+                <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-emerald-100 text-emerald-800">
+                  <svg viewBox="0 0 24 24" className="h-6 w-6" aria-hidden="true">
+                    <path
+                      d="M5 21c6-1 10-5 12-10 1.6-4-2-8-6-6C7 7 3 11 3 17c0 2 1 4 2 4z"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                    <path
+                      d="M8 16c3-2 5-4 8-8"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                  </svg>
+                </div>
+                <div className="text-lg font-semibold tracking-tight">{props.title}</div>
+              </Link>
 
-              <nav className="rounded-xl bg-white p-2 shadow-sm border border-slate-200" aria-label="Primary">
+              <nav className="mt-3 space-y-1" aria-label="Primary">
                 {navItems.map((item) => {
                   const active = item.match(location.pathname)
                   return (
@@ -202,38 +229,23 @@ export function MobileShell(props: { title: string; children: ReactNode }) {
                 })}
               </nav>
 
-              <Link
-                to="/capture"
-                className="inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-emerald-600 via-teal-500 to-sky-500 px-4 py-3 text-sm font-medium text-white shadow-sm transition hover:brightness-110 active:brightness-95"
-              >
-                <NavIcon name="scan" active={true} />
-                Scan Meal
-              </Link>
-
-              <div className="rounded-xl bg-white p-4 shadow-sm border border-slate-200">
-                <div className="text-xs text-slate-600">Tip</div>
-                <div className="mt-1 text-sm text-slate-900">Aim for consistency over perfection.</div>
+              <div className="mt-auto pt-4">
+                <button
+                  onClick={() => openScanPicker()}
+                  className="inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-500 px-4 py-3 text-sm font-semibold text-white shadow-sm transition hover:brightness-110 active:brightness-95"
+                  type="button"
+                >
+                  <NavIcon name="scan" active={true} tone="inverse" />
+                  Scan Meal
+                </button>
               </div>
             </div>
           </aside>
 
           <div className="min-w-0">
-            <header className="mb-4 flex items-center justify-between">
-              <div>
-                <div className="text-xs font-medium uppercase tracking-wide text-slate-500">{props.title}</div>
-                <div className="text-lg font-semibold">{activeLabel}</div>
-              </div>
-              <Link
-                to="/settings"
-                className="hidden lg:inline-flex rounded-md border border-slate-200 bg-white px-3 py-2 text-sm hover:bg-slate-50"
-              >
-                Settings
-              </Link>
-            </header>
-
             {!isOnline ? (
               <div
-                className="mb-3 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900"
+                className="mb-3 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900"
                 role="status"
                 aria-live="polite"
               >
@@ -243,7 +255,7 @@ export function MobileShell(props: { title: string; children: ReactNode }) {
 
             {activeMealId || queuedMealIds.length > 0 ? (
               <button
-                className="mb-3 flex w-full items-center justify-between gap-3 rounded-xl border border-slate-200 bg-white px-3 py-2 text-left text-sm shadow-sm hover:bg-slate-50"
+                className="mb-3 flex w-full items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-left text-sm shadow-sm hover:bg-slate-50"
                 onClick={() => {
                   const target = activeMealId ?? queuedMealIds[0] ?? null
                   if (!target) return
@@ -252,72 +264,74 @@ export function MobileShell(props: { title: string; children: ReactNode }) {
                 type="button"
               >
                 <div className="min-w-0">
-                  <div className="text-xs font-medium text-slate-700">Analyzing in background</div>
+                  <div className="text-xs font-semibold text-slate-900">Analyzing in background</div>
                   <div className="truncate text-xs text-slate-600">
                     {activeMealId ? 'Running now' : 'Waiting to start'}
                     {queuedMealIds.length > 0 ? ` • ${queuedMealIds.length} queued` : ''}
                   </div>
                 </div>
-                <div className="shrink-0 rounded-md bg-slate-100 px-2 py-1 text-[11px] text-slate-700">View</div>
+                <div className="shrink-0 rounded-xl bg-slate-100 px-3 py-1 text-[11px] font-medium text-slate-700">View</div>
               </button>
             ) : null}
 
-            <main className="pb-24 lg:pb-0">
+            <main className="pb-24 md:pb-0">
               <div className="mx-auto w-full max-w-4xl">{props.children}</div>
             </main>
           </div>
         </div>
       </div>
 
-      <nav
-        className="fixed bottom-0 left-0 right-0 border-t border-slate-200 bg-white lg:hidden"
-        aria-label="Bottom navigation"
-        style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
-      >
-        <div className="relative mx-auto max-w-md px-2 py-2">
-          <div className="grid grid-cols-5 gap-1">
-            {navItems.map((item) => {
-              const active = item.match(location.pathname)
+      {!hideBottomNav ? (
+        <nav
+          className="fixed bottom-0 left-0 right-0 border-t border-slate-200 bg-white md:hidden"
+          aria-label="Bottom navigation"
+          style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
+        >
+          <div className="relative mx-auto max-w-md px-2 py-2">
+            <div className="grid grid-cols-5 gap-1">
+              {bottomNavItems.map((item) => {
+                const active = item.match(location.pathname)
 
-              if (item.to === '/capture') {
+                if (item.to === '/capture') {
+                  return (
+                    <div key={item.to} className="relative">
+                      <button
+                        onClick={() => openScanPicker()}
+                        className="absolute left-1/2 top-[-22px] flex h-14 w-14 -translate-x-1/2 items-center justify-center rounded-full bg-gradient-to-r from-emerald-600 via-teal-500 to-sky-500 shadow-lg ring-8 ring-white"
+                        aria-label={item.label}
+                        type="button"
+                      >
+                        <NavIcon name={item.icon} active={true} tone="inverse" />
+                      </button>
+                      <div className="h-10" />
+                    </div>
+                  )
+                }
+
                 return (
-                  <div key={item.to} className="relative">
-                    <button
-                      onClick={() => openScanPicker()}
-                      className="absolute left-1/2 top-[-22px] flex h-14 w-14 -translate-x-1/2 items-center justify-center rounded-full bg-gradient-to-r from-emerald-600 via-teal-500 to-sky-500 shadow-lg ring-8 ring-white"
-                      aria-label={item.label}
-                      type="button"
-                    >
-                      <NavIcon name={item.icon} active={true} />
-                    </button>
-                    <div className="h-10" />
-                  </div>
+                  <Link
+                    key={item.to}
+                    to={item.to}
+                    className={
+                      active
+                        ? 'rounded-xl bg-gradient-to-r from-emerald-600 via-teal-500 to-sky-500 px-2 py-2 text-center text-[11px] font-medium text-white'
+                        : 'rounded-xl px-2 py-2 text-center text-[11px] text-slate-700 hover:bg-slate-100'
+                    }
+                  >
+                    <div className="mx-auto flex w-full flex-col items-center gap-1">
+                      <NavIcon name={item.icon} active={active} tone={active ? 'inverse' : undefined} />
+                      <div className="leading-none">{item.label}</div>
+                    </div>
+                  </Link>
                 )
-              }
-
-              return (
-                <Link
-                  key={item.to}
-                  to={item.to}
-                  className={
-                    active
-                      ? 'rounded-xl bg-gradient-to-r from-emerald-600 via-teal-500 to-sky-500 px-2 py-2 text-center text-[11px] font-medium text-white'
-                      : 'rounded-xl px-2 py-2 text-center text-[11px] text-slate-700 hover:bg-slate-100'
-                  }
-                >
-                  <div className="mx-auto flex w-full flex-col items-center gap-1">
-                    <NavIcon name={item.icon} active={active} />
-                    <div className="leading-none">{item.label}</div>
-                  </div>
-                </Link>
-              )
-            })}
+              })}
+            </div>
           </div>
-        </div>
-      </nav>
+        </nav>
+      ) : null}
 
       {scanSourcePickerOpen ? (
-        <div className="fixed inset-0 z-50 lg:hidden" role="dialog" aria-modal="true">
+        <div className="fixed inset-0 z-50 md:hidden" role="dialog" aria-modal="true">
           <button
             className="absolute inset-0 bg-black/40"
             onClick={() => setScanSourcePickerOpen(false)}
@@ -329,7 +343,7 @@ export function MobileShell(props: { title: string; children: ReactNode }) {
             <div className="mt-1 text-xs text-slate-600">Choose camera or gallery.</div>
             <div className="mt-3 grid gap-2">
               <button
-                className="w-full rounded-xl bg-gradient-to-r from-emerald-600 via-teal-500 to-sky-500 px-3 py-2 text-sm font-medium text-white transition hover:brightness-110 active:brightness-95"
+                className="w-full rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-500 px-3 py-2 text-sm font-medium text-white transition hover:brightness-110 active:brightness-95"
                 onClick={() => pickScanSource('camera')}
                 type="button"
               >

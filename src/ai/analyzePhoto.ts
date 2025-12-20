@@ -100,6 +100,7 @@ function numberOrZero(value: unknown): number {
 
 export async function analyzeMealPhoto(input: {
   photoDataUrl: string
+  description?: string
 }): Promise<{ items: FoodItem[]; totalMacros: MacroNutrients; ai: MealAiAnalysis }> {
   const settings = getAiSettings()
 
@@ -113,8 +114,11 @@ export async function analyzeMealPhoto(input: {
 
     const url = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(settings.gemini.model)}:generateContent`
 
+    const description = input.description?.trim()
     const prompt =
-      'You are a nutrition assistant. Analyze the meal photo. Return ONLY valid JSON with the shape: {"items": [{"name": string, "quantityGrams": number, "calories": number, "protein_g": number, "carbs_g": number, "fat_g": number, "sugar_g": number, "sodium_mg": number}]}. Use numbers only. If uncertain, make a best guess.'
+      'You are a nutrition assistant. Analyze the meal photo.' +
+      (description ? ` The user describes the meal as: "${description}".` : '') +
+      ' Return ONLY valid JSON with the shape: {"items": [{"name": string, "quantityGrams": number, "calories": number, "protein_g": number, "carbs_g": number, "fat_g": number, "sugar_g": number, "sodium_mg": number}]}. Use numbers only. If uncertain, make a best guess.'
 
     const res = await fetch(url, {
       method: 'POST',
@@ -185,8 +189,11 @@ export async function analyzeMealPhoto(input: {
       required: ['items'],
     } as const
 
+    const description = input.description?.trim()
     const prompt =
-      'Analyze the meal photo. Return ONLY valid JSON (no markdown, no backticks, no code fences, no extra text) with the shape: {"items": [{"name": string, "quantityGrams": number, "calories": number, "protein_g": number, "carbs_g": number, "fat_g": number, "sugar_g": number, "sodium_mg": number}]}. Use numbers only. If uncertain, make a best guess.'
+      'Analyze the meal photo.' +
+      (description ? ` The user describes the meal as: "${description}".` : '') +
+      ' Return ONLY valid JSON (no markdown, no backticks, no code fences, no extra text) with the shape: {"items": [{"name": string, "quantityGrams": number, "calories": number, "protein_g": number, "carbs_g": number, "fat_g": number, "sugar_g": number, "sodium_mg": number}]}. Use numbers only. If uncertain, make a best guess.'
 
     const res = await fetch(url, {
       method: 'POST',

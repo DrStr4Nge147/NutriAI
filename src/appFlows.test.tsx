@@ -64,17 +64,17 @@ describe('app flows', () => {
     await renderApp(['/'])
     await completeOnboarding('Test')
 
-    fireEvent.click(screen.getAllByRole('link', { name: 'Manual' })[0])
+    fireEvent.click(within(screen.getByRole('navigation', { name: 'Primary' })).getByRole('link', { name: 'Manual Entry' }))
 
-    await screen.findByText('Manual meal entry')
+    await screen.findByLabelText('Food')
 
     fireEvent.change(screen.getByLabelText('Food'), { target: { value: 'White rice' } })
     fireEvent.change(screen.getByLabelText('Grams'), { target: { value: '100' } })
 
     fireEvent.click(screen.getByRole('button', { name: 'Save meal' }))
 
-    await screen.findByText('Totals')
-    expect(screen.getByText('130 kcal')).toBeInTheDocument()
+    await screen.findByText('Items consumed')
+    expect(screen.getAllByText((_, el) => el?.textContent === '130 kcal').length).toBeGreaterThan(0)
   })
 
   it('scan button lets user pick a photo and prefills eaten-at time', async () => {
@@ -108,7 +108,7 @@ describe('app flows', () => {
       const file = new File(['x'], 'meal.jpg', { type: 'image/jpeg' })
       fireEvent.change(scanInput, { target: { files: [file] } })
 
-      await screen.findByText('Scan meal')
+      await screen.findByText('Describe this meal')
       expect(await screen.findByAltText('Meal photo preview')).toBeInTheDocument()
 
       const eatenAtInput = screen.getByLabelText('Eaten at') as HTMLInputElement
@@ -170,29 +170,28 @@ describe('app flows', () => {
 
       fireEvent.click(scanButton)
       fireEvent.change(scanInput, { target: { files: [new File(['x'], 'm1.jpg', { type: 'image/jpeg' })] } })
-      await screen.findByText('Scan meal')
+      await screen.findByText('Describe this meal')
       await screen.findByAltText('Meal photo preview')
 
-      fireEvent.click(screen.getByRole('button', { name: 'Save photo meal' }))
-      await screen.findByText('Photo analysis')
-
-      fireEvent.click(screen.getByRole('button', { name: 'Analyze photo' }))
+      fireEvent.click(screen.getByRole('button', { name: 'Analyze Meal →' }))
+      await screen.findByText('Analyzing your food…')
       await waitFor(() => expect((globalThis as any).fetch).toHaveBeenCalledTimes(1))
 
-      fireEvent.click(screen.getByRole('link', { name: 'Back' }))
-      await screen.findByText('All meals saved on this device.')
+      const preview = await screen.findByAltText('Meal photo preview')
+      const previewContainer = preview.parentElement
+      if (!previewContainer) throw new Error('Preview container not found')
+      fireEvent.click(within(previewContainer).getByRole('button', { name: 'Close' }))
+      await screen.findByText('Calories left')
       await screen.findByText('Analyzing in background')
 
-      fireEvent.click(within(screen.getByRole('navigation', { name: 'Primary' })).getByRole('link', { name: 'Scan' }))
+      fireEvent.click(screen.getByRole('button', { name: 'Scan' }))
       await screen.findByText('Scan meal')
       const upload = screen.getByLabelText(/Upload photo/i) as HTMLInputElement
       fireEvent.change(upload, { target: { files: [new File(['x'], 'm2.jpg', { type: 'image/jpeg' })] } })
       await screen.findByAltText('Meal photo preview')
 
-      fireEvent.click(screen.getByRole('button', { name: 'Save photo meal' }))
-      await screen.findByText('Photo analysis')
-
-      fireEvent.click(screen.getByRole('button', { name: 'Analyze photo' }))
+      await screen.findByText('Describe this meal')
+      fireEvent.click(screen.getByRole('button', { name: 'Analyze Meal →' }))
       expect((globalThis as any).fetch).toHaveBeenCalledTimes(1)
 
       fetchDefers[0].resolve({

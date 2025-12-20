@@ -7,7 +7,7 @@ import { useApp } from './AppContext'
 type MealPhotoAnalysisValue = {
   activeMealId: string | null
   queuedMealIds: string[]
-  enqueueMealPhotoAnalysis: (mealId: string) => void
+  enqueueMealPhotoAnalysis: (mealId: string, options?: { description?: string }) => void
   isMealQueued: (mealId: string) => boolean
   isMealRunning: (mealId: string) => boolean
   getMealError: (mealId: string) => string | null
@@ -22,11 +22,17 @@ export function MealPhotoAnalysisProvider(props: { children: ReactNode }) {
   const [activeMealId, setActiveMealId] = useState<string | null>(null)
   const [queuedMealIds, setQueuedMealIds] = useState<string[]>([])
   const [errorsByMealId, setErrorsByMealId] = useState<Record<string, string | null>>({})
+  const [descriptionsByMealId, setDescriptionsByMealId] = useState<Record<string, string | undefined>>({})
 
   const mealsRef = useRef(meals)
   useEffect(() => {
     mealsRef.current = meals
   }, [meals])
+
+  const descriptionsRef = useRef(descriptionsByMealId)
+  useEffect(() => {
+    descriptionsRef.current = descriptionsByMealId
+  }, [descriptionsByMealId])
 
   const inFlightRef = useRef<string | null>(null)
 
@@ -36,7 +42,7 @@ export function MealPhotoAnalysisProvider(props: { children: ReactNode }) {
   const getMealError = useCallback((mealId: string) => errorsByMealId[mealId] ?? null, [errorsByMealId])
 
   const enqueueMealPhotoAnalysis = useCallback(
-    (mealId: string) => {
+    (mealId: string, options?: { description?: string }) => {
       const meal = mealsRef.current.find((m) => m.id === mealId) ?? null
       if (!meal) throw new Error('Meal not found')
       if (!meal.photoDataUrl) throw new Error('Meal does not have a photo')
@@ -47,6 +53,11 @@ export function MealPhotoAnalysisProvider(props: { children: ReactNode }) {
       }
 
       setErrorsByMealId((prev) => ({ ...prev, [mealId]: null }))
+
+      const description = options?.description?.trim()
+      if (description) {
+        setDescriptionsByMealId((prev) => ({ ...prev, [mealId]: description }))
+      }
 
       setQueuedMealIds((prev) => {
         if (prev.includes(mealId)) return prev
@@ -68,7 +79,9 @@ export function MealPhotoAnalysisProvider(props: { children: ReactNode }) {
         const meal = mealsRef.current.find((m) => m.id === mealId) ?? null
         if (!meal?.photoDataUrl) throw new Error('Meal photo not found')
 
-        const result = await analyzeMealPhoto({ photoDataUrl: meal.photoDataUrl })
+        const description = descriptionsRef.current[mealId]
+
+        const result = await analyzeMealPhoto({ photoDataUrl: meal.photoDataUrl, description })
 
         const latest = mealsRef.current.find((m) => m.id === mealId) ?? meal
 
@@ -85,6 +98,12 @@ export function MealPhotoAnalysisProvider(props: { children: ReactNode }) {
         setErrorsByMealId((prev) => ({ ...prev, [mealId]: msg }))
         toast({ kind: 'error', message: msg })
       } finally {
+        setDescriptionsByMealId((prev) => {
+          if (!prev[mealId]) return prev
+          const next = { ...prev }
+          delete next[mealId]
+          return next
+        })
         inFlightRef.current = null
         setActiveMealId(null)
       }

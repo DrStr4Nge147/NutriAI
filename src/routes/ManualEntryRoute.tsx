@@ -34,8 +34,28 @@ export function ManualEntryRoute() {
   return (
     <div className="space-y-4">
       <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-        <div className="text-base font-semibold">Manual meal entry</div>
-        <div className="mt-1 text-sm text-slate-600">Type a food and grams. We’ll estimate macros.</div>
+        <div className="flex items-center gap-2">
+          <svg viewBox="0 0 24 24" className="h-5 w-5 text-emerald-700" aria-hidden="true">
+            <path
+              d="M4 20h16"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+            <path
+              d="M6 16l8.5-8.5a2 2 0 0 1 2.8 0l.2.2a2 2 0 0 1 0 2.8L11 19H6v-3z"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          </svg>
+          <div className="text-base font-semibold">Manual Entry</div>
+        </div>
+        <div className="mt-1 text-sm text-slate-600">Type what you ate and grams. We’ll estimate macros.</div>
       </div>
 
       <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm space-y-4">

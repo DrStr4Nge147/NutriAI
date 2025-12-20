@@ -1,7 +1,9 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { readFileAsDataUrl } from '../utils/files'
+import { buildHealthInsights } from '../nutrition/health'
 import { useApp } from '../state/AppContext'
+import { useMealPhotoAnalysis } from '../state/MealPhotoAnalysisContext'
 
 function formatDatetimeLocalValue(date: Date) {
   const tzOffsetMs = date.getTimezoneOffset() * 60_000
@@ -9,10 +11,39 @@ function formatDatetimeLocalValue(date: Date) {
   return local.toISOString().slice(0, 16)
 }
 
+function mealLabelFromHour(hour: number) {
+  if (hour >= 5 && hour < 11) return 'Breakfast'
+  if (hour >= 11 && hour < 15) return 'Lunch'
+  if (hour >= 15 && hour < 18) return 'Snack'
+  if (hour >= 18 && hour < 23) return 'Dinner'
+  return 'Meal'
+}
+
+function nutritionistNote(input: { calories: number; protein_g: number; carbs_g: number; fat_g: number }): string {
+  const kcal = input.calories
+  if (!Number.isFinite(kcal) || kcal <= 0) return 'Log a meal to see a nutrition note.'
+
+  const pKcal = Math.max(0, input.protein_g) * 4
+  const cKcal = Math.max(0, input.carbs_g) * 4
+  const fKcal = Math.max(0, input.fat_g) * 9
+  const total = pKcal + cKcal + fKcal
+
+  const pct = (v: number) => (total > 0 ? Math.round((v / total) * 100) : 0)
+  const p = pct(pKcal)
+  const c = pct(cKcal)
+  const f = pct(fKcal)
+
+  if (kcal >= 900) return `This meal is energy-dense (~${kcal} kcal). Consider balancing with lighter meals later and adding vegetables/fiber for fullness.`
+  if (kcal >= 600) return `This is a substantial meal (~${kcal} kcal). Aim for balance: protein, fiber-rich carbs, and some healthy fats.`
+  return `Macro split is roughly P ${p}% / C ${c}% / F ${f}%. If you’re still hungry later, add fiber (fruit/veg) and water.`
+}
+
 export function CaptureMealRoute() {
   const navigate = useNavigate()
   const location = useLocation()
-  const { addPhotoMeal } = useApp()
+  const { addPhotoMeal, meals, currentProfile } = useApp()
+
+  const { enqueueMealPhotoAnalysis, isMealQueued, isMealRunning, getMealError } = useMealPhotoAnalysis()
 
   const scanFileInputRef = useRef<HTMLInputElement | null>(null)
   const uploadFileInputRef = useRef<HTMLInputElement | null>(null)
@@ -34,6 +65,12 @@ export function CaptureMealRoute() {
   const [stream, setStream] = useState<MediaStream | null>(null)
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
+
+  const [description, setDescription] = useState('')
+  const [mealId, setMealId] = useState<string | null>(null)
+  const [confirmed, setConfirmed] = useState(false)
+
+  const [step, setStep] = useState<'pick' | 'describe' | 'analyzing' | 'review'>(() => (photoPreview ? 'describe' : 'pick'))
 
   const videoRef = useRef<HTMLVideoElement | null>(null)
 
@@ -59,6 +96,55 @@ export function CaptureMealRoute() {
     if (typeof s?.photoDataUrl === 'string') setPhotoPreview(s.photoDataUrl)
     if (typeof s?.eatenAtLocal === 'string') setEatenAt(s.eatenAtLocal)
   }, [location.state])
+
+  useEffect(() => {
+    if (photoPreview && step === 'pick') setStep('describe')
+    if (!photoPreview && step !== 'pick') {
+      setStep('pick')
+      setMealId(null)
+      setConfirmed(false)
+    }
+  }, [photoPreview, step])
+
+  const meal = useMemo(() => (mealId ? meals.find((m) => m.id === mealId) ?? null : null), [mealId, meals])
+
+  const mealLabel = useMemo(() => {
+    const dt = new Date(eatenAt)
+    if (!Number.isFinite(dt.getTime())) return 'Meal'
+    return mealLabelFromHour(dt.getHours())
+  }, [eatenAt])
+
+  const mealInsights = useMemo(() => {
+    if (!meal || !currentProfile) return []
+    return buildHealthInsights({
+      scope: 'meal',
+      body: currentProfile.body,
+      medical: currentProfile.medical,
+      totals: meal.totalMacros,
+      targetKcal: null,
+      items: meal.items.map((i) => ({ name: i.name })),
+    })
+  }, [meal, currentProfile])
+
+  const note = useMemo(() => {
+    const totals = meal?.totalMacros ?? null
+    if (!totals) return ''
+    return nutritionistNote(totals)
+  }, [meal?.totalMacros])
+
+  useEffect(() => {
+    if (step !== 'analyzing') return
+    if (!mealId) return
+    if (getMealError(mealId)) {
+      setStep('review')
+      return
+    }
+
+    const m = meals.find((x) => x.id === mealId) ?? null
+    if (m?.aiAnalysis || (m?.items?.length ?? 0) > 0) {
+      setStep('review')
+    }
+  }, [step, mealId, meals, getMealError])
 
   async function onPickFile(file: File | null) {
     setError(null)
@@ -138,142 +224,305 @@ export function CaptureMealRoute() {
     el.click()
   }
 
-  async function save() {
+  async function beginAnalysis() {
     if (!photoPreview) return
     setSubmitting(true)
     setError(null)
     try {
       const iso = new Date(eatenAt).toISOString()
-      const meal = await addPhotoMeal({ photoDataUrl: photoPreview, eatenAt: iso })
-      navigate(`/meals/${meal.id}`)
+
+      const created = mealId
+        ? (meals.find((m) => m.id === mealId) ?? null)
+        : await addPhotoMeal({ photoDataUrl: photoPreview, eatenAt: iso })
+
+      if (!created) throw new Error('Failed to create meal')
+      setMealId(created.id)
+
+      enqueueMealPhotoAnalysis(created.id, { description })
+      setStep('analyzing')
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Failed to save meal')
+      setError(e instanceof Error ? e.message : 'Failed to analyze meal')
     } finally {
       setSubmitting(false)
     }
   }
 
+  async function onClose() {
+    navigate('/')
+  }
+
+  function confirmAndSave() {
+    setConfirmed(true)
+    navigate('/')
+  }
+
   return (
-    <div className="space-y-4">
-      <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm space-y-4">
-        <div>
-          <div className="text-base font-semibold">Scan meal</div>
-          <div className="mt-1 text-sm text-slate-600">Take a photo or upload an image to estimate nutrition.</div>
-        </div>
+    <div className="relative">
+      {photoPreview ? (
+        <div className="relative">
+          <div className="relative h-[240px] w-full overflow-hidden rounded-2xl border border-slate-200 bg-slate-100 md:h-[320px]">
+            <img src={photoPreview} alt="Meal photo preview" className="h-full w-full object-cover" />
+            <button
+              onClick={() => void onClose()}
+              className="absolute right-3 top-3 flex h-9 w-9 items-center justify-center rounded-full bg-black/50 text-white"
+              aria-label="Close"
+              type="button"
+            >
+              <span className="text-lg leading-none">×</span>
+            </button>
+            <div className="absolute left-3 top-3 rounded-full bg-emerald-600 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-white">
+              {mealLabel}
+            </div>
+          </div>
 
-        <input
-          ref={scanFileInputRef}
-          className="sr-only"
-          type="file"
-          accept="image/*"
-          capture="environment"
-          onChange={(e) => void onPickFile(e.target.files?.[0] ?? null)}
-        />
+          <div className="-mt-6 rounded-t-3xl bg-white p-5 shadow-2xl">
+            {step === 'describe' ? (
+              <div className="space-y-4">
+                <div>
+                  <div className="text-lg font-semibold">Describe this meal</div>
+                  <div className="mt-1 text-sm text-slate-600">Help the AI by adding details (e.g., "fried in oil", "double rice").</div>
+                </div>
 
-        <label className="block text-sm">
-          <div className="font-medium">Eaten at</div>
-          <input
-            className="mt-1 w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm"
-            value={eatenAt}
-            onChange={(e) => setEatenAt(e.target.value)}
-            type="datetime-local"
-          />
-        </label>
+                <textarea
+                  className="min-h-[120px] w-full resize-none rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none focus:border-emerald-400 focus:ring-2 focus:ring-emerald-200/60"
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                  placeholder="e.g., Chicken adobo with garlic rice..."
+                />
 
-        {isCoarsePointer ? (
-          <button
-            className="w-full rounded-xl bg-gradient-to-r from-emerald-600 via-teal-500 to-sky-500 px-3 py-2 text-sm font-medium text-white transition hover:brightness-110 active:brightness-95 disabled:opacity-50"
-            onClick={() => openFilePicker()}
-            disabled={submitting}
-            type="button"
-          >
-            Scan
-          </button>
-        ) : (
-          <>
-            <div className="flex gap-2">
-              {!cameraActive ? (
+                <div className="grid gap-2">
+                  <label className="block text-sm">
+                    <div className="font-medium">Eaten at</div>
+                    <input
+                      className="mt-1 w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm"
+                      value={eatenAt}
+                      onChange={(e) => setEatenAt(e.target.value)}
+                      type="datetime-local"
+                    />
+                  </label>
+
+                  {error ? (
+                    <div className="text-sm text-red-600" role="alert" aria-live="assertive">
+                      {error}
+                    </div>
+                  ) : null}
+
+                  <button
+                    className="mt-2 w-full rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-500 px-4 py-4 text-sm font-semibold text-white transition hover:brightness-110 active:brightness-95 disabled:opacity-50"
+                    onClick={() => void beginAnalysis()}
+                    disabled={submitting}
+                    type="button"
+                  >
+                    Analyze Meal →
+                  </button>
+
+                  <button
+                    className="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm font-medium text-slate-900 hover:bg-slate-50"
+                    onClick={() => navigate('/manual')}
+                    type="button"
+                  >
+                    Or use manual entry
+                  </button>
+                </div>
+              </div>
+            ) : null}
+
+            {step === 'analyzing' ? (
+              <div className="flex min-h-[260px] flex-col items-center justify-center gap-3 text-center">
+                <div className="h-10 w-10 animate-spin rounded-full border-4 border-emerald-200 border-t-emerald-600" />
+                <div className="text-lg font-semibold">Analyzing your food…</div>
+                <div className="text-sm text-slate-600">Identifying ingredients and calculating nutrition…</div>
+
+                {mealId ? (
+                  <div className="mt-2 text-xs text-slate-500">
+                    {isMealRunning(mealId) || isMealQueued(mealId) ? 'Running' : 'Starting'}
+                  </div>
+                ) : null}
+
+                {mealId && getMealError(mealId) ? (
+                  <div className="mt-3 w-full">
+                    <div className="text-sm text-red-600" role="alert" aria-live="assertive">
+                      {getMealError(mealId)}
+                    </div>
+                    <button
+                      className="mt-3 w-full rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-500 px-4 py-3 text-sm font-semibold text-white"
+                      onClick={() => {
+                        enqueueMealPhotoAnalysis(mealId, { description })
+                        setStep('analyzing')
+                      }}
+                      type="button"
+                    >
+                      Try again
+                    </button>
+                  </div>
+                ) : null}
+              </div>
+            ) : null}
+
+            {step === 'review' ? (
+              <div className="space-y-4">
+                <div className="flex items-center justify-between gap-3">
+                  <div className="text-sm font-semibold text-slate-900">Detected Items</div>
+                  <div className="text-sm font-semibold text-emerald-700">{meal?.totalMacros.calories ?? 0} kcal</div>
+                </div>
+
+                {mealInsights.length > 0 ? (
+                  <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3">
+                    <div className="text-sm font-semibold text-amber-900">Attention</div>
+                    <div className="mt-2 space-y-1">
+                      {mealInsights.slice(0, 2).map((i) => (
+                        <div key={i.id} className="text-xs text-amber-900">
+                          - {i.text}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ) : null}
+
+                <div className="overflow-hidden rounded-2xl border border-slate-200">
+                  {(meal?.items ?? []).length === 0 ? (
+                    <div className="px-4 py-4 text-sm text-slate-600">No detected items yet.</div>
+                  ) : (
+                    <div>
+                      {(meal?.items ?? []).map((it) => (
+                        <div key={it.id} className="flex items-start justify-between gap-4 border-t border-slate-200 px-4 py-3 first:border-t-0">
+                          <div className="min-w-0">
+                            <div className="truncate text-sm font-medium text-slate-900">{it.name}</div>
+                            <div className="mt-0.5 text-xs text-slate-600">
+                              {it.quantityGrams ? `${Math.round(it.quantityGrams)}g` : '—'}
+                            </div>
+                          </div>
+                          <div className="text-right">
+                            <div className="text-sm font-semibold text-emerald-700">{it.macros.calories} kcal</div>
+                            <div className="mt-0.5 text-[11px] text-slate-500">
+                              P {it.macros.protein_g}g · C {it.macros.carbs_g}g · F {it.macros.fat_g}g
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                <div className="rounded-2xl bg-emerald-50 px-4 py-3">
+                  <div className="text-sm font-semibold text-emerald-900">Nutritionist Note</div>
+                  <div className="mt-2 text-xs text-emerald-900/90">"{note}"</div>
+                </div>
+
+                {mealId && getMealError(mealId) ? (
+                  <div className="text-sm text-red-600" role="alert" aria-live="assertive">
+                    {getMealError(mealId)}
+                  </div>
+                ) : null}
+
                 <button
-                  className="flex-1 rounded-xl bg-gradient-to-r from-emerald-600 via-teal-500 to-sky-500 px-3 py-2 text-sm font-medium text-white transition hover:brightness-110 active:brightness-95 disabled:opacity-50"
-                  onClick={() => void startCamera()}
-                  disabled={submitting}
+                  className="w-full rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-500 px-4 py-4 text-sm font-semibold text-white transition hover:brightness-110 active:brightness-95 disabled:opacity-50"
+                  onClick={() => confirmAndSave()}
+                  disabled={!meal || (meal.items.length === 0 && !getMealError(meal.id))}
                   type="button"
                 >
-                  Open camera
+                  Confirm &amp; Save Meal
                 </button>
-              ) : (
-                <>
-                  <button
-                    className="flex-1 rounded-xl bg-gradient-to-r from-emerald-600 via-teal-500 to-sky-500 px-3 py-2 text-sm font-medium text-white transition hover:brightness-110 active:brightness-95"
-                    onClick={() => captureFromCamera()}
-                    type="button"
-                  >
-                    Capture
-                  </button>
-                  <button
-                    className="rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm hover:bg-slate-50"
-                    onClick={() => stopCamera()}
-                    type="button"
-                  >
-                    Close
-                  </button>
-                </>
-              )}
+              </div>
+            ) : null}
+          </div>
+        </div>
+      ) : (
+        <div className="space-y-4">
+          <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm space-y-4">
+            <div>
+              <div className="text-base font-semibold">Scan meal</div>
+              <div className="mt-1 text-sm text-slate-600">Take a photo or upload an image to estimate nutrition.</div>
             </div>
 
-            {cameraActive ? (
-              <video
-                ref={videoRef}
-                className="w-full rounded-xl border border-slate-200"
-                autoPlay
-                playsInline
-                muted
+            <input
+              ref={scanFileInputRef}
+              className="sr-only"
+              type="file"
+              accept="image/*"
+              capture="environment"
+              onChange={(e) => void onPickFile(e.target.files?.[0] ?? null)}
+            />
+
+            <label className="block text-sm">
+              <div className="font-medium">Eaten at</div>
+              <input
+                className="mt-1 w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm"
+                value={eatenAt}
+                onChange={(e) => setEatenAt(e.target.value)}
+                type="datetime-local"
               />
-            ) : null}
-          </>
-        )}
+            </label>
 
-        <label className="block text-sm">
-          <div className="font-medium">Upload photo</div>
-          <input
-            className="mt-2 block w-full text-sm text-slate-600 file:mr-3 file:rounded-xl file:border-0 file:bg-slate-100 file:px-3 file:py-2 file:text-sm file:font-medium file:text-slate-900 hover:file:bg-slate-200"
-            ref={uploadFileInputRef}
-            type="file"
-            accept="image/*"
-            onChange={(e) => void onPickFile(e.target.files?.[0] ?? null)}
-          />
-          <div className="mt-2 text-xs text-slate-600">
-            If camera doesn’t open, your browser may not support it here. Try HTTPS or use Upload.
+            {isCoarsePointer ? (
+              <button
+                className="w-full rounded-xl bg-gradient-to-r from-emerald-600 via-teal-500 to-sky-500 px-3 py-2 text-sm font-medium text-white transition hover:brightness-110 active:brightness-95 disabled:opacity-50"
+                onClick={() => openFilePicker()}
+                disabled={submitting}
+                type="button"
+              >
+                Scan
+              </button>
+            ) : (
+              <>
+                <div className="flex gap-2">
+                  {!cameraActive ? (
+                    <button
+                      className="flex-1 rounded-xl bg-gradient-to-r from-emerald-600 via-teal-500 to-sky-500 px-3 py-2 text-sm font-medium text-white transition hover:brightness-110 active:brightness-95 disabled:opacity-50"
+                      onClick={() => void startCamera()}
+                      disabled={submitting}
+                      type="button"
+                    >
+                      Open camera
+                    </button>
+                  ) : (
+                    <>
+                      <button
+                        className="flex-1 rounded-xl bg-gradient-to-r from-emerald-600 via-teal-500 to-sky-500 px-3 py-2 text-sm font-medium text-white transition hover:brightness-110 active:brightness-95"
+                        onClick={() => captureFromCamera()}
+                        type="button"
+                      >
+                        Capture
+                      </button>
+                      <button
+                        className="rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm hover:bg-slate-50"
+                        onClick={() => stopCamera()}
+                        type="button"
+                      >
+                        Close
+                      </button>
+                    </>
+                  )}
+                </div>
+
+                {cameraActive ? (
+                  <video
+                    ref={videoRef}
+                    className="w-full rounded-xl border border-slate-200"
+                    autoPlay
+                    playsInline
+                    muted
+                  />
+                ) : null}
+              </>
+            )}
+
+            <label className="block text-sm">
+              <div className="font-medium">Upload photo</div>
+              <input
+                className="mt-2 block w-full text-sm text-slate-600 file:mr-3 file:rounded-xl file:border-0 file:bg-slate-100 file:px-3 file:py-2 file:text-sm file:font-medium file:text-slate-900 hover:file:bg-slate-200"
+                ref={uploadFileInputRef}
+                type="file"
+                accept="image/*"
+                onChange={(e) => void onPickFile(e.target.files?.[0] ?? null)}
+              />
+              <div className="mt-2 text-xs text-slate-600">
+                If camera doesn’t open, your browser may not support it here. Try HTTPS or use Upload.
+              </div>
+            </label>
           </div>
-        </label>
-
-        {photoPreview ? (
-          <img src={photoPreview} alt="Meal photo preview" className="w-full rounded-2xl border border-slate-200" />
-        ) : null}
-
-        {error ? (
-          <div className="text-sm text-red-600" role="alert" aria-live="assertive">
-            {error}
-          </div>
-        ) : null}
-
-        <button
-          className="w-full rounded-xl bg-gradient-to-r from-emerald-600 via-teal-500 to-sky-500 px-3 py-2 text-sm font-medium text-white transition hover:brightness-110 active:brightness-95 disabled:opacity-50"
-          onClick={() => void save()}
-          disabled={submitting || !photoPreview}
-          type="button"
-        >
-          Save photo meal
-        </button>
-
-        <button
-          className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm hover:bg-slate-50"
-          onClick={() => navigate('/manual')}
-          type="button"
-        >
-          Or use manual entry
-        </button>
-      </div>
+        </div>
+      )}
     </div>
   )
 }

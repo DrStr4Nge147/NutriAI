@@ -7,6 +7,7 @@ import { OnboardingRoute } from './routes/OnboardingRoute'
 import { ManualEntryRoute } from './routes/ManualEntryRoute'
 import { MealsRoute } from './routes/MealsRoute'
 import { MealDetailRoute } from './routes/MealDetailRoute'
+import { MealEditRoute } from './routes/MealEditRoute'
 import { SettingsRoute } from './routes/SettingsRoute'
 import { CaptureMealRoute } from './routes/CaptureMealRoute'
 import { ProfileRoute } from './routes/ProfileRoute'
@@ -81,6 +82,16 @@ export default function App() {
           path="meals"
           element={
             currentProfileId ? <MealsRoute /> : <Navigate to="/onboarding" replace />
+          }
+        />
+        <Route
+          path="meals/:mealId/edit"
+          element={
+            currentProfileId ? (
+              <MealEditRoute />
+            ) : (
+              <Navigate to="/onboarding" replace />
+            )
           }
         />
         <Route
