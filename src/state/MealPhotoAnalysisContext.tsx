@@ -1,6 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { analyzeMealPhoto } from '../ai/analyzePhoto'
 import { emptyMacros } from '../nutrition/macros'
+import { getMeal } from '../storage/db'
 import { useUiFeedback } from './UiFeedbackContext'
 import { useApp } from './AppContext'
 
@@ -43,10 +44,6 @@ export function MealPhotoAnalysisProvider(props: { children: ReactNode }) {
 
   const enqueueMealPhotoAnalysis = useCallback(
     (mealId: string, options?: { description?: string }) => {
-      const meal = mealsRef.current.find((m) => m.id === mealId) ?? null
-      if (!meal) throw new Error('Meal not found')
-      if (!meal.photoDataUrl) throw new Error('Meal does not have a photo')
-
       if (inFlightRef.current === mealId || queuedMealIds.includes(mealId)) {
         toast({ kind: 'info', message: 'Meal photo analysis is already in progress.' })
         return
@@ -76,8 +73,10 @@ export function MealPhotoAnalysisProvider(props: { children: ReactNode }) {
   const runJob = useCallback(
     async (mealId: string) => {
       try {
-        const meal = mealsRef.current.find((m) => m.id === mealId) ?? null
-        if (!meal?.photoDataUrl) throw new Error('Meal photo not found')
+        const inMemory = mealsRef.current.find((m) => m.id === mealId) ?? null
+        const meal = inMemory ?? (await getMeal(mealId)) ?? null
+        if (!meal) throw new Error('Meal not found')
+        if (!meal.photoDataUrl) throw new Error('Meal photo not found')
 
         const description = descriptionsRef.current[mealId]
 

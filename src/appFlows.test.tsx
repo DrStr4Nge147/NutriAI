@@ -175,6 +175,7 @@ describe('app flows', () => {
       await screen.findByAltText('Meal photo preview')
 
       fireEvent.click(screen.getByRole('button', { name: 'Analyze Meal →' }))
+      expect(screen.queryByText('Meal not found')).not.toBeInTheDocument()
       await screen.findByText('Analyzing your food…')
       await waitFor(() => expect((globalThis as any).fetch).toHaveBeenCalledTimes(1))
 

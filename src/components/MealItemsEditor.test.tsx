@@ -52,7 +52,9 @@ describe('MealItemsEditor', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Analyze (AI)' }))
 
     await waitFor(() => {
-      expect(screen.getByText(/321 kcal/i)).toBeInTheDocument()
+      expect(
+        screen.getAllByText((_, el) => /321\s*kcal/i.test(el?.textContent ?? '')).length,
+      ).toBeGreaterThan(0)
     })
   })
 
@@ -79,7 +81,9 @@ describe('MealItemsEditor', () => {
     fireEvent.change(nameInput, { target: { value: 'White rice (cooked)' } })
 
     await waitFor(() => {
-      expect(screen.getByText(/130 kcal/i)).toBeInTheDocument()
+      expect(
+        screen.getAllByText((_, el) => /130\s*kcal/i.test(el?.textContent ?? '')).length,
+      ).toBeGreaterThan(0)
     })
 
     expect(screen.queryByRole('button', { name: /re-estimate/i })).not.toBeInTheDocument()
