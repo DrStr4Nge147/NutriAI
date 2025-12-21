@@ -290,32 +290,34 @@ export function MobileShell(props: { title: string; children: ReactNode }) {
           </aside>
 
           <div className="min-w-0">
-            <div className="mb-3 flex items-center justify-end">
-              <Link
-                to="/profile"
-                aria-label="Profile"
-                className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 bg-white shadow-sm hover:bg-slate-50"
-              >
-                <svg viewBox="0 0 24 24" className="h-5 w-5" aria-hidden="true">
-                  <path
-                    d="M20 21a8 8 0 0 0-16 0"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2.2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                  <path
-                    d="M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8z"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2.2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                </svg>
-              </Link>
-            </div>
+            {location.pathname !== '/' ? (
+              <div className="mb-3 flex items-center justify-end">
+                <Link
+                  to="/profile"
+                  aria-label="Profile"
+                  className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 bg-white shadow-sm hover:bg-slate-50"
+                >
+                  <svg viewBox="0 0 24 24" className="h-5 w-5" aria-hidden="true">
+                    <path
+                      d="M20 21a8 8 0 0 0-16 0"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2.2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                    <path
+                      d="M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8z"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2.2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                  </svg>
+                </Link>
+              </div>
+            ) : null}
 
             {!isOnline ? (
               <div

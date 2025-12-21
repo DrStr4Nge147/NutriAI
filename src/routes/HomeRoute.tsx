@@ -160,11 +160,36 @@ export function HomeRoute() {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <div>
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
           <div className="text-sm text-slate-600">{greetingForHour(new Date().getHours())}</div>
           <div className="text-xl font-semibold">{currentProfile?.name ?? 'NutriAI'}</div>
         </div>
+
+        <Link
+          to="/profile"
+          aria-label="Profile"
+          className="mt-0.5 inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-slate-200 bg-white shadow-sm hover:bg-slate-50"
+        >
+          <svg viewBox="0 0 24 24" className="h-5 w-5" aria-hidden="true">
+            <path
+              d="M20 21a8 8 0 0 0-16 0"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2.2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+            <path
+              d="M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8z"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2.2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          </svg>
+        </Link>
       </div>
 
       <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
