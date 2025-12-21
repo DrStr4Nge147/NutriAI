@@ -5,7 +5,7 @@ import { readFileAsDataUrl } from '../utils/files'
 import { useMealPhotoAnalysis } from '../state/MealPhotoAnalysisContext'
 import { useApp } from '../state/AppContext'
 
-function NavIcon(props: { name: 'home' | 'scan' | 'manual' | 'history' | 'medical' | 'settings'; active: boolean; tone?: 'inverse' }) {
+function NavIcon(props: { name: 'home' | 'scan' | 'manual' | 'history' | 'medical' | 'settings' | 'more'; active: boolean; tone?: 'inverse' }) {
   const stroke = props.tone === 'inverse' ? '#ffffff' : props.active ? '#047857' : '#64748b'
   const common = { stroke, strokeWidth: 2.2, fill: 'none', strokeLinecap: 'round' as const, strokeLinejoin: 'round' as const }
 
@@ -60,6 +60,22 @@ function NavIcon(props: { name: 'home' | 'scan' | 'manual' | 'history' | 'medica
     )
   }
 
+  if (props.name === 'more') {
+    return (
+      <svg viewBox="0 0 24 24" className="h-5 w-5" aria-hidden="true">
+        <path {...common} d="M5 12h.01" />
+        <path {...common} d="M12 12h.01" />
+        <path {...common} d="M19 12h.01" />
+        <path
+          {...common}
+          d="M5 12a1 1 0 1 0 0 .01"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+      </svg>
+    )
+  }
+
   return (
     <svg viewBox="0 0 24 24" className="h-5 w-5" aria-hidden="true">
       <path {...common} d="M12 15.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7z" />
@@ -96,6 +112,7 @@ export function MobileShell(props: { title: string; children: ReactNode }) {
   const scanGalleryInputRef = useRef<HTMLInputElement | null>(null)
 
   const [scanSourcePickerOpen, setScanSourcePickerOpen] = useState(false)
+  const [moreOpen, setMoreOpen] = useState(false)
 
   const AI_DISCLAIMER_KEY = 'ai-nutritionist.hideAiCloudDisclaimer'
   const aiDisclaimerShownRef = useRef(false)
@@ -169,16 +186,12 @@ export function MobileShell(props: { title: string; children: ReactNode }) {
     { to: '/settings', label: 'Settings', icon: 'settings', match: (p) => p.startsWith('/settings') },
   ]
 
-  const bottomNavItems: Array<{ to: string; label: string; icon: Parameters<typeof NavIcon>[0]['name']; match: (path: string) => boolean }> = [
-    navItems[0],
-    navItems[1],
-    { to: '/capture', label: 'Scan', icon: 'scan', match: (p) => p.startsWith('/capture') },
-    navItems[2],
-    navItems[3],
-    navItems[4],
-  ]
-
   const hideBottomNav = location.pathname.startsWith('/capture')
+
+  const moreActive =
+    location.pathname.startsWith('/medical-history') ||
+    location.pathname.startsWith('/settings') ||
+    location.pathname.startsWith('/profile')
 
   function linkClass(active: boolean) {
     return active
@@ -349,46 +362,161 @@ export function MobileShell(props: { title: string; children: ReactNode }) {
           style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
         >
           <div className="relative mx-auto max-w-md px-2 py-2">
-            <div className="grid grid-cols-6 gap-1">
-              {bottomNavItems.map((item) => {
-                const active = item.match(location.pathname)
+            <button
+              onClick={() => openScanPicker()}
+              className="absolute left-1/2 top-[-22px] flex h-14 w-14 -translate-x-1/2 items-center justify-center rounded-full bg-gradient-to-r from-emerald-600 via-teal-500 to-sky-500 shadow-lg ring-8 ring-white"
+              aria-label="Scan"
+              type="button"
+            >
+              <NavIcon name="scan" active={true} tone="inverse" />
+            </button>
 
-                if (item.to === '/capture') {
-                  return (
-                    <div key={item.to} className="relative">
-                      <button
-                        onClick={() => openScanPicker()}
-                        className="absolute left-1/2 top-[-22px] flex h-14 w-14 -translate-x-1/2 items-center justify-center rounded-full bg-gradient-to-r from-emerald-600 via-teal-500 to-sky-500 shadow-lg ring-8 ring-white"
-                        aria-label={item.label}
-                        type="button"
-                      >
-                        <NavIcon name={item.icon} active={true} tone="inverse" />
-                      </button>
-                      <div className="h-10" />
-                    </div>
-                  )
+            <div className="grid grid-cols-4 gap-1 pt-6">
+              <Link
+                to={navItems[0].to}
+                className={
+                  navItems[0].match(location.pathname)
+                    ? 'rounded-xl bg-gradient-to-r from-emerald-600 via-teal-500 to-sky-500 px-2 py-2 text-center text-[11px] font-medium text-white'
+                    : 'rounded-xl px-2 py-2 text-center text-[11px] text-slate-700 hover:bg-slate-100'
                 }
+              >
+                <div className="mx-auto flex w-full flex-col items-center gap-1">
+                  <NavIcon
+                    name={navItems[0].icon}
+                    active={navItems[0].match(location.pathname)}
+                    tone={navItems[0].match(location.pathname) ? 'inverse' : undefined}
+                  />
+                  <div className="leading-none">{navItems[0].label}</div>
+                </div>
+              </Link>
 
-                return (
-                  <Link
-                    key={item.to}
-                    to={item.to}
-                    className={
-                      active
-                        ? 'rounded-xl bg-gradient-to-r from-emerald-600 via-teal-500 to-sky-500 px-2 py-2 text-center text-[11px] font-medium text-white'
-                        : 'rounded-xl px-2 py-2 text-center text-[11px] text-slate-700 hover:bg-slate-100'
-                    }
-                  >
-                    <div className="mx-auto flex w-full flex-col items-center gap-1">
-                      <NavIcon name={item.icon} active={active} tone={active ? 'inverse' : undefined} />
-                      <div className="leading-none">{item.label}</div>
-                    </div>
-                  </Link>
-                )
-              })}
+              <Link
+                to={navItems[2].to}
+                className={
+                  navItems[2].match(location.pathname)
+                    ? 'rounded-xl bg-gradient-to-r from-emerald-600 via-teal-500 to-sky-500 px-2 py-2 text-center text-[11px] font-medium text-white'
+                    : 'rounded-xl px-2 py-2 text-center text-[11px] text-slate-700 hover:bg-slate-100'
+                }
+              >
+                <div className="mx-auto flex w-full flex-col items-center gap-1">
+                  <NavIcon
+                    name={navItems[2].icon}
+                    active={navItems[2].match(location.pathname)}
+                    tone={navItems[2].match(location.pathname) ? 'inverse' : undefined}
+                  />
+                  <div className="leading-none">{navItems[2].label}</div>
+                </div>
+              </Link>
+
+              <Link
+                to={navItems[1].to}
+                className={
+                  navItems[1].match(location.pathname)
+                    ? 'rounded-xl bg-gradient-to-r from-emerald-600 via-teal-500 to-sky-500 px-2 py-2 text-center text-[11px] font-medium text-white'
+                    : 'rounded-xl px-2 py-2 text-center text-[11px] text-slate-700 hover:bg-slate-100'
+                }
+              >
+                <div className="mx-auto flex w-full flex-col items-center gap-1">
+                  <NavIcon
+                    name={navItems[1].icon}
+                    active={navItems[1].match(location.pathname)}
+                    tone={navItems[1].match(location.pathname) ? 'inverse' : undefined}
+                  />
+                  <div className="leading-none">{navItems[1].label}</div>
+                </div>
+              </Link>
+
+              <button
+                onClick={() => setMoreOpen(true)}
+                type="button"
+                className={
+                  moreOpen || moreActive
+                    ? 'rounded-xl bg-gradient-to-r from-emerald-600 via-teal-500 to-sky-500 px-2 py-2 text-center text-[11px] font-medium text-white'
+                    : 'rounded-xl px-2 py-2 text-center text-[11px] text-slate-700 hover:bg-slate-100'
+                }
+                aria-label="More options"
+              >
+                <div className="mx-auto flex w-full flex-col items-center gap-1">
+                  <NavIcon name="more" active={moreOpen || moreActive} tone={moreOpen || moreActive ? 'inverse' : undefined} />
+                  <div className="leading-none">More</div>
+                </div>
+              </button>
             </div>
           </div>
         </nav>
+      ) : null}
+
+      {moreOpen ? (
+        <div className="fixed inset-0 z-50 md:hidden" role="dialog" aria-modal="true" aria-label="More options">
+          <button className="absolute inset-0 bg-black/40" onClick={() => setMoreOpen(false)} type="button" aria-label="Close" />
+          <div className="absolute bottom-0 left-0 right-0 rounded-t-2xl bg-white p-4 shadow-2xl">
+            <div className="text-sm font-semibold text-slate-900">More options</div>
+            <div className="mt-1 text-xs text-slate-600">Other pages and settings.</div>
+
+            <div className="mt-4 grid gap-2">
+              <Link
+                to="/medical-history"
+                onClick={() => setMoreOpen(false)}
+                className="flex items-center justify-between rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm hover:bg-slate-50"
+              >
+                <div className="flex items-center gap-3">
+                  <NavIcon name="medical" active={false} />
+                  <div>Medical</div>
+                </div>
+                <div className="text-slate-400">›</div>
+              </Link>
+
+              <Link
+                to="/settings"
+                onClick={() => setMoreOpen(false)}
+                className="flex items-center justify-between rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm hover:bg-slate-50"
+              >
+                <div className="flex items-center gap-3">
+                  <NavIcon name="settings" active={false} />
+                  <div>Settings</div>
+                </div>
+                <div className="text-slate-400">›</div>
+              </Link>
+
+              <Link
+                to="/profile"
+                onClick={() => setMoreOpen(false)}
+                className="flex items-center justify-between rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm hover:bg-slate-50"
+              >
+                <div className="flex items-center gap-3">
+                  <svg viewBox="0 0 24 24" className="h-5 w-5" aria-hidden="true">
+                    <path
+                      d="M20 21a8 8 0 0 0-16 0"
+                      fill="none"
+                      stroke="#64748b"
+                      strokeWidth="2.2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                    <path
+                      d="M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8z"
+                      fill="none"
+                      stroke="#64748b"
+                      strokeWidth="2.2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                  </svg>
+                  <div>Profile</div>
+                </div>
+                <div className="text-slate-400">›</div>
+              </Link>
+
+              <button
+                className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm hover:bg-slate-50"
+                onClick={() => setMoreOpen(false)}
+                type="button"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
       ) : null}
 
       {scanSourcePickerOpen ? (
