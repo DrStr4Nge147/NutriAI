@@ -7,7 +7,7 @@ export type ActivityLevel =
   | 'active'
   | 'very_active'
 
-export type Goal = 'maintain' | 'lose' | 'gain'
+export type Goal = 'maintain' | 'lose' | 'gain' | 'overall_health'
 
 export type MacroNutrients = {
   calories: number

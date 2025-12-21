@@ -206,6 +206,7 @@ export function ProfileRoute() {
               disabled={busy}
             >
               <option value="maintain">Maintain</option>
+              <option value="overall_health">Overall Health</option>
               <option value="lose">Lose weight</option>
               <option value="gain">Gain weight</option>
             </select>

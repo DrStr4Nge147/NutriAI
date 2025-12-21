@@ -45,4 +45,14 @@ describe('dailyNeeds', () => {
 
     expect(target).toMatchObject({ tdee: 2508, target: 2008, mode: 'goal' })
   })
+
+  it('treats overall health goal like maintain when no override is set', () => {
+    const target = dailyCalorieTarget({
+      body: { heightCm: 170, weightKg: 70, age: 30, sex: 'male', activityLevel: 'moderate' },
+      goal: 'overall_health',
+      targetCaloriesKcal: null,
+    })
+
+    expect(target).toMatchObject({ tdee: 2508, target: 2508, mode: 'tdee' })
+  })
 })

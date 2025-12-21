@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
+import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 import App from './App'
 import { AppProvider } from './state/AppContext'
@@ -126,6 +126,28 @@ describe('app flows', () => {
     expect(screen.getByText('Profiles')).toBeInTheDocument()
     expect(screen.getByText('Weight tracking')).toBeInTheDocument()
     expect(screen.getByRole('link', { name: 'Create new profile' })).toBeInTheDocument()
+  })
+
+  it('can set goal to Overall Health and persists', async () => {
+    await renderApp(['/'])
+    await completeOnboarding('Test')
+
+    fireEvent.click(screen.getByRole('link', { name: 'Profile' }))
+    await screen.findByText('Edit profile')
+
+    const goalSelect = screen.getByRole('combobox', { name: 'Goal' })
+    fireEvent.change(goalSelect, { target: { value: 'overall_health' } })
+
+    fireEvent.click(screen.getByRole('button', { name: 'Save profile' }))
+    await act(async () => {
+      await new Promise((r) => setTimeout(r, 25))
+    })
+
+    await waitFor(async () => {
+      const profiles = await listProfiles()
+      const profile = profiles.find((p) => p.name === 'Test')
+      expect(profile?.goal).toBe('overall_health')
+    })
   })
 
   it('onboarding creates a profile and lands on home', async () => {
