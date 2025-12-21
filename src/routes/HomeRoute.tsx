@@ -1,4 +1,4 @@
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { dailyCalorieTarget } from '../nutrition/dailyNeeds'
 import { buildHealthInsights, buildLifestyleInsights } from '../nutrition/health'
@@ -25,6 +25,9 @@ function mealLabelFromHour(hour: number) {
 
 export function HomeRoute() {
   const { currentProfile, meals } = useApp()
+
+  const [healthExpanded, setHealthExpanded] = useState(false)
+  const [lifestyleExpanded, setLifestyleExpanded] = useState(false)
 
   const todayMeals = useMemo(() => {
     const start = new Date()
@@ -78,8 +81,15 @@ export function HomeRoute() {
       meals,
       targetKcal: dailyNeeds?.target ?? null,
       days: 7,
-    })
+    }).filter((i) => i.id !== 'medical-files-on-record')
   }, [currentProfile, meals, dailyNeeds?.target])
+
+  const lifestylePreview = lifestyleInsights.slice(0, 3)
+  const lifestyleHasWarning = lifestylePreview.some((i) => i.severity === 'warning')
+  const lifestyleParagraph = lifestylePreview.map((i) => i.text).join(' ')
+
+  const lifestyleHasWarningAll = lifestyleInsights.some((i) => i.severity === 'warning')
+  const lifestyleParagraphAll = lifestyleInsights.map((i) => i.text).join(' ')
 
   const calorieProgress = useMemo(() => {
     const target = dailyNeeds?.target ?? null
@@ -260,11 +270,14 @@ export function HomeRoute() {
       </div>
 
       <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-        <div className="text-sm font-medium">Health Insights</div>
+        <div className="flex items-baseline justify-between gap-3">
+          <div className="text-sm font-medium">Health Insights</div>
+          <div className="text-xs text-slate-500">Today</div>
+        </div>
 
         {healthInsights.length > 0 ? (
           <div className="mt-3 space-y-2">
-            {healthInsights.slice(0, 3).map((i) => (
+            {healthInsights.slice(0, healthExpanded ? healthInsights.length : 3).map((i) => (
               <div
                 key={i.id}
                 className={
@@ -277,30 +290,44 @@ export function HomeRoute() {
               </div>
             ))}
             {healthInsights.length > 3 ? (
-              <div className="text-xs text-slate-600">+{healthInsights.length - 3} more insight(s)</div>
+              <button
+                type="button"
+                className="text-left text-xs text-slate-900 underline"
+                aria-expanded={healthExpanded}
+                onClick={() => setHealthExpanded((v) => !v)}
+              >
+                {healthExpanded ? 'Show less' : `Show ${healthInsights.length - 3} more`}
+              </button>
             ) : null}
           </div>
         ) : (
-          <div className="mt-3 text-sm text-slate-600">No insights yet. Log meals to see guidance.</div>
+          <div className="mt-3 text-sm text-slate-600">No insights yet for today. Log meals to see guidance.</div>
         )}
 
         {lifestyleInsights.length > 0 ? (
           <div className="mt-4 space-y-2">
-            <div className="text-xs font-semibold uppercase tracking-wide text-slate-600">Lifestyle</div>
-            {lifestyleInsights.slice(0, 3).map((i) => (
-              <div
-                key={i.id}
-                className={
-                  i.severity === 'warning'
-                    ? 'rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900'
-                    : 'rounded-md border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900'
-                }
-              >
-                {i.text}
-              </div>
-            ))}
+            <div className="flex items-baseline justify-between gap-3">
+              <div className="text-xs font-semibold uppercase tracking-wide text-slate-600">Lifestyle</div>
+              <div className="text-xs text-slate-500">Last 7 days</div>
+            </div>
+            <div
+              className={
+                (lifestyleExpanded ? lifestyleHasWarningAll : lifestyleHasWarning)
+                  ? 'rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900'
+                  : 'rounded-md border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900'
+              }
+            >
+              {lifestyleExpanded ? lifestyleParagraphAll : lifestyleParagraph}
+            </div>
             {lifestyleInsights.length > 3 ? (
-              <div className="text-xs text-slate-600">+{lifestyleInsights.length - 3} more insight(s)</div>
+              <button
+                type="button"
+                className="text-left text-xs text-slate-900 underline"
+                aria-expanded={lifestyleExpanded}
+                onClick={() => setLifestyleExpanded((v) => !v)}
+              >
+                {lifestyleExpanded ? 'Show less' : `Show ${lifestyleInsights.length - 3} more`}
+              </button>
             ) : null}
           </div>
         ) : null}
