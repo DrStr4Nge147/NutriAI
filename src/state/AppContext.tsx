@@ -12,6 +12,8 @@ import { emptyMacros, sumMacros } from '../nutrition/macros'
 import { estimateFromLocalFoods } from '../nutrition/localFoods'
 import {
   deleteMeal,
+  deleteMeals,
+  deleteMealsByProfile,
   deleteProfile as deleteProfileFromDb,
   listMealsByProfile,
   listProfiles,
@@ -36,6 +38,8 @@ type AppContextValue = {
   addPhotoMeal: (input: { photoDataUrl: string; eatenAt: string }) => Promise<Meal>
   updateMeal: (meal: Meal) => Promise<void>
   removeMeal: (mealId: string) => Promise<void>
+  removeMeals: (mealIds: string[]) => Promise<void>
+  removeAllMeals: () => Promise<void>
 }
 
 const AppContext = createContext<AppContextValue | null>(null)
@@ -206,6 +210,19 @@ export function AppProvider(props: { children: ReactNode }) {
     setMeals((prev) => prev.filter((m) => m.id !== mealId))
   }, [])
 
+  const removeMeals = useCallback(async (mealIds: string[]) => {
+    const ids = mealIds.filter(Boolean)
+    if (ids.length === 0) return
+    await deleteMeals(ids)
+    setMeals((prev) => prev.filter((m) => !ids.includes(m.id)))
+  }, [])
+
+  const removeAllMeals = useCallback(async () => {
+    if (!currentProfileId) return
+    await deleteMealsByProfile(currentProfileId)
+    setMeals([])
+  }, [currentProfileId])
+
   const currentProfile = useMemo(
     () => profiles.find((p) => p.id === currentProfileId) ?? null,
     [profiles, currentProfileId],
@@ -226,6 +243,8 @@ export function AppProvider(props: { children: ReactNode }) {
     addPhotoMeal,
     updateMeal,
     removeMeal,
+    removeMeals,
+    removeAllMeals,
   }
 
   return <AppContext.Provider value={value}>{props.children}</AppContext.Provider>

@@ -338,6 +338,62 @@ describe('app flows', () => {
     expect(screen.getAllByText((_, el) => el?.textContent === '130 kcal').length).toBeGreaterThan(0)
   })
 
+  it('can delete multiple meals and delete all from meal history', async () => {
+    await renderApp(['/'])
+    await completeOnboarding('Test')
+
+    async function createManualMeal(minuteOffset: number) {
+      fireEvent.click(within(screen.getByRole('navigation', { name: 'Primary' })).getByRole('link', { name: 'Manual Entry' }))
+      await screen.findByText('Add item')
+
+      const eatenAtInput = screen.getByLabelText('Eaten at') as HTMLInputElement
+      fireEvent.change(eatenAtInput, { target: { value: formatDatetimeLocalValue(new Date(Date.now() - minuteOffset * 60_000)) } })
+
+      fireEvent.change(screen.getByLabelText('Food'), { target: { value: 'White rice' } })
+      fireEvent.change(screen.getByLabelText('Grams'), { target: { value: '100' } })
+      fireEvent.click(screen.getByRole('button', { name: 'Add item (estimate)' }))
+      fireEvent.click(screen.getByRole('button', { name: 'Save meal' }))
+
+      await screen.findByText('Items consumed')
+      fireEvent.click(screen.getByRole('link', { name: 'Back' }))
+      await screen.findByText('All meals saved on this device.')
+    }
+
+    fireEvent.click(within(screen.getByRole('navigation', { name: 'Primary' })).getByRole('link', { name: 'Meal History' }))
+    await screen.findByText('All meals saved on this device.')
+
+    await createManualMeal(0)
+    await createManualMeal(1)
+    await createManualMeal(2)
+
+    fireEvent.click(screen.getByRole('button', { name: 'Select' }))
+    expect(screen.getByText('0 selected')).toBeInTheDocument()
+
+    const boxes = screen.getAllByRole('checkbox')
+    expect(boxes.length).toBeGreaterThanOrEqual(3)
+    fireEvent.click(boxes[0])
+    fireEvent.click(boxes[1])
+
+    expect(screen.getByText('2 selected')).toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Delete selected' }))
+    const confirm1 = await screen.findByRole('dialog')
+    fireEvent.click(within(confirm1).getByRole('button', { name: 'Delete' }))
+
+    await waitFor(() => {
+      expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+    })
+
+    await waitFor(() => {
+      expect(screen.getAllByRole('checkbox').length).toBe(1)
+    })
+
+    fireEvent.click(screen.getByRole('button', { name: 'Delete all' }))
+    const confirm2 = await screen.findByRole('dialog')
+    fireEvent.click(within(confirm2).getByRole('button', { name: 'Delete all' }))
+    await screen.findByText('No meals yet.')
+  })
+
   it('scan button lets user pick a photo and prefills eaten-at time', async () => {
     const prevFileReader = (globalThis as any).FileReader
 

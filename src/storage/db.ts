@@ -77,6 +77,29 @@ export async function deleteMeal(mealId: string): Promise<void> {
   await db.delete('meals', mealId)
 }
 
+export async function deleteMeals(mealIds: string[]): Promise<void> {
+  const ids = mealIds.filter(Boolean)
+  if (ids.length === 0) return
+  const db = await getDb()
+  const tx = db.transaction('meals', 'readwrite')
+  for (const id of ids) {
+    await tx.store.delete(id)
+  }
+  await tx.done
+}
+
+export async function deleteMealsByProfile(profileId: string): Promise<void> {
+  const db = await getDb()
+  const tx = db.transaction('meals', 'readwrite')
+  const idx = tx.store.index('by-profile')
+  let cursor = await idx.openCursor(profileId)
+  while (cursor) {
+    await cursor.delete()
+    cursor = await cursor.continue()
+  }
+  await tx.done
+}
+
 export async function clearAllData(): Promise<void> {
   const db = await getDb()
   await db.clear('meals')
