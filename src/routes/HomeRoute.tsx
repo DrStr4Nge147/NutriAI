@@ -1,7 +1,7 @@
 import { useMemo } from 'react'
 import { Link } from 'react-router-dom'
 import { dailyCalorieTarget } from '../nutrition/dailyNeeds'
-import { buildHealthInsights } from '../nutrition/health'
+import { buildHealthInsights, buildLifestyleInsights } from '../nutrition/health'
 import { sumMacroNutrients } from '../nutrition/macros'
 import { useApp } from '../state/AppContext'
 
@@ -69,6 +69,17 @@ export function HomeRoute() {
       targetKcal: dailyNeeds?.target ?? null,
     })
   }, [currentProfile, todaySummary.totals, dailyNeeds?.target])
+
+  const lifestyleInsights = useMemo(() => {
+    if (!currentProfile) return []
+    return buildLifestyleInsights({
+      body: currentProfile.body,
+      medical: currentProfile.medical,
+      meals,
+      targetKcal: dailyNeeds?.target ?? null,
+      days: 7,
+    })
+  }, [currentProfile, meals, dailyNeeds?.target])
 
   const calorieProgress = useMemo(() => {
     const target = dailyNeeds?.target ?? null
@@ -143,9 +154,6 @@ export function HomeRoute() {
         <div>
           <div className="text-sm text-slate-600">{greetingForHour(new Date().getHours())}</div>
           <div className="text-xl font-semibold">{currentProfile?.name ?? 'NutriAI'}</div>
-        </div>
-        <div className="h-10 w-10 rounded-full bg-emerald-100 text-emerald-800 flex items-center justify-center text-sm font-semibold">
-          {(currentProfile?.name?.trim()?.[0] ?? 'N').toUpperCase()}
         </div>
       </div>
 
@@ -252,7 +260,8 @@ export function HomeRoute() {
       </div>
 
       <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-        <div className="text-sm font-medium">Health</div>
+        <div className="text-sm font-medium">Health Insights</div>
+
         {healthInsights.length > 0 ? (
           <div className="mt-3 space-y-2">
             {healthInsights.slice(0, 3).map((i) => (
@@ -274,6 +283,27 @@ export function HomeRoute() {
         ) : (
           <div className="mt-3 text-sm text-slate-600">No insights yet. Log meals to see guidance.</div>
         )}
+
+        {lifestyleInsights.length > 0 ? (
+          <div className="mt-4 space-y-2">
+            <div className="text-xs font-semibold uppercase tracking-wide text-slate-600">Lifestyle</div>
+            {lifestyleInsights.slice(0, 3).map((i) => (
+              <div
+                key={i.id}
+                className={
+                  i.severity === 'warning'
+                    ? 'rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900'
+                    : 'rounded-md border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900'
+                }
+              >
+                {i.text}
+              </div>
+            ))}
+            {lifestyleInsights.length > 3 ? (
+              <div className="text-xs text-slate-600">+{lifestyleInsights.length - 3} more insight(s)</div>
+            ) : null}
+          </div>
+        ) : null}
       </div>
     </div>
   )

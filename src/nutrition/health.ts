@@ -1,4 +1,4 @@
-import type { BodyMetrics, MacroNutrients, MedicalInfo } from '../models/types'
+import type { BodyMetrics, MacroNutrients, Meal, MedicalInfo } from '../models/types'
 
 export type HealthInsight = {
   id: string
@@ -187,6 +187,161 @@ export function buildHealthInsights(input: {
         id: 'allergy-reminder',
         severity: 'info',
         text: `Allergies listed (${allergyTerms.join(', ')}). Double-check meal ingredients and labels.`,
+      })
+    }
+  }
+
+  return insights
+}
+
+function withinLastDays(iso: string, days: number): boolean {
+  const d = new Date(iso)
+  const t = d.getTime()
+  if (!Number.isFinite(t)) return false
+  const now = Date.now()
+  return t >= now - days * 24 * 60 * 60 * 1000
+}
+
+function hourFromIso(iso: string): number | null {
+  const d = new Date(iso)
+  const t = d.getTime()
+  if (!Number.isFinite(t)) return null
+  return d.getHours()
+}
+
+function clamp01(value: number) {
+  return Math.max(0, Math.min(1, value))
+}
+
+export function buildLifestyleInsights(input: {
+  body: BodyMetrics
+  medical: MedicalInfo
+  meals: Meal[]
+  targetKcal: number | null
+  days?: number
+}): HealthInsight[] {
+  const insights: HealthInsight[] = []
+
+  const days = input.days ?? 7
+  const recentMeals = input.meals.filter((m) => withinLastDays(m.eatenAt, days))
+
+  const daysWithMeals = new Set(
+    recentMeals
+      .map((m) => {
+        const d = new Date(m.eatenAt)
+        const t = d.getTime()
+        if (!Number.isFinite(t)) return null
+        return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+      })
+      .filter(Boolean) as string[],
+  )
+
+  const dayCount = daysWithMeals.size
+  if (dayCount <= 2) {
+    insights.push({
+      id: 'meal-logging-low',
+      severity: 'info',
+      text: `You’ve logged meals on ${dayCount} day(s) in the last ${days} days. More consistent logging helps generate better insights.`,
+    })
+  } else if (dayCount >= Math.max(4, Math.floor(days * 0.7))) {
+    insights.push({
+      id: 'meal-logging-consistent',
+      severity: 'info',
+      text: `Nice consistency: meals logged on ${dayCount} day(s) in the last ${days} days.`,
+    })
+  }
+
+  const lateMeals = recentMeals.filter((m) => {
+    const h = hourFromIso(m.eatenAt)
+    return h != null && (h >= 22 || h <= 4)
+  })
+  const lateRatio = recentMeals.length > 0 ? lateMeals.length / recentMeals.length : 0
+  if (recentMeals.length >= 4 && lateRatio >= 0.35) {
+    insights.push({
+      id: 'late-night-meals',
+      severity: 'info',
+      text: `Many meals were logged late at night (~${Math.round(clamp01(lateRatio) * 100)}%). If sleep or energy is an issue, consider earlier last-meal timing.`,
+    })
+  }
+
+  const totals = recentMeals.reduce(
+    (acc, m) => {
+      acc.calories += m.totalMacros.calories
+      acc.sodium_mg += m.totalMacros.sodium_mg ?? 0
+      acc.sugar_g += m.totalMacros.sugar_g ?? 0
+      return acc
+    },
+    { calories: 0, sodium_mg: 0, sugar_g: 0 },
+  )
+
+  const avgPerDay = {
+    calories: days > 0 ? totals.calories / days : 0,
+    sodium_mg: days > 0 ? totals.sodium_mg / days : 0,
+    sugar_g: days > 0 ? totals.sugar_g / days : 0,
+  }
+
+  if (input.targetKcal != null && Number.isFinite(input.targetKcal) && input.targetKcal > 0) {
+    const ratio = avgPerDay.calories / input.targetKcal
+    if (ratio >= 1.25) {
+      insights.push({
+        id: 'avg-calories-high',
+        severity: 'info',
+        text: `Your average logged intake is above your target (~${Math.round(avgPerDay.calories)} kcal/day vs ${Math.round(input.targetKcal)}).`,
+      })
+    } else if (avgPerDay.calories > 0 && ratio <= 0.6) {
+      insights.push({
+        id: 'avg-calories-low',
+        severity: 'info',
+        text: `Your average logged intake is well below your target (~${Math.round(avgPerDay.calories)} kcal/day vs ${Math.round(input.targetKcal)}).`,
+      })
+    }
+  }
+
+  const hasHypertension = hasAnyCondition(input.medical, ['hypertension', 'high blood pressure', 'high_bp', 'hbp'])
+  if (hasHypertension && avgPerDay.sodium_mg >= 2300) {
+    insights.push({
+      id: 'avg-sodium-high-hypertension',
+      severity: 'warning',
+      text: `With hypertension listed, average sodium looks high (~${Math.round(avgPerDay.sodium_mg)} mg/day across last ${days} days).`,
+    })
+  }
+
+  const hasDiabetes = hasAnyCondition(input.medical, ['diabetes', 'prediabetes', 'insulin resistance', 'insulin_resistance'])
+  const sugarThreshold = hasDiabetes ? 35 : 50
+  if (avgPerDay.sugar_g >= sugarThreshold) {
+    insights.push({
+      id: 'avg-sugar-high',
+      severity: hasDiabetes ? 'warning' : 'info',
+      text: `Average sugar looks high (~${Math.round(avgPerDay.sugar_g)} g/day across last ${days} days).`,
+    })
+  }
+
+  if (input.body.activityLevel === 'sedentary') {
+    insights.push({
+      id: 'activity-sedentary',
+      severity: 'info',
+      text: `Activity level is set to sedentary. Even short walks or light resistance training can improve energy and glucose control.`,
+    })
+  }
+
+  const medicalFilled =
+    (input.medical.conditions?.length ?? 0) > 0 ||
+    (input.medical.labs?.length ?? 0) > 0 ||
+    Boolean(input.medical.notes?.trim())
+
+  if (!medicalFilled) {
+    insights.push({
+      id: 'medical-history-missing',
+      severity: 'info',
+      text: 'Medical history is empty. Adding conditions, notes, or lab files can improve personalization.',
+    })
+  } else {
+    const labsCount = input.medical.labs?.length ?? 0
+    if (labsCount > 0) {
+      insights.push({
+        id: 'medical-files-on-record',
+        severity: 'info',
+        text: `Medical files on record: ${labsCount}. These can help personalize guidance.`,
       })
     }
   }

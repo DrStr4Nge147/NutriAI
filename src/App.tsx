@@ -11,6 +11,7 @@ import { MealEditRoute } from './routes/MealEditRoute'
 import { SettingsRoute } from './routes/SettingsRoute'
 import { CaptureMealRoute } from './routes/CaptureMealRoute'
 import { ProfileRoute } from './routes/ProfileRoute'
+import { MedicalHistoryRoute } from './routes/MedicalHistoryRoute'
 
 export default function App() {
   const { isHydrated, currentProfileId } = useApp()
@@ -119,6 +120,16 @@ export default function App() {
           element={
             currentProfileId ? (
               <ProfileRoute />
+            ) : (
+              <Navigate to="/onboarding" replace />
+            )
+          }
+        />
+        <Route
+          path="medical-history"
+          element={
+            currentProfileId ? (
+              <MedicalHistoryRoute />
             ) : (
               <Navigate to="/onboarding" replace />
             )

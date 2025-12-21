@@ -5,7 +5,7 @@ import { readFileAsDataUrl } from '../utils/files'
 import { useMealPhotoAnalysis } from '../state/MealPhotoAnalysisContext'
 import { useApp } from '../state/AppContext'
 
-function NavIcon(props: { name: 'home' | 'scan' | 'manual' | 'history' | 'settings'; active: boolean; tone?: 'inverse' }) {
+function NavIcon(props: { name: 'home' | 'scan' | 'manual' | 'history' | 'medical' | 'settings'; active: boolean; tone?: 'inverse' }) {
   const stroke = props.tone === 'inverse' ? '#ffffff' : props.active ? '#047857' : '#64748b'
   const common = { stroke, strokeWidth: 2.2, fill: 'none', strokeLinecap: 'round' as const, strokeLinejoin: 'round' as const }
 
@@ -45,6 +45,17 @@ function NavIcon(props: { name: 'home' | 'scan' | 'manual' | 'history' | 'settin
         <path {...common} d="M7 16h10" />
         <path {...common} d="M5 4v16" />
         <path {...common} d="M19 4v16" />
+      </svg>
+    )
+  }
+
+  if (props.name === 'medical') {
+    return (
+      <svg viewBox="0 0 24 24" className="h-5 w-5" aria-hidden="true">
+        <path {...common} d="M12 2v20" />
+        <path {...common} d="M2 12h20" />
+        <path {...common} d="M7 5h10" />
+        <path {...common} d="M7 19h10" />
       </svg>
     )
   }
@@ -154,7 +165,8 @@ export function MobileShell(props: { title: string; children: ReactNode }) {
     { to: '/', label: 'Dashboard', icon: 'home', match: (p) => p === '/' },
     { to: '/meals', label: 'Meal History', icon: 'history', match: (p) => p.startsWith('/meals') },
     { to: '/manual', label: 'Manual Entry', icon: 'manual', match: (p) => p.startsWith('/manual') },
-    { to: '/settings', label: 'Settings', icon: 'settings', match: (p) => p.startsWith('/settings') || p.startsWith('/profile') },
+    { to: '/medical-history', label: 'Medical', icon: 'medical', match: (p) => p.startsWith('/medical-history') },
+    { to: '/settings', label: 'Settings', icon: 'settings', match: (p) => p.startsWith('/settings') },
   ]
 
   const bottomNavItems: Array<{ to: string; label: string; icon: Parameters<typeof NavIcon>[0]['name']; match: (path: string) => boolean }> = [
@@ -163,6 +175,7 @@ export function MobileShell(props: { title: string; children: ReactNode }) {
     { to: '/capture', label: 'Scan', icon: 'scan', match: (p) => p.startsWith('/capture') },
     navItems[2],
     navItems[3],
+    navItems[4],
   ]
 
   const hideBottomNav = location.pathname.startsWith('/capture')
@@ -264,6 +277,33 @@ export function MobileShell(props: { title: string; children: ReactNode }) {
           </aside>
 
           <div className="min-w-0">
+            <div className="mb-3 flex items-center justify-end">
+              <Link
+                to="/profile"
+                aria-label="Profile"
+                className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 bg-white shadow-sm hover:bg-slate-50"
+              >
+                <svg viewBox="0 0 24 24" className="h-5 w-5" aria-hidden="true">
+                  <path
+                    d="M20 21a8 8 0 0 0-16 0"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2.2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                  <path
+                    d="M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8z"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2.2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </svg>
+              </Link>
+            </div>
+
             {!isOnline ? (
               <div
                 className="mb-3 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900"
@@ -309,7 +349,7 @@ export function MobileShell(props: { title: string; children: ReactNode }) {
           style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
         >
           <div className="relative mx-auto max-w-md px-2 py-2">
-            <div className="grid grid-cols-5 gap-1">
+            <div className="grid grid-cols-6 gap-1">
               {bottomNavItems.map((item) => {
                 const active = item.match(location.pathname)
 

@@ -78,6 +78,9 @@ function parseProfile(value: unknown): UserProfile {
   if (!v.medical) throw new Error('Invalid profile')
   if (!Array.isArray(v.medical.conditions)) throw new Error('Invalid profile')
 
+  const notes = (v.medical as any).notes
+  if (typeof notes !== 'undefined' && typeof notes !== 'string') throw new Error('Invalid profile')
+
   const labs = (v.medical as any).labs
   if (typeof labs !== 'undefined') {
     if (!Array.isArray(labs)) throw new Error('Invalid profile')

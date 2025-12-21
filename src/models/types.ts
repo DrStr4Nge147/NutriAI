@@ -37,6 +37,7 @@ export type MedicalLabUpload = {
 export type MedicalInfo = {
   conditions: string[]
   labs?: MedicalLabUpload[]
+  notes?: string
 }
 
 export type WeightEntry = {

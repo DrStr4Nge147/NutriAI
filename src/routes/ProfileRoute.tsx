@@ -68,8 +68,8 @@ export function ProfileRoute() {
           activityLevel,
         },
         medical: {
+          ...currentProfile.medical,
           conditions: parsedConditions,
-          labs: currentProfile.medical.labs,
         },
         goal,
         targetCaloriesKcal:

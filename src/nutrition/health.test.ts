@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { buildHealthInsights } from './health'
+import { buildHealthInsights, buildLifestyleInsights } from './health'
 
 describe('health', () => {
   it('warns on underweight BMI', () => {
@@ -79,5 +79,68 @@ describe('health', () => {
     })
 
     expect(insights.some((i) => i.id === 'allergy-match' && i.severity === 'warning')).toBe(true)
+  })
+
+  it('adds a lifestyle insight when meal logging is sparse', () => {
+    const now = new Date()
+    const meals = [
+      {
+        id: 'm1',
+        profileId: 'p1',
+        name: 'Meal 1',
+        createdAt: now.toISOString(),
+        eatenAt: now.toISOString(),
+        items: [],
+        totalMacros: { calories: 500, carbs_g: 0, protein_g: 0, fat_g: 0 },
+      },
+    ]
+
+    const insights = buildLifestyleInsights({
+      body: { heightCm: 170, weightKg: 70, age: 30, sex: 'male', activityLevel: 'moderate' },
+      medical: { conditions: [] },
+      meals: meals as any,
+      targetKcal: 2000,
+      days: 7,
+    })
+
+    expect(insights.some((i) => i.id === 'meal-logging-low')).toBe(true)
+  })
+
+  it('warns on high average sodium when hypertension is listed (lifestyle)', () => {
+    const now = Date.now()
+    const meals = Array.from({ length: 7 }, (_, idx) => {
+      const d = new Date(now - idx * 24 * 60 * 60 * 1000)
+      return {
+        id: `m${idx}`,
+        profileId: 'p1',
+        name: `Meal ${idx}`,
+        createdAt: d.toISOString(),
+        eatenAt: d.toISOString(),
+        items: [],
+        totalMacros: { calories: 500, carbs_g: 0, protein_g: 0, fat_g: 0, sodium_mg: 4000, sugar_g: 0 },
+      }
+    })
+
+    const insights = buildLifestyleInsights({
+      body: { heightCm: 170, weightKg: 70, age: 30, sex: 'male', activityLevel: 'moderate' },
+      medical: { conditions: ['Hypertension'] },
+      meals: meals as any,
+      targetKcal: 2000,
+      days: 7,
+    })
+
+    expect(insights.some((i) => i.id === 'avg-sodium-high-hypertension' && i.severity === 'warning')).toBe(true)
+  })
+
+  it('encourages filling medical history when empty (lifestyle)', () => {
+    const insights = buildLifestyleInsights({
+      body: { heightCm: 170, weightKg: 70, age: 30, sex: 'male', activityLevel: 'moderate' },
+      medical: { conditions: [] },
+      meals: [],
+      targetKcal: null,
+      days: 7,
+    })
+
+    expect(insights.some((i) => i.id === 'medical-history-missing')).toBe(true)
   })
 })

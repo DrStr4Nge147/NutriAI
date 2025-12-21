@@ -5,7 +5,7 @@ import App from './App'
 import { AppProvider } from './state/AppContext'
 import { MealPhotoAnalysisProvider } from './state/MealPhotoAnalysisContext'
 import { UiFeedbackProvider } from './state/UiFeedbackContext'
-import { clearAllData } from './storage/db'
+import { clearAllData, listProfiles } from './storage/db'
 
 function formatDatetimeLocalValue(date: Date) {
   const tzOffsetMs = date.getTimezoneOffset() * 60_000
@@ -63,6 +63,53 @@ describe('app flows', () => {
   beforeEach(async () => {
     localStorage.clear()
     await clearAllData()
+  })
+
+  it('can edit medical history, upload a file, and persists to storage', async () => {
+    const prevFileReader = (globalThis as any).FileReader
+
+    class FileReaderStub {
+      result: string | ArrayBuffer | null = null
+      onload: null | (() => void) = null
+      onerror: null | (() => void) = null
+
+      readAsDataURL() {
+        this.result = 'data:application/pdf;base64,AAA'
+        this.onload?.()
+      }
+    }
+
+    ;(globalThis as any).FileReader = FileReaderStub
+
+    try {
+      await renderApp(['/'])
+      await completeOnboarding('Test')
+
+      fireEvent.click(within(screen.getByRole('navigation', { name: 'Primary' })).getByRole('link', { name: 'Medical' }))
+      await screen.findByText('Medical History')
+
+      fireEvent.change(screen.getByPlaceholderText('Medications, allergies, surgeries, family history, symptoms, etc.'), {
+        target: { value: 'Allergy: penicillin' },
+      })
+
+      const uploadInput = screen.getByLabelText('Upload medical files') as HTMLInputElement
+      const file = new File(['x'], 'lab.pdf', { type: 'application/pdf' })
+      fireEvent.change(uploadInput, { target: { files: [file] } })
+      await screen.findByText('lab.pdf')
+
+      fireEvent.click(screen.getByRole('button', { name: 'Save medical history' }))
+      await screen.findByRole('button', { name: 'Export data' })
+
+      const profiles = await listProfiles()
+      const profile = profiles.find((p) => p.name === 'Test')
+      expect(profile).toBeTruthy()
+      expect(profile?.medical.notes).toBe('Allergy: penicillin')
+      expect(profile?.medical.labs?.length).toBe(1)
+      expect(profile?.medical.labs?.[0]?.name).toBe('lab.pdf')
+      expect(profile?.medical.labs?.[0]?.dataUrl).toMatch(/^data:application\/pdf;base64,/)
+    } finally {
+      ;(globalThis as any).FileReader = prevFileReader
+    }
   })
 
   it('onboarding creates a profile and lands on home', async () => {
