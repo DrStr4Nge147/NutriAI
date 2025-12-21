@@ -112,6 +112,22 @@ describe('app flows', () => {
     }
   })
 
+  it('keeps profile management and weight tracking on profile page, not in settings', async () => {
+    await renderApp(['/'])
+    await completeOnboarding('Test')
+
+    fireEvent.click(within(screen.getByRole('navigation', { name: 'Primary' })).getByRole('link', { name: 'Settings' }))
+    await screen.findByRole('button', { name: 'Export data' })
+    expect(screen.queryByText('Profiles')).not.toBeInTheDocument()
+    expect(screen.queryByText('Weight tracking')).not.toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole('link', { name: 'Profile' }))
+    await screen.findByText('Edit profile')
+    expect(screen.getByText('Profiles')).toBeInTheDocument()
+    expect(screen.getByText('Weight tracking')).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: 'Create new profile' })).toBeInTheDocument()
+  })
+
   it('onboarding creates a profile and lands on home', async () => {
     await renderApp(['/'])
     await completeOnboarding('Nick')

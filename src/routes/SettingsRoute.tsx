@@ -1,7 +1,5 @@
 import { useState } from 'react'
-import { Link } from 'react-router-dom'
 import { getAiSettings, setAiSettings } from '../ai/settings'
-import { WeightTracker } from '../components/WeightTracker'
 import {
   getReminderSettings,
   refreshReminderScheduler,
@@ -14,7 +12,7 @@ import { useApp } from '../state/AppContext'
 import { useUiFeedback } from '../state/UiFeedbackContext'
 
 export function SettingsRoute() {
-  const { refresh, profiles, currentProfile, currentProfileId, selectProfile, saveProfile, deleteProfile } = useApp()
+  const { refresh } = useApp()
   const { toast, confirm } = useUiFeedback()
   const [busy, setBusy] = useState(false)
   const [aiSettings, setAiSettingsState] = useState(() => getAiSettings())
@@ -317,92 +315,7 @@ export function SettingsRoute() {
       </div>
 
       <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm space-y-3">
-        <div className="text-sm font-medium">Profiles</div>
-        <div className="space-y-2">
-          {profiles.map((p) => (
-            <div
-              key={p.id}
-              className="flex items-center justify-between rounded-xl border border-slate-200 px-3 py-2"
-            >
-              <div>
-                <div className="text-sm font-medium">
-                  {p.name}{' '}
-                  {p.id === currentProfileId ? (
-                    <span className="text-xs font-normal text-slate-600">(current)</span>
-                  ) : null}
-                </div>
-                <div className="text-xs text-slate-600">
-                  {p.body.heightCm}cm · {p.body.weightKg}kg · {p.body.age}y
-                </div>
-              </div>
-
-              <div className="flex gap-2">
-                {p.id !== currentProfileId ? (
-                  <button
-                    className="rounded-xl border border-slate-300 bg-white px-3 py-1 text-xs hover:bg-slate-50"
-                    onClick={() => void (async () => {
-                      await selectProfile(p.id)
-                      toast({ kind: 'success', message: `Switched to ${p.name}` })
-                    })()}
-                    disabled={busy}
-                    type="button"
-                  >
-                    Switch
-                  </button>
-                ) : null}
-                <button
-                  className="rounded-xl border border-red-300 bg-white px-3 py-1 text-xs text-red-700 disabled:opacity-50"
-                  onClick={() => {
-                    void (async () => {
-                      const ok = await confirm({
-                        title: 'Delete profile',
-                        message: `Delete profile "${p.name}"? This deletes its meals.`,
-                        confirmText: 'Delete',
-                        cancelText: 'Cancel',
-                        destructive: true,
-                      })
-                      if (!ok) return
-
-                      setBusy(true)
-                      try {
-                        await deleteProfile(p.id)
-                        toast({ kind: 'success', message: 'Profile deleted' })
-                      } catch (e) {
-                        toast({ kind: 'error', message: e instanceof Error ? e.message : 'Failed to delete profile' })
-                      } finally {
-                        setBusy(false)
-                      }
-                    })()
-                  }}
-                  disabled={busy}
-                  type="button"
-                >
-                  Delete
-                </button>
-              </div>
-            </div>
-          ))}
-        </div>
-
-        <Link
-          to="/onboarding"
-          className="inline-block rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm hover:bg-slate-50"
-        >
-          Create new profile
-        </Link>
-
-        {currentProfile ? (
-          <Link
-            to="/profile"
-            className="inline-block rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm hover:bg-slate-50"
-          >
-            Edit current profile
-          </Link>
-        ) : null}
-
-        {currentProfile ? <WeightTracker profile={currentProfile} onSaveProfile={saveProfile} /> : null}
-
-        <hr className="my-2 border-slate-200" />
+        <div className="text-sm font-medium">Data</div>
 
         <button
           className="w-full rounded-xl bg-gradient-to-r from-emerald-600 via-teal-500 to-sky-500 px-3 py-2 text-sm font-medium text-white transition hover:brightness-110 active:brightness-95 disabled:opacity-50"

@@ -1,12 +1,12 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { ProfileManager } from '../components/ProfileManager'
+import { WeightTracker } from '../components/WeightTracker'
 import type { ActivityLevel, Goal, Sex } from '../models/types'
 import { useApp } from '../state/AppContext'
 import { useUiFeedback } from '../state/UiFeedbackContext'
 import { clampNumber, safeNumber } from '../utils/numbers'
 
 export function ProfileRoute() {
-  const navigate = useNavigate()
   const { currentProfile, saveProfile } = useApp()
   const { toast } = useUiFeedback()
 
@@ -78,7 +78,6 @@ export function ProfileRoute() {
 
       await saveProfile(nextProfile)
       toast({ kind: 'success', message: 'Profile saved' })
-      navigate('/settings')
     } catch (e) {
       const msg = e instanceof Error ? e.message : 'Failed to save'
       setError(msg)
@@ -91,16 +90,18 @@ export function ProfileRoute() {
   if (!currentProfile) {
     return (
       <div className="space-y-4">
+        <ProfileManager />
         <div className="rounded-lg bg-white p-4 shadow-sm text-sm text-slate-600">No profile selected.</div>
-        <Link to="/settings" className="inline-block text-sm text-slate-900 underline">
-          Back to settings
-        </Link>
       </div>
     )
   }
 
   return (
     <div className="space-y-4">
+      <ProfileManager />
+
+      <WeightTracker profile={currentProfile} onSaveProfile={saveProfile} />
+
       <div className="rounded-lg bg-white p-4 shadow-sm">
         <div className="text-base font-semibold">Edit profile</div>
         <div className="mt-1 text-sm text-slate-600">Update details used for daily needs and health insights.</div>
@@ -231,10 +232,6 @@ export function ProfileRoute() {
         >
           Save profile
         </button>
-
-        <Link to="/settings" className="inline-block text-sm text-slate-900 underline">
-          Cancel
-        </Link>
 
         {error ? (
           <div className="text-sm text-red-600" role="alert" aria-live="assertive">
