@@ -94,6 +94,18 @@ function parseProfile(value: unknown): UserProfile {
     }
   }
 
+  const filesSummary = (v.medical as any).filesSummary
+  if (typeof filesSummary !== 'undefined') {
+    if (!filesSummary || typeof filesSummary !== 'object') throw new Error('Invalid profile')
+    if (typeof (filesSummary as any).provider !== 'string') throw new Error('Invalid profile')
+    if (typeof (filesSummary as any).analyzedAt !== 'string') throw new Error('Invalid profile')
+    if (typeof (filesSummary as any).inputSignature !== 'string') throw new Error('Invalid profile')
+    if (typeof (filesSummary as any).summary !== 'string') throw new Error('Invalid profile')
+    if (typeof (filesSummary as any).rawText !== 'undefined' && typeof (filesSummary as any).rawText !== 'string') {
+      throw new Error('Invalid profile')
+    }
+  }
+
   if (typeof (v as any).weightHistory !== 'undefined') {
     const wh = (v as any).weightHistory
     if (!Array.isArray(wh)) throw new Error('Invalid profile')

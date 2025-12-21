@@ -34,10 +34,19 @@ export type MedicalLabUpload = {
   dataUrl: string
 }
 
+export type MedicalFilesAiSummary = {
+  provider: AiProvider
+  analyzedAt: string
+  inputSignature: string
+  summary: string
+  rawText?: string
+}
+
 export type MedicalInfo = {
   conditions: string[]
   labs?: MedicalLabUpload[]
   notes?: string
+  filesSummary?: MedicalFilesAiSummary
 }
 
 export type WeightEntry = {

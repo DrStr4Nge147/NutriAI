@@ -112,6 +112,107 @@ describe('app flows', () => {
     }
   })
 
+  it('can preview and analyze uploaded medical files, and marks summary stale when files change', async () => {
+    const prevFileReader = (globalThis as any).FileReader
+    const prevFetch = (globalThis as any).fetch
+
+    class FileReaderStub {
+      result: string | ArrayBuffer | null = null
+      onload: null | (() => void) = null
+      onerror: null | (() => void) = null
+
+      readAsDataURL() {
+        this.result = 'data:image/png;base64,AAA'
+        this.onload?.()
+      }
+    }
+
+    ;(globalThis as any).FileReader = FileReaderStub
+
+    ;(globalThis as any).fetch = vi.fn(async () => {
+      return {
+        ok: true,
+        status: 200,
+        statusText: 'OK',
+        json: async () => ({
+          candidates: [
+            {
+              content: {
+                parts: [{ text: JSON.stringify({ summary: 'Summary: all good.' }) }],
+              },
+            },
+          ],
+        }),
+        text: async () => '',
+      }
+    })
+
+    localStorage.setItem(
+      'ai-nutritionist.aiSettings',
+      JSON.stringify({
+        provider: 'gemini',
+        gemini: { apiKey: 'x', model: 'gemini-2.0-flash', consentToSendData: true },
+        ollama: { baseUrl: 'http://localhost:11434', model: 'qwen3-vl:8b' },
+      }),
+    )
+
+    try {
+      await renderApp(['/'])
+      await completeOnboarding('Test')
+
+      fireEvent.click(within(screen.getByRole('navigation', { name: 'Primary' })).getByRole('link', { name: 'Medical' }))
+      await screen.findByText('Medical History')
+
+      const uploadInput = screen.getByLabelText('Upload medical files') as HTMLInputElement
+      const file = new File(['x'], 'lab.png', { type: 'image/png' })
+      fireEvent.change(uploadInput, { target: { files: [file] } })
+      await screen.findByText('lab.png')
+
+      fireEvent.click(screen.getByRole('button', { name: 'View' }))
+      await screen.findByRole('dialog', { name: 'File preview' })
+      expect(screen.getByRole('button', { name: 'Zoom in' })).toBeInTheDocument()
+
+      fireEvent.click(screen.getByRole('button', { name: 'Zoom in' }))
+      const wheelBox = screen.getByTestId('file-preview-wheel')
+      fireEvent.wheel(wheelBox, { ctrlKey: true, deltaY: -100 })
+      fireEvent.wheel(wheelBox, { ctrlKey: true, deltaY: 100 })
+
+      const viewport = screen.getByTestId('file-preview-viewport')
+      fireEvent.pointerDown(viewport, { pointerId: 1, clientX: 10, clientY: 10 })
+      fireEvent.pointerMove(viewport, { pointerId: 1, clientX: 30, clientY: 30 })
+      fireEvent.pointerUp(viewport, { pointerId: 1, clientX: 30, clientY: 30 })
+
+      fireEvent.click(screen.getByRole('button', { name: 'Close' }))
+      await waitFor(() => {
+        expect(screen.queryByRole('dialog', { name: 'File preview' })).not.toBeInTheDocument()
+      })
+
+      fireEvent.click(screen.getByRole('button', { name: 'Analyze' }))
+      await screen.findByText('Summary: all good.')
+      expect(screen.queryByText(/Out of date/i)).not.toBeInTheDocument()
+
+      fireEvent.click(screen.getByRole('button', { name: 'Save medical history' }))
+      await screen.findByRole('button', { name: 'Export data' })
+
+      const profiles = await listProfiles()
+      const profile = profiles.find((p) => p.name === 'Test')
+      expect(profile?.medical.filesSummary?.summary).toBe('Summary: all good.')
+
+      fireEvent.click(within(screen.getByRole('navigation', { name: 'Primary' })).getByRole('link', { name: 'Medical' }))
+      await screen.findByText('Medical History')
+
+      const uploadInput2 = screen.getByLabelText('Upload medical files') as HTMLInputElement
+      const file2 = new File(['x'], 'lab2.png', { type: 'image/png' })
+      fireEvent.change(uploadInput2, { target: { files: [file2] } })
+      await screen.findByText('lab2.png')
+
+      expect(screen.getByText(/Out of date/i)).toBeInTheDocument()
+    } finally {
+      ;(globalThis as any).FileReader = prevFileReader
+      ;(globalThis as any).fetch = prevFetch
+    }
+  })
+
   it('keeps profile management and weight tracking on profile page, not in settings', async () => {
     await renderApp(['/'])
     await completeOnboarding('Test')

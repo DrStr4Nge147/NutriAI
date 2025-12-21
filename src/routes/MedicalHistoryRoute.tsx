@@ -1,8 +1,11 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import type { MedicalLabUpload } from '../models/types'
+import { analyzeMedicalFiles } from '../ai/analyzeMedicalFiles'
+import { FilePreviewModal } from '../components/FilePreviewModal'
+import type { MedicalFilesAiSummary, MedicalLabUpload } from '../models/types'
 import { useApp } from '../state/AppContext'
 import { useUiFeedback } from '../state/UiFeedbackContext'
+import { computeMedicalFilesSignature } from '../utils/medicalFiles'
 import { readFileAsDataUrl } from '../utils/files'
 import { newId } from '../utils/id'
 
@@ -19,6 +22,12 @@ export function MedicalHistoryRoute() {
   const [uploads, setUploads] = useState<MedicalLabUpload[]>([])
   const [uploadError, setUploadError] = useState<string | null>(null)
 
+  const [previewOpen, setPreviewOpen] = useState(false)
+  const [previewFile, setPreviewFile] = useState<MedicalLabUpload | null>(null)
+
+  const [analyzeBusy, setAnalyzeBusy] = useState(false)
+  const [filesSummary, setFilesSummary] = useState<MedicalFilesAiSummary | null>(null)
+
   useEffect(() => {
     setError(null)
 
@@ -27,6 +36,7 @@ export function MedicalHistoryRoute() {
     setConditionsText((currentProfile.medical.conditions ?? []).join(', '))
     setNotes(currentProfile.medical.notes ?? '')
     setUploads(currentProfile.medical.labs ?? [])
+    setFilesSummary(currentProfile.medical.filesSummary ?? null)
   }, [currentProfile?.id])
 
   const parsedConditions = useMemo(() => {
@@ -35,6 +45,17 @@ export function MedicalHistoryRoute() {
       .map((s) => s.trim())
       .filter(Boolean)
   }, [conditionsText])
+
+  const filesSignature = useMemo(() => {
+    if (uploads.length === 0) return null
+    return computeMedicalFilesSignature(uploads)
+  }, [uploads])
+
+  const summaryIsStale = useMemo(() => {
+    if (!filesSignature) return false
+    if (!filesSummary?.inputSignature) return false
+    return filesSignature !== filesSummary.inputSignature
+  }, [filesSignature, filesSummary?.inputSignature])
 
   async function onAddUploads(files: FileList | null) {
     setUploadError(null)
@@ -53,10 +74,26 @@ export function MedicalHistoryRoute() {
           dataUrl,
         })
       }
-
       setUploads((prev) => [...prev, ...next])
     } catch (e) {
       setUploadError(e instanceof Error ? e.message : 'Failed to read file')
+    }
+  }
+
+  async function onAnalyzeFiles() {
+    setError(null)
+    if (!uploads.length) return
+
+    setAnalyzeBusy(true)
+    try {
+      const result = await analyzeMedicalFiles({ files: uploads })
+      setFilesSummary(result)
+      toast({ kind: 'success', message: 'Medical files summarized. Remember to save medical history.' })
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : 'Failed to analyze medical files'
+      toast({ kind: 'error', message: msg })
+    } finally {
+      setAnalyzeBusy(false)
     }
   }
 
@@ -74,8 +111,9 @@ export function MedicalHistoryRoute() {
         medical: {
           ...currentProfile.medical,
           conditions: parsedConditions,
-          labs: uploads,
+          labs: uploads.length > 0 ? uploads : undefined,
           notes: trimmedNotes ? trimmedNotes : undefined,
+          filesSummary: uploads.length > 0 ? (filesSummary ?? undefined) : undefined,
         },
       }
 
@@ -166,14 +204,16 @@ export function MedicalHistoryRoute() {
                   <div className="text-[11px] text-slate-600">{new Date(u.uploadedAt).toLocaleString()}</div>
                 </div>
                 <div className="flex shrink-0 items-center gap-2">
-                  <a
+                  <button
                     className="rounded-lg border border-slate-300 bg-white px-2 py-1 text-xs hover:bg-slate-50"
-                    href={u.dataUrl}
-                    target="_blank"
-                    rel="noreferrer"
+                    onClick={() => {
+                      setPreviewFile(u)
+                      setPreviewOpen(true)
+                    }}
+                    type="button"
                   >
                     View
-                  </a>
+                  </button>
                   <button
                     className="rounded-lg border border-slate-300 bg-white px-2 py-1 text-xs hover:bg-slate-50"
                     onClick={() => setUploads((prev) => prev.filter((x) => x.id !== u.id))}
@@ -185,6 +225,34 @@ export function MedicalHistoryRoute() {
                 </div>
               </div>
             ))}
+
+            <div className="mt-2 rounded-xl border border-slate-200 bg-white p-3">
+              <div className="flex items-center justify-between gap-3">
+                <div className="min-w-0">
+                  <div className="text-xs font-semibold text-slate-900">Medical files summary</div>
+                  {filesSummary ? (
+                    <div className="mt-1 text-[11px] text-slate-600">
+                      Last analyzed: {new Date(filesSummary.analyzedAt).toLocaleString()}
+                      {summaryIsStale ? ' • Out of date' : ''}
+                    </div>
+                  ) : (
+                    <div className="mt-1 text-[11px] text-slate-600">Not analyzed yet.</div>
+                  )}
+                </div>
+                <button
+                  className="shrink-0 rounded-xl bg-slate-900 px-3 py-2 text-xs font-medium text-white hover:bg-slate-800 disabled:opacity-50"
+                  onClick={() => void onAnalyzeFiles()}
+                  type="button"
+                  disabled={busy || analyzeBusy}
+                >
+                  {analyzeBusy ? 'Analyzing…' : filesSummary ? 'Analyze again' : 'Analyze'}
+                </button>
+              </div>
+
+              {filesSummary ? (
+                <div className="mt-2 whitespace-pre-wrap text-sm text-slate-800">{filesSummary.summary}</div>
+              ) : null}
+            </div>
           </div>
         ) : (
           <div className="mt-3 text-sm text-slate-600">No files uploaded yet.</div>
@@ -211,6 +279,15 @@ export function MedicalHistoryRoute() {
           </div>
         ) : null}
       </div>
+
+      <FilePreviewModal
+        open={previewOpen}
+        file={previewFile ? { name: previewFile.name, mimeType: previewFile.mimeType, dataUrl: previewFile.dataUrl } : null}
+        onClose={() => {
+          setPreviewOpen(false)
+          setPreviewFile(null)
+        }}
+      />
     </div>
   )
 }
