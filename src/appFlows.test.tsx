@@ -121,7 +121,7 @@ describe('app flows', () => {
       await renderApp(['/'])
       await completeOnboarding('Test')
 
-      fireEvent.click(within(screen.getByRole('navigation', { name: 'Primary' })).getByRole('link', { name: 'Meal Plan' }))
+      fireEvent.click(within(screen.getByRole('navigation', { name: 'Primary' })).getByRole('link', { name: 'AI Meal plan' }))
       await screen.findByRole('button', { name: 'Generate a Meal Plan' })
 
       fireEvent.change(screen.getByRole('combobox', { name: /meal type/i }), { target: { value: 'lunch' } })
@@ -237,7 +237,7 @@ describe('app flows', () => {
       fireEvent.click(screen.getByRole('button', { name: 'Save medical history' }))
       await screen.findByRole('button', { name: 'Export data' })
 
-      fireEvent.click(within(screen.getByRole('navigation', { name: 'Primary' })).getByRole('link', { name: 'Meal Plan' }))
+      fireEvent.click(within(screen.getByRole('navigation', { name: 'Primary' })).getByRole('link', { name: 'AI Meal plan' }))
       await screen.findByRole('button', { name: 'Generate a Meal Plan' })
       fireEvent.click(screen.getByRole('button', { name: 'Generate a Meal Plan' }))
 

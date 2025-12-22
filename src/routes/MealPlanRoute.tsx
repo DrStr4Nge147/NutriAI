@@ -261,7 +261,7 @@ export function MealPlanRoute() {
                 strokeLinejoin="round"
               />
             </svg>
-            <div className="text-base font-semibold">Meal Plan</div>
+            <div className="text-base font-semibold">AI Meal plan</div>
           </div>
           <div className="mt-1 text-sm text-slate-600 dark:text-slate-300">Generate a simple Filipino-style meal that’s easy to cook and easy to shop for.</div>
         </div>

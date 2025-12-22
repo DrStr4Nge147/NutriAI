@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { getAiSettings, setAiSettings } from '../ai/settings'
 import { getUiTheme, saveAndApplyUiTheme, type UiTheme } from '../ui/theme'
@@ -10,6 +10,7 @@ import {
 } from '../notifications/reminders'
 import { exportAllData, importAllData } from '../storage/exportImport'
 import { clearAllData } from '../storage/db'
+import { GeminiTutorialModal } from '../components/GeminiTutorialModal'
 import { useApp } from '../state/AppContext'
 import { useUiFeedback } from '../state/UiFeedbackContext'
 
@@ -20,6 +21,7 @@ export function SettingsRoute() {
   const [busy, setBusy] = useState(false)
   const [uiTheme, setUiThemeState] = useState<UiTheme>(() => getUiTheme())
   const [aiSettings, setAiSettingsState] = useState(() => getAiSettings())
+  const [geminiTutorialOpen, setGeminiTutorialOpen] = useState(false)
   const [reminders, setRemindersState] = useState(() => getReminderSettings())
   const [notificationPermission, setNotificationPermission] = useState<
     NotificationPermission | 'unsupported'
@@ -27,6 +29,19 @@ export function SettingsRoute() {
     if (typeof Notification === 'undefined') return 'unsupported'
     return Notification.permission
   })
+
+  useEffect(() => {
+    if (aiSettings.provider !== 'gemini') return
+    if (aiSettings.gemini.apiKey) return
+
+    try {
+      const k = 'ai-nutritionist.geminiTutorialShown'
+      if (localStorage.getItem(k)) return
+      setGeminiTutorialOpen(true)
+      localStorage.setItem(k, '1')
+    } catch {
+    }
+  }, [aiSettings.provider, aiSettings.gemini.apiKey])
 
   async function onExport() {
     setBusy(true)
@@ -87,6 +102,7 @@ export function SettingsRoute() {
         localStorage.removeItem('ai-nutritionist.uiTheme')
         localStorage.removeItem('ai-nutritionist.reminders')
         localStorage.removeItem('ai-nutritionist.hideAiCloudDisclaimer')
+        localStorage.removeItem('ai-nutritionist.geminiTutorialShown')
       } catch {
         // ignore
       }
@@ -187,7 +203,16 @@ export function SettingsRoute() {
         </label>
 
         <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 space-y-3 dark:border-slate-800 dark:bg-slate-950">
-          <div className="text-sm font-medium text-slate-900 dark:text-slate-100">Gemini</div>
+          <div className="flex items-center justify-between gap-3">
+            <div className="text-sm font-medium text-slate-900 dark:text-slate-100">Gemini</div>
+            <button
+              className="shrink-0 rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100 dark:hover:bg-slate-900"
+              onClick={() => setGeminiTutorialOpen(true)}
+              type="button"
+            >
+              How?
+            </button>
+          </div>
           <label className="block text-sm">
             <div className="font-medium text-slate-900 dark:text-slate-100">API key</div>
             <input
@@ -266,6 +291,8 @@ export function SettingsRoute() {
           Save AI settings
         </button>
       </div>
+
+      <GeminiTutorialModal open={geminiTutorialOpen} onClose={() => setGeminiTutorialOpen(false)} />
 
       <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm space-y-3 dark:border-slate-800 dark:bg-slate-900">
         <div className="text-sm font-medium text-slate-900 dark:text-slate-100">Reminders (optional)</div>

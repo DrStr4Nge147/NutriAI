@@ -207,7 +207,7 @@ export function MobileShell(props: { title: string; children: ReactNode }) {
   const navItems: Array<{ to: string; label: string; icon: Parameters<typeof NavIcon>[0]['name']; match: (path: string) => boolean }> = [
     { to: '/', label: 'Dashboard', icon: 'home', match: (p) => p === '/' },
     { to: '/meals', label: 'Meal History', icon: 'history', match: (p) => p.startsWith('/meals') },
-    { to: '/meal-plan', label: 'Meal Plan', icon: 'mealPlan', match: (p) => p.startsWith('/meal-plan') },
+    { to: '/meal-plan', label: 'AI Meal plan', icon: 'mealPlan', match: (p) => p.startsWith('/meal-plan') },
     { to: '/manual', label: 'Manual Entry', icon: 'manual', match: (p) => p.startsWith('/manual') },
     { to: '/medical-history', label: 'Medical', icon: 'medical', match: (p) => p.startsWith('/medical-history') },
     { to: '/settings', label: 'Settings', icon: 'settings', match: (p) => p.startsWith('/settings') },
