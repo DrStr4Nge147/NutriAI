@@ -252,7 +252,7 @@ export function MobileShell(props: { title: string; children: ReactNode }) {
         accept="image/*"
         onChange={(e) => void onPickScanPhoto(e.target.files?.[0] ?? null)}
       />
-      <div className="mx-auto max-w-6xl px-4 py-4 md:px-6">
+      <div className="w-full px-4 py-4 md:px-6 xl:px-8">
         {!hideBottomNav ? (
           <header
             className="sticky top-0 z-40 -mx-4 -mt-4 mb-4 md:hidden"
@@ -439,7 +439,7 @@ export function MobileShell(props: { title: string; children: ReactNode }) {
             ) : null}
 
             <main className="pb-24 md:pb-0">
-              <div className="mx-auto w-full max-w-4xl">{props.children}</div>
+              <div className="w-full">{props.children}</div>
             </main>
           </div>
         </div>
