@@ -662,16 +662,16 @@ export function MobileShell(props: { title: string; children: ReactNode }) {
             aria-label="Close"
           />
           <div className="absolute bottom-0 left-0 right-0 rounded-t-2xl bg-white p-4 shadow-2xl md:left-1/2 md:bottom-auto md:top-1/2 md:max-w-2xl md:-translate-x-1/2 md:-translate-y-1/2 md:rounded-2xl md:p-6 dark:bg-slate-900">
-            <div className="text-sm font-semibold text-slate-900 md:text-base dark:text-slate-100">AI analysis & cloud processing</div>
-            <div className="mt-2 text-xs leading-5 text-slate-600 md:text-sm md:leading-6 dark:text-slate-300">
+            <div className="text-base font-semibold text-slate-900 sm:text-lg md:text-xl dark:text-slate-100">AI analysis & cloud processing</div>
+            <div className="mt-2 text-sm leading-6 text-slate-600 sm:text-base sm:leading-7 dark:text-slate-300">
               When you use AI features (photo analysis, item analysis), the information you provide will be sent for processing and may leave
               this device. Avoid including sensitive personal information in images or text.
             </div>
-            <div className="mt-2 text-xs leading-5 text-slate-600 md:text-sm md:leading-6 dark:text-slate-300">
+            <div className="mt-2 text-sm leading-6 text-slate-600 sm:text-base sm:leading-7 dark:text-slate-300">
               If you upload lab results, it’s suggested to crop out your name and your physician’s name for privacy.
             </div>
 
-            <label className="mt-4 flex items-center gap-2 text-xs text-slate-700 md:text-sm dark:text-slate-200">
+            <label className="mt-4 flex items-center gap-2 text-sm text-slate-700 sm:text-base dark:text-slate-200">
               <input
                 type="checkbox"
                 checked={aiDisclaimerDontShowAgain}
@@ -682,7 +682,7 @@ export function MobileShell(props: { title: string; children: ReactNode }) {
 
             <div className="mt-4">
               <button
-                className="w-full rounded-xl bg-slate-900 px-3 py-2 text-sm font-medium text-white hover:bg-slate-800 md:py-3 md:text-base dark:bg-slate-100 dark:text-slate-900 dark:hover:bg-white"
+                className="w-full rounded-xl bg-slate-900 px-3 py-2 text-base font-medium text-white hover:bg-slate-800 sm:py-3 sm:text-lg dark:bg-slate-100 dark:text-slate-900 dark:hover:bg-white"
                 onClick={() => closeAiDisclaimer()}
                 type="button"
               >
