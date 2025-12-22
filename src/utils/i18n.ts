@@ -5,12 +5,12 @@ export type TranslationKey = 'app_title' | 'offline_banner'
 type Dictionary = Record<TranslationKey, string>
 
 const en: Dictionary = {
-  app_title: 'NutriAI',
+  app_title: 'HimsogAI',
   offline_banner: "You're offline. Previously visited screens should still work, but AI analysis and sync won’t.",
 }
 
 const fil: Dictionary = {
-  app_title: 'NutriAI',
+  app_title: 'HimsogAI',
   offline_banner: "Offline ka. Dapat gumana pa rin ang mga screen na nabuksan na dati, pero hindi gagana ang AI analysis at sync.",
 }
 

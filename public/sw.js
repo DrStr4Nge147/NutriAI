@@ -1,4 +1,4 @@
-const CACHE_NAME = 'nutriai-v1'
+const CACHE_NAME = 'himsogai-v1'
 
 self.addEventListener('install', (event) => {
   event.waitUntil(

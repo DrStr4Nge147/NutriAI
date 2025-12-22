@@ -4,8 +4,9 @@ import { t } from '../utils/i18n'
 import { readFileAsDataUrl } from '../utils/files'
 import { useMealPhotoAnalysis } from '../state/MealPhotoAnalysisContext'
 import { useApp } from '../state/AppContext'
+import { AppLogo } from './AppLogo'
 
-function NavIcon(props: { name: 'home' | 'scan' | 'manual' | 'history' | 'mealPlan' | 'medical' | 'settings' | 'more'; active: boolean; tone?: 'inverse' }) {
+function NavIcon(props: { name: 'home' | 'scan' | 'manual' | 'history' | 'mealPlan' | 'medical' | 'settings' | 'about' | 'more'; active: boolean; tone?: 'inverse' }) {
   const iconClass =
     props.tone === 'inverse'
       ? 'text-white'
@@ -19,6 +20,16 @@ function NavIcon(props: { name: 'home' | 'scan' | 'manual' | 'history' | 'mealPl
       <svg viewBox="0 0 24 24" className={`h-5 w-5 ${iconClass}`} aria-hidden="true">
         <path {...common} d="M4 11l8-7 8 7" />
         <path {...common} d="M6.5 10.5V20h11V10.5" />
+      </svg>
+    )
+  }
+
+  if (props.name === 'about') {
+    return (
+      <svg viewBox="0 0 24 24" className={`h-5 w-5 ${iconClass}`} aria-hidden="true">
+        <circle cx="12" cy="12" r="9" {...common} />
+        <path {...common} d="M12 10.5v6" />
+        <path {...common} d="M12 7.5h.01" />
       </svg>
     )
   }
@@ -200,6 +211,7 @@ export function MobileShell(props: { title: string; children: ReactNode }) {
     { to: '/manual', label: 'Manual Entry', icon: 'manual', match: (p) => p.startsWith('/manual') },
     { to: '/medical-history', label: 'Medical', icon: 'medical', match: (p) => p.startsWith('/medical-history') },
     { to: '/settings', label: 'Settings', icon: 'settings', match: (p) => p.startsWith('/settings') },
+    { to: '/about', label: 'About', icon: 'about', match: (p) => p.startsWith('/about') },
   ]
 
   const hideBottomNav = location.pathname.startsWith('/capture')
@@ -207,7 +219,8 @@ export function MobileShell(props: { title: string; children: ReactNode }) {
   const moreActive =
     location.pathname.startsWith('/medical-history') ||
     location.pathname.startsWith('/settings') ||
-    location.pathname.startsWith('/profile')
+    location.pathname.startsWith('/profile') ||
+    location.pathname.startsWith('/about')
 
   function linkClass(active: boolean) {
     return active
@@ -261,7 +274,7 @@ export function MobileShell(props: { title: string; children: ReactNode }) {
             <div className="bg-gradient-to-r from-emerald-600 via-teal-500 to-sky-500 px-4 py-3 text-white shadow-sm">
               <div className="mx-auto flex max-w-md items-center justify-between">
                 <Link to="/" className="flex items-center gap-2" aria-label={props.title}>
-                  <img src="/icons/icon-192.svg" alt="" aria-hidden="true" className="h-8 w-8" />
+                  <AppLogo decorative className="h-8 w-8" />
                   <div className="text-base font-semibold tracking-tight">{props.title}</div>
                 </Link>
 
@@ -313,26 +326,7 @@ export function MobileShell(props: { title: string; children: ReactNode }) {
           <aside className="hidden md:block">
             <div className="sticky top-4 flex min-h-[calc(100vh-2rem)] flex-col rounded-3xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900">
               <Link to="/" className="flex items-center gap-3 px-2 py-2">
-                <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-200">
-                  <svg viewBox="0 0 24 24" className="h-6 w-6" aria-hidden="true">
-                    <path
-                      d="M5 21c6-1 10-5 12-10 1.6-4-2-8-6-6C7 7 3 11 3 17c0 2 1 4 2 4z"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    />
-                    <path
-                      d="M8 16c3-2 5-4 8-8"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    />
-                  </svg>
-                </div>
+                <AppLogo decorative className="h-10 w-10 rounded-2xl" />
                 <div className="text-lg font-semibold tracking-tight">{props.title}</div>
               </Link>
 
@@ -593,6 +587,18 @@ export function MobileShell(props: { title: string; children: ReactNode }) {
                 <div className="flex items-center gap-3">
                   <NavIcon name="settings" active={false} />
                   <div>Settings</div>
+                </div>
+                <div className="text-slate-400">›</div>
+              </Link>
+
+              <Link
+                to="/about"
+                onClick={() => setMoreOpen(false)}
+                className="flex items-center justify-between rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm hover:bg-slate-50 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100 dark:hover:bg-slate-900"
+              >
+                <div className="flex items-center gap-3">
+                  <NavIcon name="about" active={false} />
+                  <div>About</div>
                 </div>
                 <div className="text-slate-400">›</div>
               </Link>

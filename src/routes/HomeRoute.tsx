@@ -163,7 +163,7 @@ export function HomeRoute() {
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <div className="text-sm text-slate-600 dark:text-slate-300">{greetingForHour(new Date().getHours())}</div>
-          <div className="text-xl font-semibold">{currentProfile?.name ?? 'NutriAI'}</div>
+          <div className="text-xl font-semibold">{currentProfile?.name ?? 'HimsogAI'}</div>
         </div>
 
         <Link

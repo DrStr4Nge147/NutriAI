@@ -1,4 +1,4 @@
-# AI Nutritionist Web App MVP Specification
+# HimsogAI Web App MVP Specification
 
 ## Overview
 This document defines the Minimum Viable Product for a mobile‑optimized web application built with ReactJS. The app serves as a personal AI nutritionist that analyzes meals, tracks health data, and provides dietary recommendations. All user data is stored locally on the user's device, with import and export features for backup and device transfer.
