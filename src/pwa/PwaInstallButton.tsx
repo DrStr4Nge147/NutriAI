@@ -109,15 +109,15 @@ export function PwaInstallButton(props: { className?: string }) {
       <button
         type="button"
         onClick={() => void onInstall()}
-        className="w-full rounded-2xl bg-black px-4 py-3 text-left shadow-sm transition active:scale-[0.99]"
+        className="w-full rounded-2xl bg-black px-4 py-3 text-left shadow-sm transition active:scale-[0.99] dark:bg-white"
         aria-label="Install this app"
       >
         <div className="flex items-center gap-3">
           <span
-            className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-white/10"
+            className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-white/10 dark:bg-black/10"
             aria-hidden="true"
           >
-            <svg viewBox="0 0 24 24" className="h-5 w-5 text-white" fill="none" stroke="currentColor" strokeWidth="2.2">
+            <svg viewBox="0 0 24 24" className="h-5 w-5 text-white dark:text-black" fill="none" stroke="currentColor" strokeWidth="2.2">
               <path d="M12 3v10" strokeLinecap="round" />
               <path d="M8 9l4 4 4-4" strokeLinecap="round" strokeLinejoin="round" />
               <path d="M4 17v3h16v-3" strokeLinecap="round" strokeLinejoin="round" />
@@ -125,11 +125,11 @@ export function PwaInstallButton(props: { className?: string }) {
           </span>
 
           <div className="min-w-0">
-            <div className="text-sm font-semibold tracking-tight text-white">Install</div>
-            <div className="mt-0.5 text-xs text-white/80">Add to your home screen for faster access</div>
+            <div className="text-sm font-semibold tracking-tight text-white dark:text-black">Install</div>
+            <div className="mt-0.5 text-xs text-white/80 dark:text-black/70">Add to your home screen for faster access</div>
           </div>
 
-          <div className="ml-auto inline-flex shrink-0 items-center rounded-full bg-white px-3 py-1 text-xs font-semibold text-black">
+          <div className="ml-auto inline-flex shrink-0 items-center rounded-full bg-white px-3 py-1 text-xs font-semibold text-black dark:bg-black dark:text-white">
             Get
           </div>
         </div>
