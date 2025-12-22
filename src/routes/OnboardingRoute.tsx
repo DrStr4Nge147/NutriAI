@@ -93,6 +93,15 @@ export function OnboardingRoute() {
       .filter(Boolean)
   }, [conditionsText])
 
+  function onEnter(e: React.KeyboardEvent, action: () => void, enabled = true) {
+    if (!enabled) return
+    if (e.key !== 'Enter') return
+    if (e.shiftKey || e.ctrlKey || e.metaKey || e.altKey) return
+
+    e.preventDefault()
+    action()
+  }
+
   async function finish(profileOverrides?: Partial<Omit<UserProfile, 'id' | 'createdAt'>>) {
     const profileInput: Omit<UserProfile, 'id' | 'createdAt'> = {
       ...DEFAULTS,
@@ -132,7 +141,7 @@ export function OnboardingRoute() {
     const canContinue = name.trim().length > 0
     return (
       <OnboardingStepShell stepTitle={stepTitle} stepIndex={stepIndex} animateKey={step}>
-        <div className="space-y-5">
+        <div className="space-y-5" onKeyDown={(e) => onEnter(e, () => setStep('body'), canContinue)}>
           <div>
             <div className="text-2xl font-semibold tracking-tight sm:text-3xl">Welcome</div>
             <div className="mt-2 text-sm leading-6 text-slate-600 dark:text-slate-300">
@@ -169,7 +178,7 @@ export function OnboardingRoute() {
   if (step === 'body') {
     return (
       <OnboardingStepShell stepTitle={stepTitle} stepIndex={stepIndex} animateKey={step}>
-        <div className="space-y-6">
+        <div className="space-y-6" onKeyDown={(e) => onEnter(e, () => setStep('goal'))}>
           <div>
             <div className="text-2xl font-semibold tracking-tight">Body details</div>
             <div className="mt-2 text-sm leading-6 text-slate-600 dark:text-slate-300">Used to estimate daily needs. You can update this later.</div>
@@ -223,11 +232,11 @@ export function OnboardingRoute() {
                 value={activityLevel}
                 onChange={(e) => setActivityLevel(e.target.value as ActivityLevel)}
               >
-                <option value="sedentary">Sedentary</option>
-                <option value="light">Light</option>
-                <option value="moderate">Moderate</option>
-                <option value="active">Active</option>
-                <option value="very_active">Very active</option>
+                <option value="sedentary">Sedentary — mostly sitting, little to no exercise</option>
+                <option value="light">Light — light exercise 1–3 days/week</option>
+                <option value="moderate">Moderate — moderate exercise 3–5 days/week</option>
+                <option value="active">Active — hard exercise 6–7 days/week</option>
+                <option value="very_active">Very active — very hard exercise or physical job</option>
               </select>
             </label>
           </div>
@@ -260,7 +269,7 @@ export function OnboardingRoute() {
   if (step === 'goal') {
     return (
       <OnboardingStepShell stepTitle={stepTitle} stepIndex={stepIndex} animateKey={step}>
-        <div className="space-y-6">
+        <div className="space-y-6" onKeyDown={(e) => onEnter(e, () => setStep('medical'))}>
           <div>
             <div className="text-2xl font-semibold tracking-tight">Goal</div>
             <div className="mt-2 text-sm leading-6 text-slate-600 dark:text-slate-300">
@@ -346,7 +355,7 @@ export function OnboardingRoute() {
 
     return (
       <OnboardingStepShell stepTitle={stepTitle} stepIndex={stepIndex} animateKey={step}>
-        <div className="space-y-6">
+        <div className="space-y-6" onKeyDown={(e) => onEnter(e, onNext)}>
           <div>
             <div className="text-2xl font-semibold tracking-tight">Medical conditions (optional)</div>
             <div className="mt-2 text-sm leading-6 text-slate-600 dark:text-slate-300">
@@ -445,7 +454,7 @@ export function OnboardingRoute() {
 
   return (
     <OnboardingStepShell stepTitle={stepTitle} stepIndex={stepIndex} animateKey={step}>
-      <div className="space-y-6">
+      <div className="space-y-6" onKeyDown={(e) => onEnter(e, () => void finish())}>
         <div>
           <div className="text-2xl font-semibold tracking-tight">Privacy & storage</div>
           <div className="mt-2 text-sm leading-6 text-slate-600 dark:text-slate-300">
