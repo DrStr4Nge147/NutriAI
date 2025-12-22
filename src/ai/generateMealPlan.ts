@@ -70,6 +70,15 @@ function mealTypeLabel(mealType: MealPlanMealType) {
 export async function generateMealPlan(input: {
   mealType: MealPlanMealType
   avoidTitles?: string[]
+  profileContext?: {
+    age?: number
+    sex?: string
+    heightCm?: number
+    weightKg?: number
+    activityLevel?: string
+    goal?: string
+    targetCaloriesKcal?: number | null
+  }
   medicalContext?: {
     conditions?: string[]
     notes?: string
@@ -82,6 +91,31 @@ export async function generateMealPlan(input: {
 
   const avoidBlock = avoidTitles.length
     ? ` Avoid repeating any of these dish titles: ${avoidTitles.map((t) => `"${t}"`).join(', ')}.`
+    : ''
+
+  const age = Number.isFinite(input.profileContext?.age) ? input.profileContext?.age : null
+  const heightCm = Number.isFinite(input.profileContext?.heightCm) ? input.profileContext?.heightCm : null
+  const weightKg = Number.isFinite(input.profileContext?.weightKg) ? input.profileContext?.weightKg : null
+  const sex = (input.profileContext?.sex ?? '').trim()
+  const activityLevel = (input.profileContext?.activityLevel ?? '').trim()
+  const goal = (input.profileContext?.goal ?? '').trim()
+  const targetCaloriesKcal = Number.isFinite(input.profileContext?.targetCaloriesKcal)
+    ? (input.profileContext?.targetCaloriesKcal ?? null)
+    : null
+
+  const hasProfileContext = Boolean(age || heightCm || weightKg || sex || activityLevel || goal || targetCaloriesKcal)
+  const profileBlock = hasProfileContext
+    ?
+        ' The user has the following profile:' +
+        (age ? ` Age: ${age}.` : '') +
+        (sex ? ` Sex: ${sex}.` : '') +
+        (heightCm ? ` Height: ${heightCm} cm.` : '') +
+        (weightKg ? ` Weight: ${weightKg} kg.` : '') +
+        (activityLevel ? ` Activity level: ${activityLevel}.` : '') +
+        (goal ? ` Goal: ${goal}.` : '') +
+        (targetCaloriesKcal ? ` Target calories/day: ${targetCaloriesKcal} kcal.` : '') +
+        ' Use this information to choose reasonable portions and ingredient choices for this meal.' +
+        ' Do not invent targets or restrictions that are not stated.'
     : ''
 
   const conditions = (input.medicalContext?.conditions ?? []).map((x) => x.trim()).filter(Boolean).slice(0, 25)
@@ -102,6 +136,7 @@ export async function generateMealPlan(input: {
     'You are a helpful home cook assistant specializing in Filipino home cooking.' +
     ` Create a simple ${mealTypeLabel(input.mealType)} plan for today that is easy to find ingredients for and easy to cook.` +
     ' Prefer common grocery items, minimal steps, and low hassle.' +
+    profileBlock +
     medicalBlock +
     avoidBlock +
     ' Return ONLY valid JSON (no markdown, no backticks, no code fences, no extra text) with this exact shape:' +

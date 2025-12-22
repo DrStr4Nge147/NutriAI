@@ -154,6 +154,13 @@ describe('app flows', () => {
         fetchBodies?.[1]?.contents?.[0]?.parts?.map((p: any) => p?.text).filter(Boolean).join('\n') ??
         ''
       expect(typeof secondPrompt).toBe('string')
+      expect(secondPrompt).toContain('The user has the following profile:')
+      expect(secondPrompt).toContain('Age: 30')
+      expect(secondPrompt).toContain('Sex: prefer_not_say')
+      expect(secondPrompt).toContain('Height: 170 cm')
+      expect(secondPrompt).toContain('Weight: 70 kg')
+      expect(secondPrompt).toContain('Activity level: moderate')
+      expect(secondPrompt).toContain('Goal: maintain')
       expect(secondPrompt).toContain('Avoid repeating')
       expect(secondPrompt).toContain('Chicken Adobo')
 
@@ -235,6 +242,7 @@ describe('app flows', () => {
         fetchBodies?.[0]?.contents?.[0]?.parts?.[0]?.text ??
         fetchBodies?.[0]?.contents?.[0]?.parts?.map((p: any) => p?.text).filter(Boolean).join('\n') ??
         ''
+      expect(prompt).toContain('The user has the following profile:')
       expect(prompt).toContain('Notes/medications: Avoid grapefruit')
     } finally {
       ;(globalThis as any).fetch = prevFetch

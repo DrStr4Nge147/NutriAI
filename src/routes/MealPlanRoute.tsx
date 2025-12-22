@@ -173,6 +173,15 @@ export function MealPlanRoute() {
       const result = await generateMealPlan({
         mealType,
         avoidTitles,
+        profileContext: {
+          age: currentProfile?.body.age,
+          sex: currentProfile?.body.sex,
+          heightCm: currentProfile?.body.heightCm,
+          weightKg: currentProfile?.body.weightKg,
+          activityLevel: currentProfile?.body.activityLevel,
+          goal: currentProfile?.goal,
+          targetCaloriesKcal: currentProfile?.targetCaloriesKcal ?? null,
+        },
         medicalContext: {
           conditions: currentProfile?.medical.conditions ?? [],
           notes: currentProfile?.medical.notes ?? '',
