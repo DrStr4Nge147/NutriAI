@@ -143,12 +143,12 @@ export function HomeRoute() {
     return (
       <div>
         <div className="flex items-center justify-between text-xs">
-          <div className="font-medium text-slate-700">{props.label}</div>
-          <div className="text-slate-600">
+          <div className="font-medium text-slate-700 dark:text-slate-200">{props.label}</div>
+          <div className="text-slate-600 dark:text-slate-300">
             {Math.round(props.valueG)}g{props.targetG ? ` / ${Math.round(props.targetG)}g` : ''}
           </div>
         </div>
-        <div className="mt-1 h-2 w-full overflow-hidden rounded-full bg-slate-100">
+        <div className="mt-1 h-2 w-full overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800">
           <div
             className="h-full rounded-full bg-gradient-to-r from-emerald-600 via-teal-500 to-sky-500"
             style={{ width: `${Math.round(pct * 100)}%` }}
@@ -162,14 +162,14 @@ export function HomeRoute() {
     <div className="space-y-4">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
-          <div className="text-sm text-slate-600">{greetingForHour(new Date().getHours())}</div>
+          <div className="text-sm text-slate-600 dark:text-slate-300">{greetingForHour(new Date().getHours())}</div>
           <div className="text-xl font-semibold">{currentProfile?.name ?? 'NutriAI'}</div>
         </div>
 
         <Link
           to="/profile"
           aria-label="Profile"
-          className="relative mt-0.5 hidden h-10 w-10 shrink-0 items-center justify-center rounded-full border border-slate-200 bg-white shadow-sm hover:bg-slate-50 md:inline-flex"
+          className="relative mt-0.5 hidden h-10 w-10 shrink-0 items-center justify-center rounded-full border border-slate-200 bg-white shadow-sm hover:bg-slate-50 md:inline-flex dark:border-slate-800 dark:bg-slate-900 dark:hover:bg-slate-800"
         >
           <svg viewBox="0 0 24 24" className="h-5 w-5" aria-hidden="true">
             <path
@@ -191,14 +191,14 @@ export function HomeRoute() {
           </svg>
 
           <span
-            className="pointer-events-none absolute -bottom-1 -right-1 inline-flex h-4 w-4 items-center justify-center rounded-full bg-slate-100 ring-1 ring-slate-200"
+            className="pointer-events-none absolute -bottom-1 -right-1 inline-flex h-4 w-4 items-center justify-center rounded-full bg-slate-100 ring-1 ring-slate-200 dark:bg-slate-800 dark:ring-slate-700"
             aria-hidden="true"
           >
-            <svg viewBox="0 0 24 24" className="h-3 w-3" aria-hidden="true">
+            <svg viewBox="0 0 24 24" className="h-3 w-3 text-slate-500 dark:text-slate-300" aria-hidden="true">
               <path
                 d="M7 10l5 5 5-5"
                 fill="none"
-                stroke="#64748b"
+                stroke="currentColor"
                 strokeWidth="2.4"
                 strokeLinecap="round"
                 strokeLinejoin="round"
@@ -208,14 +208,14 @@ export function HomeRoute() {
         </Link>
       </div>
 
-      <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+      <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
         <div className="grid grid-cols-[1fr_96px] items-center gap-4">
           <div>
-            <div className="text-sm font-medium text-slate-700">Calories left</div>
+            <div className="text-sm font-medium text-slate-700 dark:text-slate-200">Calories left</div>
             <div className="mt-1 text-4xl font-semibold tracking-tight">
               {calorieProgress ? Math.max(0, Math.round(calorieProgress.remaining)) : '--'}
             </div>
-            <div className="mt-1 text-sm text-slate-600">
+            <div className="mt-1 text-sm text-slate-600 dark:text-slate-300">
               {calorieProgress ? `Goal: ${calorieProgress.target} kcal` : 'Add body details to estimate a daily goal.'}
             </div>
           </div>
@@ -223,24 +223,41 @@ export function HomeRoute() {
           <div className="flex items-center justify-center">
             {donut ? (
               <svg viewBox="0 0 84 84" className="h-24 w-24" role="img" aria-label="Calories progress">
-                <circle cx={donut.cx} cy={donut.cy} r={donut.radius} fill="none" stroke="#e2e8f0" strokeWidth="10" />
                 <circle
                   cx={donut.cx}
                   cy={donut.cy}
                   r={donut.radius}
                   fill="none"
-                  stroke="#059669"
+                  stroke="currentColor"
+                  strokeWidth="10"
+                  className="text-slate-200 dark:text-slate-700"
+                />
+                <circle
+                  cx={donut.cx}
+                  cy={donut.cy}
+                  r={donut.radius}
+                  fill="none"
+                  stroke="currentColor"
                   strokeWidth="10"
                   strokeLinecap="round"
                   strokeDasharray={`${donut.dash} ${donut.gap}`}
                   transform={`rotate(-90 ${donut.cx} ${donut.cy})`}
+                  className="text-emerald-600 dark:text-emerald-400"
                 />
-                <text x="42" y="46" textAnchor="middle" fontSize="14" fill="#64748b" fontWeight="600">
+                <text
+                  x="42"
+                  y="46"
+                  textAnchor="middle"
+                  fontSize="14"
+                  fill="currentColor"
+                  fontWeight="600"
+                  className="text-slate-500 dark:text-slate-300"
+                >
                   {donut.pctLabel}%
                 </text>
               </svg>
             ) : (
-              <div className="h-24 w-24 rounded-full bg-slate-100" />
+              <div className="h-24 w-24 rounded-full bg-slate-100 dark:bg-slate-800" />
             )}
           </div>
         </div>
@@ -252,16 +269,16 @@ export function HomeRoute() {
         </div>
       </div>
 
-      <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+      <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
         <div className="flex items-center justify-between gap-3">
           <div className="text-sm font-medium">Today&apos;s meals</div>
-          <Link to="/meals" className="text-sm text-slate-900 underline">
+          <Link to="/meals" className="text-sm text-slate-900 underline dark:text-slate-100">
             View all
           </Link>
         </div>
 
         {todayMeals.length === 0 ? (
-          <div className="mt-3 text-sm text-slate-600">No meals logged today.</div>
+          <div className="mt-3 text-sm text-slate-600 dark:text-slate-300">No meals logged today.</div>
         ) : (
           <div className="mt-3 space-y-2">
             {todayMeals.slice(0, 6).map((m) => {
@@ -272,10 +289,10 @@ export function HomeRoute() {
                 <Link
                   key={m.id}
                   to={`/meals/${m.id}`}
-                  className="block rounded-xl border border-slate-200 bg-white px-3 py-3 hover:bg-slate-50"
+                  className="block rounded-xl border border-slate-200 bg-white px-3 py-3 hover:bg-slate-50 dark:border-slate-800 dark:bg-slate-950 dark:hover:bg-slate-900"
                 >
                   <div className="flex items-center gap-3">
-                    <div className="h-12 w-12 overflow-hidden rounded-lg bg-slate-100">
+                    <div className="h-12 w-12 overflow-hidden rounded-lg bg-slate-100 dark:bg-slate-800">
                       {m.photoDataUrl ? (
                         <img src={m.photoDataUrl} alt="" className="h-full w-full object-cover" />
                       ) : (
@@ -285,15 +302,15 @@ export function HomeRoute() {
                     <div className="min-w-0 flex-1">
                       <div className="flex items-start justify-between gap-3">
                         <div className="min-w-0">
-                          <div className="truncate text-sm font-medium text-slate-900">{label}</div>
-                          <div className="mt-1 text-xs text-slate-600">{time}</div>
+                          <div className="truncate text-sm font-medium text-slate-900 dark:text-slate-100">{label}</div>
+                          <div className="mt-1 text-xs text-slate-600 dark:text-slate-300">{time}</div>
                         </div>
-                        <div className="shrink-0 text-sm font-semibold text-slate-900">{m.totalMacros.calories} kcal</div>
+                        <div className="shrink-0 text-sm font-semibold text-slate-900 dark:text-slate-100">{m.totalMacros.calories} kcal</div>
                       </div>
                       <div className="mt-2 flex flex-wrap gap-1">
-                        <div className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] text-slate-700">P {m.totalMacros.protein_g}g</div>
-                        <div className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] text-slate-700">C {m.totalMacros.carbs_g}g</div>
-                        <div className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] text-slate-700">F {m.totalMacros.fat_g}g</div>
+                        <div className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] text-slate-700 dark:bg-slate-800 dark:text-slate-200">P {m.totalMacros.protein_g}g</div>
+                        <div className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] text-slate-700 dark:bg-slate-800 dark:text-slate-200">C {m.totalMacros.carbs_g}g</div>
+                        <div className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] text-slate-700 dark:bg-slate-800 dark:text-slate-200">F {m.totalMacros.fat_g}g</div>
                       </div>
                     </div>
                   </div>
@@ -304,16 +321,16 @@ export function HomeRoute() {
         )}
 
         {todaySummary.missingNutritionCount > 0 ? (
-          <div className="mt-3 text-sm text-amber-700">
+          <div className="mt-3 text-sm text-amber-700 dark:text-amber-300">
             {todaySummary.missingNutritionCount} meal(s) don’t have nutrition totals yet.
           </div>
         ) : null}
       </div>
 
-      <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+      <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
         <div className="flex items-baseline justify-between gap-3">
           <div className="text-sm font-medium">Health Insights</div>
-          <div className="text-xs text-slate-500">Today</div>
+          <div className="text-xs text-slate-500 dark:text-slate-400">Today</div>
         </div>
 
         {healthInsights.length > 0 ? (
@@ -323,8 +340,8 @@ export function HomeRoute() {
                 key={i.id}
                 className={
                   i.severity === 'warning'
-                    ? 'rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900'
-                    : 'rounded-md border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900'
+                    ? 'rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900 dark:border-amber-900/50 dark:bg-amber-900/20 dark:text-amber-100'
+                    : 'rounded-md border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100'
                 }
               >
                 {i.text}
@@ -333,7 +350,7 @@ export function HomeRoute() {
             {healthInsights.length > 3 ? (
               <button
                 type="button"
-                className="text-left text-xs text-slate-900 underline"
+                className="text-left text-xs text-slate-900 underline dark:text-slate-100"
                 aria-expanded={healthExpanded}
                 onClick={() => setHealthExpanded((v) => !v)}
               >
@@ -342,20 +359,20 @@ export function HomeRoute() {
             ) : null}
           </div>
         ) : (
-          <div className="mt-3 text-sm text-slate-600">No insights yet for today. Log meals to see guidance.</div>
+          <div className="mt-3 text-sm text-slate-600 dark:text-slate-300">No insights yet for today. Log meals to see guidance.</div>
         )}
 
         {lifestyleInsights.length > 0 ? (
           <div className="mt-4 space-y-2">
             <div className="flex items-baseline justify-between gap-3">
-              <div className="text-xs font-semibold uppercase tracking-wide text-slate-600">Lifestyle</div>
-              <div className="text-xs text-slate-500">Last 7 days</div>
+              <div className="text-xs font-semibold uppercase tracking-wide text-slate-600 dark:text-slate-300">Lifestyle</div>
+              <div className="text-xs text-slate-500 dark:text-slate-400">Last 7 days</div>
             </div>
             <div
               className={
                 (lifestyleExpanded ? lifestyleHasWarningAll : lifestyleHasWarning)
-                  ? 'rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900'
-                  : 'rounded-md border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900'
+                  ? 'rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900 dark:border-amber-900/50 dark:bg-amber-900/20 dark:text-amber-100'
+                  : 'rounded-md border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100'
               }
             >
               {lifestyleExpanded ? lifestyleParagraphAll : lifestyleParagraph}
@@ -363,7 +380,7 @@ export function HomeRoute() {
             {lifestyleInsights.length > 3 ? (
               <button
                 type="button"
-                className="text-left text-xs text-slate-900 underline"
+                className="text-left text-xs text-slate-900 underline dark:text-slate-100"
                 aria-expanded={lifestyleExpanded}
                 onClick={() => setLifestyleExpanded((v) => !v)}
               >

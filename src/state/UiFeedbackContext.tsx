@@ -36,9 +36,9 @@ type UiFeedbackValue = {
 const UiFeedbackContext = createContext<UiFeedbackValue | null>(null)
 
 function toastClasses(kind: ToastKind) {
-  if (kind === 'success') return 'border-emerald-200 bg-emerald-50 text-emerald-900'
-  if (kind === 'error') return 'border-red-200 bg-red-50 text-red-900'
-  return 'border-slate-200 bg-white text-slate-900'
+  if (kind === 'success') return 'border-emerald-200 bg-emerald-50 text-emerald-900 dark:border-emerald-900/60 dark:bg-emerald-900/30 dark:text-emerald-50'
+  if (kind === 'error') return 'border-red-200 bg-red-50 text-red-900 dark:border-red-900/60 dark:bg-red-900/30 dark:text-red-50'
+  return 'border-slate-200 bg-white text-slate-900 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-100'
 }
 
 export function UiFeedbackProvider(props: { children: ReactNode }) {
@@ -188,7 +188,7 @@ export function UiFeedbackProvider(props: { children: ReactNode }) {
                   <div className="text-sm">{t.message}</div>
                 </div>
                 <button
-                  className="rounded-md px-2 py-1 text-xs text-slate-700 hover:bg-black/5"
+                  className="rounded-md px-2 py-1 text-xs text-slate-700 hover:bg-black/5 dark:text-slate-200 dark:hover:bg-white/10"
                   onClick={() => dismissToast(t.id)}
                   type="button"
                   aria-label="Close"
@@ -203,15 +203,15 @@ export function UiFeedbackProvider(props: { children: ReactNode }) {
 
       {activeConfirm ? (
         <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 p-3 sm:items-center" role="dialog" aria-modal="true">
-          <div className="w-full max-w-md rounded-2xl border border-slate-200 bg-white p-5 shadow-2xl">
+          <div className="w-full max-w-md rounded-2xl border border-slate-200 bg-white p-5 shadow-2xl dark:border-slate-800 dark:bg-slate-900">
             {activeConfirm.title ? (
-              <div className="text-base font-semibold text-slate-900">{activeConfirm.title}</div>
+              <div className="text-base font-semibold text-slate-900 dark:text-slate-100">{activeConfirm.title}</div>
             ) : null}
-            <div className="mt-2 text-sm text-slate-700">{activeConfirm.message}</div>
+            <div className="mt-2 text-sm text-slate-700 dark:text-slate-200">{activeConfirm.message}</div>
 
             <div className="mt-4 flex justify-end gap-2">
               <button
-                className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm hover:bg-slate-50"
+                className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-950 dark:hover:bg-slate-900"
                 onClick={() => closeConfirm(activeConfirm.id, false)}
                 type="button"
               >

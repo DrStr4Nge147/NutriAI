@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { getAiSettings, setAiSettings } from '../ai/settings'
+import { getUiTheme, saveAndApplyUiTheme, type UiTheme } from '../ui/theme'
 import {
   getReminderSettings,
   refreshReminderScheduler,
@@ -17,6 +18,7 @@ export function SettingsRoute() {
   const { refresh } = useApp()
   const { toast, confirm } = useUiFeedback()
   const [busy, setBusy] = useState(false)
+  const [uiTheme, setUiThemeState] = useState<UiTheme>(() => getUiTheme())
   const [aiSettings, setAiSettingsState] = useState(() => getAiSettings())
   const [reminders, setRemindersState] = useState(() => getReminderSettings())
   const [notificationPermission, setNotificationPermission] = useState<
@@ -115,18 +117,40 @@ export function SettingsRoute() {
 
   return (
     <div className="space-y-4">
-      <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-        <div className="text-base font-semibold">Settings</div>
-        <div className="mt-1 text-sm text-slate-600">Export/import your local data.</div>
+      <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+        <div className="text-base font-semibold text-slate-900 dark:text-slate-100">Settings</div>
+        <div className="mt-1 text-sm text-slate-600 dark:text-slate-300">Export/import your local data.</div>
       </div>
 
-      <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm space-y-3">
-        <div className="text-sm font-medium">AI</div>
+      <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm space-y-3 dark:border-slate-800 dark:bg-slate-900">
+        <div className="text-sm font-medium text-slate-900 dark:text-slate-100">Appearance</div>
 
         <label className="block text-sm">
-          <div className="font-medium">Provider</div>
+          <div className="font-medium text-slate-900 dark:text-slate-100">Color Theme</div>
           <select
-            className="mt-1 w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm"
+            aria-label="Color Theme"
+            className="mt-1 w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
+            value={uiTheme}
+            onChange={(e) => {
+              const next = e.target.value === 'dark' ? 'dark' : 'light'
+              setUiThemeState(next)
+              saveAndApplyUiTheme(next)
+            }}
+            disabled={busy}
+          >
+            <option value="light">Light</option>
+            <option value="dark">Dark</option>
+          </select>
+        </label>
+      </div>
+
+      <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm space-y-3 dark:border-slate-800 dark:bg-slate-900">
+        <div className="text-sm font-medium text-slate-900 dark:text-slate-100">AI</div>
+
+        <label className="block text-sm">
+          <div className="font-medium text-slate-900 dark:text-slate-100">Provider</div>
+          <select
+            className="mt-1 w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm dark:border-slate-700 dark:bg-slate-950"
             value={aiSettings.provider}
             onChange={(e) => {
               const provider = e.target.value === 'ollama' ? 'ollama' : 'gemini'
@@ -139,12 +163,12 @@ export function SettingsRoute() {
           </select>
         </label>
 
-        <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 space-y-3">
-          <div className="text-sm font-medium">Gemini</div>
+        <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 space-y-3 dark:border-slate-800 dark:bg-slate-950">
+          <div className="text-sm font-medium text-slate-900 dark:text-slate-100">Gemini</div>
           <label className="block text-sm">
-            <div className="font-medium">API key</div>
+            <div className="font-medium text-slate-900 dark:text-slate-100">API key</div>
             <input
-              className="mt-1 w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm"
+              className="mt-1 w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm dark:border-slate-700 dark:bg-slate-900"
               value={aiSettings.gemini.apiKey}
               onChange={(e) => setAiSettingsState({
                 ...aiSettings,
@@ -156,9 +180,9 @@ export function SettingsRoute() {
             />
           </label>
           <label className="block text-sm">
-            <div className="font-medium">Model</div>
+            <div className="font-medium text-slate-900 dark:text-slate-100">Model</div>
             <input
-              className="mt-1 w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm"
+              className="mt-1 w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm dark:border-slate-700 dark:bg-slate-900"
               value={aiSettings.gemini.model}
               onChange={(e) => setAiSettingsState({
                 ...aiSettings,
@@ -168,7 +192,7 @@ export function SettingsRoute() {
             />
           </label>
 
-          <label className="flex items-center gap-2 text-sm">
+          <label className="flex items-center gap-2 text-sm text-slate-900 dark:text-slate-100">
             <input
               type="checkbox"
               checked={aiSettings.gemini.consentToSendData}
@@ -182,12 +206,12 @@ export function SettingsRoute() {
           </label>
         </div>
 
-        <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 space-y-3">
-          <div className="text-sm font-medium">Ollama</div>
+        <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 space-y-3 dark:border-slate-800 dark:bg-slate-950">
+          <div className="text-sm font-medium text-slate-900 dark:text-slate-100">Ollama</div>
           <label className="block text-sm">
-            <div className="font-medium">Base URL</div>
+            <div className="font-medium text-slate-900 dark:text-slate-100">Base URL</div>
             <input
-              className="mt-1 w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm"
+              className="mt-1 w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm dark:border-slate-700 dark:bg-slate-900"
               value={aiSettings.ollama.baseUrl}
               onChange={(e) => setAiSettingsState({
                 ...aiSettings,
@@ -197,9 +221,9 @@ export function SettingsRoute() {
             />
           </label>
           <label className="block text-sm">
-            <div className="font-medium">Model</div>
+            <div className="font-medium text-slate-900 dark:text-slate-100">Model</div>
             <input
-              className="mt-1 w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm"
+              className="mt-1 w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm dark:border-slate-700 dark:bg-slate-900"
               value={aiSettings.ollama.model}
               onChange={(e) => setAiSettingsState({
                 ...aiSettings,
@@ -220,18 +244,18 @@ export function SettingsRoute() {
         </button>
       </div>
 
-      <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm space-y-3">
-        <div className="text-sm font-medium">Reminders (optional)</div>
-        <div className="text-xs text-slate-600">
+      <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm space-y-3 dark:border-slate-800 dark:bg-slate-900">
+        <div className="text-sm font-medium text-slate-900 dark:text-slate-100">Reminders (optional)</div>
+        <div className="text-xs text-slate-600 dark:text-slate-300">
           Reminders use the browser Notifications API and work best when the app is open or installed as a PWA.
         </div>
 
-        <div className="text-xs text-slate-600">
+        <div className="text-xs text-slate-600 dark:text-slate-300">
           Notifications: {notificationPermission === 'unsupported' ? 'unsupported' : notificationPermission}
         </div>
 
         <button
-          className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm hover:bg-slate-50"
+          className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:hover:bg-slate-800"
           onClick={() => void onEnableNotifications()}
           disabled={busy || notificationPermission === 'granted'}
           type="button"
@@ -239,10 +263,10 @@ export function SettingsRoute() {
           {notificationPermission === 'granted' ? 'Notifications enabled' : 'Enable notifications'}
         </button>
 
-        <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 space-y-3">
-          <div className="text-sm font-medium">Meal logging</div>
+        <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 space-y-3 dark:border-slate-800 dark:bg-slate-950">
+          <div className="text-sm font-medium text-slate-900 dark:text-slate-100">Meal logging</div>
           <div className="flex items-center justify-between gap-3">
-            <label className="flex items-center gap-2 text-sm">
+            <label className="flex items-center gap-2 text-sm text-slate-900 dark:text-slate-100">
               <input
                 type="checkbox"
                 checked={reminders.mealLog.enabled}
@@ -258,7 +282,7 @@ export function SettingsRoute() {
               <span className="sr-only">Meal reminder time</span>
               <input
                 type="time"
-                className="rounded-xl border border-slate-300 bg-white px-2 py-1 text-sm"
+                className="rounded-xl border border-slate-300 bg-white px-2 py-1 text-sm dark:border-slate-700 dark:bg-slate-900"
                 value={reminders.mealLog.time}
                 onChange={(e) => setRemindersState({
                   ...reminders,
@@ -270,10 +294,10 @@ export function SettingsRoute() {
           </div>
         </div>
 
-        <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 space-y-3">
-          <div className="text-sm font-medium">Weigh-in</div>
+        <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 space-y-3 dark:border-slate-800 dark:bg-slate-950">
+          <div className="text-sm font-medium text-slate-900 dark:text-slate-100">Weigh-in</div>
           <div className="flex items-center justify-between gap-3">
-            <label className="flex items-center gap-2 text-sm">
+            <label className="flex items-center gap-2 text-sm text-slate-900 dark:text-slate-100">
               <input
                 type="checkbox"
                 checked={reminders.weighIn.enabled}
@@ -289,7 +313,7 @@ export function SettingsRoute() {
               <span className="sr-only">Weigh-in reminder time</span>
               <input
                 type="time"
-                className="rounded-xl border border-slate-300 bg-white px-2 py-1 text-sm"
+                className="rounded-xl border border-slate-300 bg-white px-2 py-1 text-sm dark:border-slate-700 dark:bg-slate-900"
                 value={reminders.weighIn.time}
                 onChange={(e) => setRemindersState({
                   ...reminders,
@@ -302,7 +326,7 @@ export function SettingsRoute() {
         </div>
 
         {notificationPermission !== 'granted' && (reminders.mealLog.enabled || reminders.weighIn.enabled) ? (
-          <div className="text-sm text-amber-700">
+          <div className="text-sm text-amber-700 dark:text-amber-300">
             Enable notifications to receive reminders.
           </div>
         ) : null}
@@ -317,8 +341,8 @@ export function SettingsRoute() {
         </button>
       </div>
 
-      <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm space-y-3">
-        <div className="text-sm font-medium">Data</div>
+      <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm space-y-3 dark:border-slate-800 dark:bg-slate-900">
+        <div className="text-sm font-medium text-slate-900 dark:text-slate-100">Data</div>
 
         <button
           className="w-full rounded-xl bg-gradient-to-r from-emerald-600 via-teal-500 to-sky-500 px-3 py-2 text-sm font-medium text-white transition hover:brightness-110 active:brightness-95 disabled:opacity-50"
@@ -339,7 +363,7 @@ export function SettingsRoute() {
         </label>
 
         <button
-          className="w-full rounded-xl border border-red-300 bg-white px-3 py-2 text-sm text-red-700 disabled:opacity-50"
+          className="w-full rounded-xl border border-red-300 bg-white px-3 py-2 text-sm text-red-700 disabled:opacity-50 dark:bg-slate-900"
           onClick={() => void onClear()}
           disabled={busy}
         >

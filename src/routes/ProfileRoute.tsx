@@ -91,7 +91,7 @@ export function ProfileRoute() {
     return (
       <div className="space-y-4">
         <ProfileManager />
-        <div className="rounded-lg bg-white p-4 shadow-sm text-sm text-slate-600">No profile selected.</div>
+        <div className="rounded-lg bg-white p-4 shadow-sm text-sm text-slate-600 dark:bg-slate-900 dark:text-slate-300">No profile selected.</div>
       </div>
     )
   }
@@ -102,16 +102,16 @@ export function ProfileRoute() {
 
       <WeightTracker profile={currentProfile} onSaveProfile={saveProfile} />
 
-      <div className="rounded-lg bg-white p-4 shadow-sm">
+      <div className="rounded-lg bg-white p-4 shadow-sm dark:bg-slate-900">
         <div className="text-base font-semibold">Edit profile</div>
-        <div className="mt-1 text-sm text-slate-600">Update details used for daily needs and health insights.</div>
+        <div className="mt-1 text-sm text-slate-600 dark:text-slate-300">Update details used for daily needs and health insights.</div>
       </div>
 
-      <div className="rounded-lg bg-white p-4 shadow-sm space-y-3">
+      <div className="rounded-lg bg-white p-4 shadow-sm space-y-3 dark:bg-slate-900">
         <label className="block text-sm">
           <div className="font-medium">Name</div>
           <input
-            className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
+            className="mt-1 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
             value={name}
             onChange={(e) => setName(e.target.value)}
             disabled={busy}
@@ -123,7 +123,7 @@ export function ProfileRoute() {
           <label className="block text-sm">
             <div className="font-medium">Height (cm)</div>
             <input
-              className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
+              className="mt-1 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
               value={heightCm}
               onChange={(e) => setHeightCm(e.target.value)}
               inputMode="numeric"
@@ -134,7 +134,7 @@ export function ProfileRoute() {
           <label className="block text-sm">
             <div className="font-medium">Weight (kg)</div>
             <input
-              className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
+              className="mt-1 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
               value={weightKg}
               onChange={(e) => setWeightKg(e.target.value)}
               inputMode="decimal"
@@ -145,7 +145,7 @@ export function ProfileRoute() {
           <label className="block text-sm">
             <div className="font-medium">Age</div>
             <input
-              className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
+              className="mt-1 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
               value={age}
               onChange={(e) => setAge(e.target.value)}
               inputMode="numeric"
@@ -156,7 +156,7 @@ export function ProfileRoute() {
           <label className="block text-sm">
             <div className="font-medium">Sex</div>
             <select
-              className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
+              className="mt-1 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
               value={sex}
               onChange={(e) => setSex(e.target.value as Sex)}
               disabled={busy}
@@ -171,7 +171,7 @@ export function ProfileRoute() {
           <label className="col-span-2 block text-sm">
             <div className="font-medium">Activity level</div>
             <select
-              className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
+              className="mt-1 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
               value={activityLevel}
               onChange={(e) => setActivityLevel(e.target.value as ActivityLevel)}
               disabled={busy}
@@ -188,7 +188,7 @@ export function ProfileRoute() {
         <label className="block text-sm">
           <div className="font-medium">Medical conditions (optional)</div>
           <input
-            className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
+            className="mt-1 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
             value={conditionsText}
             onChange={(e) => setConditionsText(e.target.value)}
             placeholder="diabetes, hypertension"
@@ -200,7 +200,7 @@ export function ProfileRoute() {
           <label className="block text-sm">
             <div className="font-medium">Goal</div>
             <select
-              className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
+              className="mt-1 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
               value={goal}
               onChange={(e) => setGoal(e.target.value as Goal)}
               disabled={busy}
@@ -215,7 +215,7 @@ export function ProfileRoute() {
           <label className="block text-sm">
             <div className="font-medium">Daily target (kcal) (optional)</div>
             <input
-              className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
+              className="mt-1 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
               value={targetCaloriesKcal}
               onChange={(e) => setTargetCaloriesKcal(e.target.value)}
               inputMode="numeric"
@@ -226,7 +226,7 @@ export function ProfileRoute() {
         </div>
 
         <button
-          className="w-full rounded-md bg-slate-900 px-3 py-2 text-sm font-medium text-white disabled:opacity-50"
+          className="w-full rounded-md bg-slate-900 px-3 py-2 text-sm font-medium text-white disabled:opacity-50 dark:bg-slate-100 dark:text-slate-900"
           onClick={() => void onSave()}
           disabled={busy}
           type="button"

@@ -130,10 +130,10 @@ export function WeightTracker(props: {
   }
 
   return (
-    <div className="rounded-lg bg-white p-4 shadow-sm space-y-3">
+    <div className="rounded-lg bg-white p-4 shadow-sm space-y-3 dark:bg-slate-900">
       <div className="text-sm font-medium">Weight tracking</div>
 
-      <div className="text-xs text-slate-600">
+      <div className="text-xs text-slate-600 dark:text-slate-300">
         Latest: {latest ? `${isoDay(latest.date)} · ${latest.weightKg} kg` : 'No entries yet'}
       </div>
 
@@ -141,7 +141,7 @@ export function WeightTracker(props: {
         <label className="block text-sm">
           <div className="font-medium">Date</div>
           <input
-            className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
+            className="mt-1 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
             value={date}
             onChange={(e) => setDate(e.target.value)}
             type="date"
@@ -152,7 +152,7 @@ export function WeightTracker(props: {
         <label className="block text-sm">
           <div className="font-medium">Weight (kg)</div>
           <input
-            className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
+            className="mt-1 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
             value={weightKg}
             onChange={(e) => setWeightKg(e.target.value)}
             inputMode="decimal"
@@ -162,7 +162,7 @@ export function WeightTracker(props: {
       </div>
 
       <button
-        className="w-full rounded-md bg-slate-900 px-3 py-2 text-sm font-medium text-white disabled:opacity-50"
+        className="w-full rounded-md bg-slate-900 px-3 py-2 text-sm font-medium text-white disabled:opacity-50 dark:bg-slate-100 dark:text-slate-900"
         onClick={() => void addEntry()}
         disabled={busy}
         type="button"
@@ -173,8 +173,8 @@ export function WeightTracker(props: {
       {entries.length > 0 ? (
         <div className="space-y-2">
           {graph ? (
-            <div className="rounded-md border border-slate-200 bg-white p-3">
-              <div className="flex items-center justify-between text-xs text-slate-600">
+            <div className="rounded-md border border-slate-200 bg-white p-3 dark:border-slate-800 dark:bg-slate-950">
+              <div className="flex items-center justify-between text-xs text-slate-600 dark:text-slate-300">
                 <div>
                   {graph.minW.toFixed(1)}–{graph.maxW.toFixed(1)} kg
                 </div>
@@ -184,13 +184,13 @@ export function WeightTracker(props: {
               </div>
               <svg
                 viewBox={`0 0 ${graph.width} ${graph.height}`}
-                className="mt-2 h-24 w-full"
+                className="mt-2 h-24 w-full text-emerald-600 dark:text-emerald-400"
                 role="img"
                 aria-label="Weight trend"
               >
-                <path d={graph.path} fill="none" stroke="#059669" strokeWidth="2" />
+                <path d={graph.path} fill="none" stroke="currentColor" strokeWidth="2" />
                 {graph.points.map((p, idx) => (
-                  <circle key={idx} cx={p.x} cy={p.y} r={2.5} fill="#059669" />
+                  <circle key={idx} cx={p.x} cy={p.y} r={2.5} fill="currentColor" />
                 ))}
               </svg>
             </div>
@@ -199,15 +199,15 @@ export function WeightTracker(props: {
           {entries.slice(0, 10).map((e, idx) => (
             <div
               key={`${e.date}-${e.weightKg}-${idx}`}
-              className="flex items-center justify-between rounded-md border border-slate-200 px-3 py-2"
+              className="flex items-center justify-between rounded-md border border-slate-200 px-3 py-2 dark:border-slate-800"
             >
               <div>
                 <div className="text-sm font-medium">{isoDay(e.date)}</div>
-                <div className="text-xs text-slate-600">{e.weightKg} kg</div>
+                <div className="text-xs text-slate-600 dark:text-slate-300">{e.weightKg} kg</div>
               </div>
 
               <button
-                className="rounded-md border border-red-300 bg-white px-3 py-1 text-xs text-red-700 disabled:opacity-50"
+                className="rounded-md border border-red-300 bg-white px-3 py-1 text-xs text-red-700 disabled:opacity-50 dark:bg-slate-950"
                 onClick={() => void removeEntry(e)}
                 disabled={busy}
                 type="button"

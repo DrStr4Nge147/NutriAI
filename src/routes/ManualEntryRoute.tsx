@@ -35,7 +35,7 @@ export function ManualEntryRoute() {
 
   return (
     <div className="space-y-4">
-      <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+      <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
         <div className="flex items-center gap-2">
           <svg viewBox="0 0 24 24" className="h-5 w-5 text-emerald-700" aria-hidden="true">
             <path
@@ -57,14 +57,14 @@ export function ManualEntryRoute() {
           </svg>
           <div className="text-base font-semibold">Manual Entry</div>
         </div>
-        <div className="mt-1 text-sm text-slate-600">Add all foods for this meal, then save.</div>
+        <div className="mt-1 text-sm text-slate-600 dark:text-slate-300">Add all foods for this meal, then save.</div>
       </div>
 
-      <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm space-y-4">
+      <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm space-y-4 dark:border-slate-800 dark:bg-slate-900">
         <label className="block text-sm">
-          <div className="font-medium">Eaten at</div>
+          <div className="font-medium text-slate-900 dark:text-slate-100">Eaten at</div>
           <input
-            className="mt-1 w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm"
+            className="mt-1 w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
             value={eatenAtLocal}
             onChange={(e) => setEatenAtLocal(e.target.value)}
             type="datetime-local"

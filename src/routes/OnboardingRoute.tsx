@@ -31,7 +31,7 @@ function OnboardingStepShell(props: {
   children: React.ReactNode
 }) {
   return (
-    <div className="relative min-h-screen overflow-hidden bg-white text-slate-900">
+    <div className="relative min-h-screen overflow-hidden bg-white text-slate-900 dark:bg-slate-950 dark:text-slate-100">
       <div className="pointer-events-none absolute inset-0">
         <div className="absolute -top-40 left-1/2 h-[560px] w-[560px] -translate-x-1/2 rounded-full bg-gradient-to-tr from-emerald-400/40 via-teal-400/30 to-white/0 blur-3xl" />
         <div className="absolute -bottom-56 left-[-160px] h-[560px] w-[560px] rounded-full bg-gradient-to-tr from-emerald-400/25 via-sky-300/15 to-white/0 blur-3xl" />
@@ -41,13 +41,13 @@ function OnboardingStepShell(props: {
       <div className="relative mx-auto flex min-h-screen max-w-3xl flex-col px-4 py-10">
         <div className="flex items-center justify-between">
           <div>
-            <div className="text-xs font-medium uppercase tracking-[0.18em] text-slate-500">Getting started</div>
+            <div className="text-xs font-medium uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">Getting started</div>
             <div className="mt-1 text-lg font-semibold">{props.stepTitle}</div>
           </div>
-          <div className="hidden sm:block text-xs text-slate-500">Step {props.stepIndex + 1} of 4</div>
+          <div className="hidden sm:block text-xs text-slate-500 dark:text-slate-400">Step {props.stepIndex + 1} of 4</div>
         </div>
 
-        <div className="mt-5 h-2 w-full overflow-hidden rounded-full bg-slate-200/70">
+        <div className="mt-5 h-2 w-full overflow-hidden rounded-full bg-slate-200/70 dark:bg-slate-800/70">
           <div
             className="h-full rounded-full bg-gradient-to-r from-emerald-600 via-teal-500 to-sky-500 transition-[width] duration-500 ease-out"
             style={{ width: `${((props.stepIndex + 1) / 4) * 100}%` }}
@@ -56,14 +56,14 @@ function OnboardingStepShell(props: {
         </div>
 
         <div className="mt-8 flex-1">
-          <div className="rounded-2xl border border-slate-200/70 bg-white/80 p-5 shadow-xl shadow-slate-900/10 backdrop-blur-xl sm:p-8">
+          <div className="rounded-2xl border border-slate-200/70 bg-white/80 p-5 shadow-xl shadow-slate-900/10 backdrop-blur-xl sm:p-8 dark:border-slate-800/70 dark:bg-slate-900/80">
             <div key={props.animateKey} className="onboarding-animate">
               {props.children}
             </div>
           </div>
         </div>
 
-        <div className="mt-8 text-center text-xs text-slate-500">Your data is stored locally on this device.</div>
+        <div className="mt-8 text-center text-xs text-slate-500 dark:text-slate-400">Your data is stored locally on this device.</div>
       </div>
     </div>
   )
@@ -130,15 +130,15 @@ export function OnboardingRoute() {
         <div className="space-y-5">
           <div>
             <div className="text-2xl font-semibold tracking-tight sm:text-3xl">Welcome</div>
-            <div className="mt-2 text-sm leading-6 text-slate-600">
+            <div className="mt-2 text-sm leading-6 text-slate-600 dark:text-slate-300">
               Track meals locally and get nutrition breakdowns. Your data stays on your device.
             </div>
           </div>
 
           <div className="grid gap-2">
-            <label className="text-sm font-medium text-slate-700">Your name</label>
+            <label className="text-sm font-medium text-slate-700 dark:text-slate-200">Your name</label>
             <input
-              className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 shadow-inner shadow-slate-900/5 outline-none ring-0 transition focus:border-emerald-400 focus:ring-2 focus:ring-emerald-200/60"
+              className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 shadow-inner shadow-slate-900/5 outline-none ring-0 transition focus:border-emerald-400 focus:ring-2 focus:ring-emerald-200/60 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100 dark:placeholder:text-slate-500"
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder="Your name"
@@ -154,14 +154,14 @@ export function OnboardingRoute() {
               Get started
             </button>
             <button
-              className="inline-flex items-center justify-center rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-medium text-slate-900 transition hover:bg-slate-50"
+              className="inline-flex items-center justify-center rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-medium text-slate-900 transition hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100 dark:hover:bg-slate-900"
               onClick={() => finish(DEFAULTS)}
             >
               Skip
             </button>
           </div>
 
-          {!canContinue ? <div className="text-xs text-slate-600">Please enter your name to continue.</div> : null}
+          {!canContinue ? <div className="text-xs text-slate-600 dark:text-slate-300">Please enter your name to continue.</div> : null}
         </div>
       </OnboardingStepShell>
     )
@@ -173,41 +173,41 @@ export function OnboardingRoute() {
         <div className="space-y-6">
           <div>
             <div className="text-2xl font-semibold tracking-tight">Body details</div>
-            <div className="mt-2 text-sm leading-6 text-slate-600">Used to estimate daily needs. You can update this later.</div>
+            <div className="mt-2 text-sm leading-6 text-slate-600 dark:text-slate-300">Used to estimate daily needs. You can update this later.</div>
           </div>
 
           <div className="grid grid-cols-2 gap-3">
             <label className="text-sm">
-              <div className="font-medium text-slate-700">Height (cm)</div>
+              <div className="font-medium text-slate-700 dark:text-slate-200">Height (cm)</div>
               <input
-                className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 shadow-inner shadow-slate-900/5 outline-none transition focus:border-emerald-400 focus:ring-2 focus:ring-emerald-200/60"
+                className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 shadow-inner shadow-slate-900/5 outline-none transition focus:border-emerald-400 focus:ring-2 focus:ring-emerald-200/60 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
                 value={heightCm}
                 onChange={(e) => setHeightCm(e.target.value)}
                 inputMode="numeric"
               />
             </label>
             <label className="text-sm">
-              <div className="font-medium text-slate-700">Weight (kg)</div>
+              <div className="font-medium text-slate-700 dark:text-slate-200">Weight (kg)</div>
               <input
-                className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 shadow-inner shadow-slate-900/5 outline-none transition focus:border-emerald-400 focus:ring-2 focus:ring-emerald-200/60"
+                className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 shadow-inner shadow-slate-900/5 outline-none transition focus:border-emerald-400 focus:ring-2 focus:ring-emerald-200/60 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
                 value={weightKg}
                 onChange={(e) => setWeightKg(e.target.value)}
                 inputMode="numeric"
               />
             </label>
             <label className="text-sm">
-              <div className="font-medium text-slate-700">Age</div>
+              <div className="font-medium text-slate-700 dark:text-slate-200">Age</div>
               <input
-                className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 shadow-inner shadow-slate-900/5 outline-none transition focus:border-emerald-400 focus:ring-2 focus:ring-emerald-200/60"
+                className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 shadow-inner shadow-slate-900/5 outline-none transition focus:border-emerald-400 focus:ring-2 focus:ring-emerald-200/60 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
                 value={age}
                 onChange={(e) => setAge(e.target.value)}
                 inputMode="numeric"
               />
             </label>
             <label className="text-sm">
-              <div className="font-medium text-slate-700">Sex</div>
+              <div className="font-medium text-slate-700 dark:text-slate-200">Sex</div>
               <select
-                className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 shadow-inner shadow-slate-900/5 outline-none transition focus:border-emerald-400 focus:ring-2 focus:ring-emerald-200/60"
+                className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 shadow-inner shadow-slate-900/5 outline-none transition focus:border-emerald-400 focus:ring-2 focus:ring-emerald-200/60 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
                 value={sex}
                 onChange={(e) => setSex(e.target.value as Sex)}
               >
@@ -218,9 +218,9 @@ export function OnboardingRoute() {
               </select>
             </label>
             <label className="col-span-2 text-sm">
-              <div className="font-medium text-slate-700">Activity level</div>
+              <div className="font-medium text-slate-700 dark:text-slate-200">Activity level</div>
               <select
-                className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 shadow-inner shadow-slate-900/5 outline-none transition focus:border-emerald-400 focus:ring-2 focus:ring-emerald-200/60"
+                className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 shadow-inner shadow-slate-900/5 outline-none transition focus:border-emerald-400 focus:ring-2 focus:ring-emerald-200/60 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
                 value={activityLevel}
                 onChange={(e) => setActivityLevel(e.target.value as ActivityLevel)}
               >
@@ -241,7 +241,7 @@ export function OnboardingRoute() {
               Continue
             </button>
             <button
-              className="inline-flex items-center justify-center rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-medium text-slate-900 transition hover:bg-slate-50"
+              className="inline-flex items-center justify-center rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-medium text-slate-900 transition hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100 dark:hover:bg-slate-900"
               onClick={() => finish(DEFAULTS)}
             >
               Skip
@@ -282,29 +282,29 @@ export function OnboardingRoute() {
         <div className="space-y-6">
           <div>
             <div className="text-2xl font-semibold tracking-tight">Medical conditions (optional)</div>
-            <div className="mt-2 text-sm leading-6 text-slate-600">
+            <div className="mt-2 text-sm leading-6 text-slate-600 dark:text-slate-300">
               Enter conditions separated by commas (e.g., diabetes, hypertension).
             </div>
           </div>
 
           <div className="grid gap-2">
-            <label className="text-sm font-medium text-slate-700">Conditions</label>
+            <label className="text-sm font-medium text-slate-700 dark:text-slate-200">Conditions</label>
             <input
-              className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 shadow-inner shadow-slate-900/5 outline-none transition focus:border-emerald-400 focus:ring-2 focus:ring-emerald-200/60"
+              className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 shadow-inner shadow-slate-900/5 outline-none transition focus:border-emerald-400 focus:ring-2 focus:ring-emerald-200/60 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100 dark:placeholder:text-slate-500"
               value={conditionsText}
               onChange={(e) => setConditionsText(e.target.value)}
               placeholder="diabetes, hypertension"
             />
           </div>
 
-          <div className="rounded-xl border border-slate-200 bg-white p-4">
-            <div className="text-sm font-semibold text-slate-900">Upload lab results (optional)</div>
-            <div className="mt-1 text-xs text-slate-600">
+          <div className="rounded-xl border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900">
+            <div className="text-sm font-semibold text-slate-900 dark:text-slate-100">Upload lab results (optional)</div>
+            <div className="mt-1 text-xs text-slate-600 dark:text-slate-300">
               Before uploading, it’s suggested to crop out your name and your physician’s name for privacy.
             </div>
 
             <div className="mt-3">
-              <label className="inline-flex items-center justify-center rounded-xl bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800">
+              <label className="inline-flex items-center justify-center rounded-xl bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800 dark:bg-slate-100 dark:text-slate-900 dark:hover:bg-white">
                 Upload labs
                 <input
                   className="sr-only"
@@ -320,15 +320,15 @@ export function OnboardingRoute() {
 
             {labUploads.length > 0 ? (
               <div className="mt-3 space-y-2">
-                <div className="text-xs font-medium text-slate-700">Uploaded</div>
+                <div className="text-xs font-medium text-slate-700 dark:text-slate-200">Uploaded</div>
                 {labUploads.map((lab) => (
-                  <div key={lab.id} className="flex items-center justify-between gap-2 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2">
+                  <div key={lab.id} className="flex items-center justify-between gap-2 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 dark:border-slate-800 dark:bg-slate-950">
                     <div className="min-w-0">
-                      <div className="truncate text-xs font-medium text-slate-900">{lab.name}</div>
-                      <div className="text-[11px] text-slate-600">{new Date(lab.uploadedAt).toLocaleString()}</div>
+                      <div className="truncate text-xs font-medium text-slate-900 dark:text-slate-100">{lab.name}</div>
+                      <div className="text-[11px] text-slate-600 dark:text-slate-300">{new Date(lab.uploadedAt).toLocaleString()}</div>
                     </div>
                     <button
-                      className="shrink-0 rounded-lg border border-slate-300 bg-white px-2 py-1 text-xs hover:bg-slate-50"
+                      className="shrink-0 rounded-lg border border-slate-300 bg-white px-2 py-1 text-xs hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:hover:bg-slate-800"
                       onClick={() => setLabUploads((prev) => prev.filter((x) => x.id !== lab.id))}
                       type="button"
                     >
@@ -348,7 +348,7 @@ export function OnboardingRoute() {
               Continue
             </button>
             <button
-              className="inline-flex items-center justify-center rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-medium text-slate-900 transition hover:bg-slate-50"
+              className="inline-flex items-center justify-center rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-medium text-slate-900 transition hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100 dark:hover:bg-slate-900"
               onClick={() => setStep('privacy')}
             >
               Skip
@@ -364,7 +364,7 @@ export function OnboardingRoute() {
       <div className="space-y-6">
         <div>
           <div className="text-2xl font-semibold tracking-tight">Privacy & storage</div>
-          <div className="mt-2 text-sm leading-6 text-slate-600">
+          <div className="mt-2 text-sm leading-6 text-slate-600 dark:text-slate-300">
             Your meals and profile are stored locally on this device. Export in Settings for backup.
           </div>
         </div>

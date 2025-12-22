@@ -132,8 +132,8 @@ export function MedicalHistoryRoute() {
   if (!currentProfile) {
     return (
       <div className="space-y-4">
-        <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm text-sm text-slate-600">No profile selected.</div>
-        <Link to="/settings" className="inline-block text-sm text-slate-900 underline">
+        <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm text-sm text-slate-600 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300">No profile selected.</div>
+        <Link to="/settings" className="inline-block text-sm text-slate-900 underline dark:text-slate-100">
           Back to settings
         </Link>
       </div>
@@ -142,16 +142,16 @@ export function MedicalHistoryRoute() {
 
   return (
     <div className="space-y-4">
-      <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-        <div className="text-base font-semibold">Medical History</div>
-        <div className="mt-1 text-sm text-slate-600">Update details to help personalize insights and recommendations.</div>
+      <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+        <div className="text-base font-semibold text-slate-900 dark:text-slate-100">Medical History</div>
+        <div className="mt-1 text-sm text-slate-600 dark:text-slate-300">Update details to help personalize insights and recommendations.</div>
       </div>
 
-      <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm space-y-4">
+      <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm space-y-4 dark:border-slate-800 dark:bg-slate-900">
         <label className="block text-sm">
-          <div className="font-medium">Medical conditions (optional)</div>
+          <div className="font-medium text-slate-900 dark:text-slate-100">Medical conditions (optional)</div>
           <input
-            className="mt-1 w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm"
+            className="mt-1 w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
             value={conditionsText}
             onChange={(e) => setConditionsText(e.target.value)}
             placeholder="diabetes, hypertension"
@@ -160,9 +160,9 @@ export function MedicalHistoryRoute() {
         </label>
 
         <label className="block text-sm">
-          <div className="font-medium">Notes (optional)</div>
+          <div className="font-medium text-slate-900 dark:text-slate-100">Notes (optional)</div>
           <textarea
-            className="mt-1 min-h-[120px] w-full resize-none rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm"
+            className="mt-1 min-h-[120px] w-full resize-none rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
             placeholder="Medications, allergies, surgeries, family history, symptoms, etc."
@@ -171,14 +171,14 @@ export function MedicalHistoryRoute() {
         </label>
       </div>
 
-      <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-        <div className="text-sm font-semibold text-slate-900">Upload medical files (optional)</div>
-        <div className="mt-1 text-xs text-slate-600">
+      <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+        <div className="text-sm font-semibold text-slate-900 dark:text-slate-100">Upload medical files (optional)</div>
+        <div className="mt-1 text-xs text-slate-600 dark:text-slate-300">
           Before uploading, it’s suggested to crop out your name and your physician’s name for privacy.
         </div>
 
         <div className="mt-3">
-          <label className="inline-flex items-center justify-center rounded-xl bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800">
+          <label className="inline-flex items-center justify-center rounded-xl bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800 dark:bg-slate-100 dark:text-slate-900 dark:hover:bg-white">
             Upload files
             <input
               className="sr-only"
@@ -196,16 +196,16 @@ export function MedicalHistoryRoute() {
 
         {uploads.length > 0 ? (
           <div className="mt-3 space-y-2">
-            <div className="text-xs font-medium text-slate-700">Uploaded</div>
+            <div className="text-xs font-medium text-slate-700 dark:text-slate-200">Uploaded</div>
             {uploads.map((u) => (
-              <div key={u.id} className="flex items-center justify-between gap-2 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2">
+              <div key={u.id} className="flex items-center justify-between gap-2 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 dark:border-slate-800 dark:bg-slate-950">
                 <div className="min-w-0">
-                  <div className="truncate text-xs font-medium text-slate-900">{u.name}</div>
-                  <div className="text-[11px] text-slate-600">{new Date(u.uploadedAt).toLocaleString()}</div>
+                  <div className="truncate text-xs font-medium text-slate-900 dark:text-slate-100">{u.name}</div>
+                  <div className="text-[11px] text-slate-600 dark:text-slate-300">{new Date(u.uploadedAt).toLocaleString()}</div>
                 </div>
                 <div className="flex shrink-0 items-center gap-2">
                   <button
-                    className="rounded-lg border border-slate-300 bg-white px-2 py-1 text-xs hover:bg-slate-50"
+                    className="rounded-lg border border-slate-300 bg-white px-2 py-1 text-xs hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:hover:bg-slate-800"
                     onClick={() => {
                       setPreviewFile(u)
                       setPreviewOpen(true)
@@ -215,7 +215,7 @@ export function MedicalHistoryRoute() {
                     View
                   </button>
                   <button
-                    className="rounded-lg border border-slate-300 bg-white px-2 py-1 text-xs hover:bg-slate-50"
+                    className="rounded-lg border border-slate-300 bg-white px-2 py-1 text-xs hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:hover:bg-slate-800"
                     onClick={() => setUploads((prev) => prev.filter((x) => x.id !== u.id))}
                     type="button"
                     disabled={busy}
@@ -226,21 +226,21 @@ export function MedicalHistoryRoute() {
               </div>
             ))}
 
-            <div className="mt-2 rounded-xl border border-slate-200 bg-white p-3">
+            <div className="mt-2 rounded-xl border border-slate-200 bg-white p-3 dark:border-slate-800 dark:bg-slate-950">
               <div className="flex items-center justify-between gap-3">
                 <div className="min-w-0">
-                  <div className="text-xs font-semibold text-slate-900">Medical files summary</div>
+                  <div className="text-xs font-semibold text-slate-900 dark:text-slate-100">Medical files summary</div>
                   {filesSummary ? (
-                    <div className="mt-1 text-[11px] text-slate-600">
+                    <div className="mt-1 text-[11px] text-slate-600 dark:text-slate-300">
                       Last analyzed: {new Date(filesSummary.analyzedAt).toLocaleString()}
                       {summaryIsStale ? ' • Out of date' : ''}
                     </div>
                   ) : (
-                    <div className="mt-1 text-[11px] text-slate-600">Not analyzed yet.</div>
+                    <div className="mt-1 text-[11px] text-slate-600 dark:text-slate-300">Not analyzed yet.</div>
                   )}
                 </div>
                 <button
-                  className="shrink-0 rounded-xl bg-slate-900 px-3 py-2 text-xs font-medium text-white hover:bg-slate-800 disabled:opacity-50"
+                  className="shrink-0 rounded-xl bg-slate-900 px-3 py-2 text-xs font-medium text-white hover:bg-slate-800 disabled:opacity-50 dark:bg-slate-100 dark:text-slate-900 dark:hover:bg-white"
                   onClick={() => void onAnalyzeFiles()}
                   type="button"
                   disabled={busy || analyzeBusy}
@@ -250,16 +250,16 @@ export function MedicalHistoryRoute() {
               </div>
 
               {filesSummary ? (
-                <div className="mt-2 whitespace-pre-wrap text-sm text-slate-800">{filesSummary.summary}</div>
+                <div className="mt-2 whitespace-pre-wrap text-sm text-slate-800 dark:text-slate-100">{filesSummary.summary}</div>
               ) : null}
             </div>
           </div>
         ) : (
-          <div className="mt-3 text-sm text-slate-600">No files uploaded yet.</div>
+          <div className="mt-3 text-sm text-slate-600 dark:text-slate-300">No files uploaded yet.</div>
         )}
       </div>
 
-      <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm space-y-3">
+      <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm space-y-3 dark:border-slate-800 dark:bg-slate-900">
         <button
           className="w-full rounded-xl bg-gradient-to-r from-emerald-600 via-teal-500 to-sky-500 px-3 py-2 text-sm font-medium text-white transition hover:brightness-110 active:brightness-95 disabled:opacity-50"
           onClick={() => void onSave()}
@@ -269,7 +269,7 @@ export function MedicalHistoryRoute() {
           Save medical history
         </button>
 
-        <Link to="/settings" className="inline-block text-sm text-slate-900 underline">
+        <Link to="/settings" className="inline-block text-sm text-slate-900 underline dark:text-slate-100">
           Cancel
         </Link>
 

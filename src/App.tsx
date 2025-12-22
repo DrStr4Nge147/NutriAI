@@ -21,14 +21,14 @@ export default function App() {
   if (!isHydrated) {
     if (location.pathname === '/onboarding') {
       return (
-        <div className="relative min-h-screen overflow-hidden bg-white text-slate-900">
+        <div className="relative min-h-screen overflow-hidden bg-white text-slate-900 dark:bg-slate-950 dark:text-slate-100">
           <div className="pointer-events-none absolute inset-0">
             <div className="absolute -top-40 left-1/2 h-[560px] w-[560px] -translate-x-1/2 rounded-full bg-gradient-to-tr from-emerald-400/40 via-teal-400/30 to-white/0 blur-3xl" />
             <div className="absolute -bottom-56 left-[-160px] h-[560px] w-[560px] rounded-full bg-gradient-to-tr from-emerald-400/25 via-sky-300/15 to-white/0 blur-3xl" />
             <div className="absolute right-[-200px] top-10 h-[520px] w-[520px] rounded-full bg-gradient-to-tr from-sky-400/25 via-teal-300/15 to-white/0 blur-3xl" />
           </div>
           <div className="relative mx-auto flex min-h-screen max-w-3xl flex-col items-center justify-center px-4 py-10">
-            <div className="onboarding-animate rounded-2xl border border-slate-200/70 bg-white/80 px-6 py-5 text-sm text-slate-700 shadow-xl shadow-slate-900/10 backdrop-blur-xl">
+            <div className="onboarding-animate rounded-2xl border border-slate-200/70 bg-white/80 px-6 py-5 text-sm text-slate-700 shadow-xl shadow-slate-900/10 backdrop-blur-xl dark:border-slate-800/70 dark:bg-slate-900/80 dark:text-slate-200">
               Loading…
             </div>
           </div>
@@ -38,7 +38,7 @@ export default function App() {
 
     return (
       <MobileShell title={t('app_title')}>
-        <div className="text-sm text-slate-600">Loading…</div>
+        <div className="text-sm text-slate-600 dark:text-slate-300">Loading…</div>
       </MobileShell>
     )
   }

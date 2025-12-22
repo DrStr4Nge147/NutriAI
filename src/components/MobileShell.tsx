@@ -6,12 +6,17 @@ import { useMealPhotoAnalysis } from '../state/MealPhotoAnalysisContext'
 import { useApp } from '../state/AppContext'
 
 function NavIcon(props: { name: 'home' | 'scan' | 'manual' | 'history' | 'mealPlan' | 'medical' | 'settings' | 'more'; active: boolean; tone?: 'inverse' }) {
-  const stroke = props.tone === 'inverse' ? '#ffffff' : props.active ? '#047857' : '#64748b'
-  const common = { stroke, strokeWidth: 2.2, fill: 'none', strokeLinecap: 'round' as const, strokeLinejoin: 'round' as const }
+  const iconClass =
+    props.tone === 'inverse'
+      ? 'text-white'
+      : props.active
+        ? 'text-emerald-700 dark:text-emerald-400'
+        : 'text-slate-500 dark:text-slate-300'
+  const common = { stroke: 'currentColor', strokeWidth: 2.2, fill: 'none', strokeLinecap: 'round' as const, strokeLinejoin: 'round' as const }
 
   if (props.name === 'home') {
     return (
-      <svg viewBox="0 0 24 24" className="h-5 w-5" aria-hidden="true">
+      <svg viewBox="0 0 24 24" className={`h-5 w-5 ${iconClass}`} aria-hidden="true">
         <path {...common} d="M4 11l8-7 8 7" />
         <path {...common} d="M6.5 10.5V20h11V10.5" />
       </svg>
@@ -20,7 +25,7 @@ function NavIcon(props: { name: 'home' | 'scan' | 'manual' | 'history' | 'mealPl
 
   if (props.name === 'scan') {
     return (
-      <svg viewBox="0 0 24 24" className="h-5 w-5" aria-hidden="true">
+      <svg viewBox="0 0 24 24" className={`h-5 w-5 ${iconClass}`} aria-hidden="true">
         <path {...common} d="M7 7h2l1-2h4l1 2h2a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V9a2 2 0 0 1 2-2z" />
         <path {...common} d="M12 17a4 4 0 1 0 0-8 4 4 0 0 0 0 8z" />
       </svg>
@@ -29,7 +34,7 @@ function NavIcon(props: { name: 'home' | 'scan' | 'manual' | 'history' | 'mealPl
 
   if (props.name === 'manual') {
     return (
-      <svg viewBox="0 0 24 24" className="h-5 w-5" aria-hidden="true">
+      <svg viewBox="0 0 24 24" className={`h-5 w-5 ${iconClass}`} aria-hidden="true">
         <path {...common} d="M4 20h16" />
         <path {...common} d="M6 16l8.5-8.5a2 2 0 0 1 2.8 0l.2.2a2 2 0 0 1 0 2.8L11 19H6v-3z" />
       </svg>
@@ -38,7 +43,7 @@ function NavIcon(props: { name: 'home' | 'scan' | 'manual' | 'history' | 'mealPl
 
   if (props.name === 'history') {
     return (
-      <svg viewBox="0 0 24 24" className="h-5 w-5" aria-hidden="true">
+      <svg viewBox="0 0 24 24" className={`h-5 w-5 ${iconClass}`} aria-hidden="true">
         <path {...common} d="M7 4h10" />
         <path {...common} d="M7 8h10" />
         <path {...common} d="M7 12h7" />
@@ -51,7 +56,7 @@ function NavIcon(props: { name: 'home' | 'scan' | 'manual' | 'history' | 'mealPl
 
   if (props.name === 'mealPlan') {
     return (
-      <svg viewBox="0 0 24 24" className="h-5 w-5" aria-hidden="true">
+      <svg viewBox="0 0 24 24" className={`h-5 w-5 ${iconClass}`} aria-hidden="true">
         <path {...common} d="M5 7h14" />
         <path {...common} d="M7 12h10" />
         <path {...common} d="M9 17h6" />
@@ -61,7 +66,7 @@ function NavIcon(props: { name: 'home' | 'scan' | 'manual' | 'history' | 'mealPl
 
   if (props.name === 'medical') {
     return (
-      <svg viewBox="0 0 24 24" className="h-5 w-5" aria-hidden="true">
+      <svg viewBox="0 0 24 24" className={`h-5 w-5 ${iconClass}`} aria-hidden="true">
         <path {...common} d="M12 2v20" />
         <path {...common} d="M2 12h20" />
         <path {...common} d="M7 5h10" />
@@ -72,7 +77,7 @@ function NavIcon(props: { name: 'home' | 'scan' | 'manual' | 'history' | 'mealPl
 
   if (props.name === 'more') {
     return (
-      <svg viewBox="0 0 24 24" className="h-5 w-5" aria-hidden="true">
+      <svg viewBox="0 0 24 24" className={`h-5 w-5 ${iconClass}`} aria-hidden="true">
         <path {...common} d="M5 12h.01" />
         <path {...common} d="M12 12h.01" />
         <path {...common} d="M19 12h.01" />
@@ -87,7 +92,7 @@ function NavIcon(props: { name: 'home' | 'scan' | 'manual' | 'history' | 'mealPl
   }
 
   return (
-    <svg viewBox="0 0 24 24" className="h-5 w-5" aria-hidden="true">
+    <svg viewBox="0 0 24 24" className={`h-5 w-5 ${iconClass}`} aria-hidden="true">
       <path {...common} d="M12 15.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7z" />
       <path
         {...common}
@@ -206,8 +211,8 @@ export function MobileShell(props: { title: string; children: ReactNode }) {
 
   function linkClass(active: boolean) {
     return active
-      ? 'flex items-center gap-3 rounded-xl bg-emerald-100 px-3 py-2 text-sm font-semibold text-emerald-900'
-      : 'flex items-center gap-3 rounded-xl px-3 py-2 text-sm font-medium text-slate-600 hover:bg-white/70 hover:text-slate-900'
+      ? 'flex items-center gap-3 rounded-xl bg-emerald-100 px-3 py-2 text-sm font-semibold text-emerald-900 dark:bg-emerald-900/40 dark:text-emerald-50'
+      : 'flex items-center gap-3 rounded-xl px-3 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-slate-50'
   }
 
   useEffect(() => {
@@ -230,7 +235,7 @@ export function MobileShell(props: { title: string; children: ReactNode }) {
   }, [])
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-900">
+    <div className="min-h-screen bg-slate-50 text-slate-900 dark:bg-slate-950 dark:text-slate-100">
       <input
         ref={scanInputRef}
         className="sr-only"
@@ -306,9 +311,9 @@ export function MobileShell(props: { title: string; children: ReactNode }) {
         ) : null}
         <div className="md:grid md:grid-cols-[260px_1fr] md:gap-8">
           <aside className="hidden md:block">
-            <div className="sticky top-4 flex min-h-[calc(100vh-2rem)] flex-col rounded-3xl bg-emerald-50/60 p-4">
+            <div className="sticky top-4 flex min-h-[calc(100vh-2rem)] flex-col rounded-3xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900">
               <Link to="/" className="flex items-center gap-3 px-2 py-2">
-                <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-emerald-100 text-emerald-800">
+                <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-200">
                   <svg viewBox="0 0 24 24" className="h-6 w-6" aria-hidden="true">
                     <path
                       d="M5 21c6-1 10-5 12-10 1.6-4-2-8-6-6C7 7 3 11 3 17c0 2 1 4 2 4z"
@@ -362,7 +367,7 @@ export function MobileShell(props: { title: string; children: ReactNode }) {
                 <Link
                   to="/profile"
                   aria-label="Profile"
-                  className="relative inline-flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 bg-white shadow-sm hover:bg-slate-50"
+                  className="relative inline-flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 bg-white shadow-sm hover:bg-slate-50 dark:border-slate-800 dark:bg-slate-900 dark:hover:bg-slate-800"
                 >
                   <svg viewBox="0 0 24 24" className="h-5 w-5" aria-hidden="true">
                     <path
@@ -384,14 +389,14 @@ export function MobileShell(props: { title: string; children: ReactNode }) {
                   </svg>
 
                   <span
-                    className="pointer-events-none absolute -bottom-1 -right-1 inline-flex h-4 w-4 items-center justify-center rounded-full bg-slate-100 ring-1 ring-slate-200"
+                    className="pointer-events-none absolute -bottom-1 -right-1 inline-flex h-4 w-4 items-center justify-center rounded-full bg-slate-100 ring-1 ring-slate-200 dark:bg-slate-800 dark:ring-slate-700"
                     aria-hidden="true"
                   >
-                    <svg viewBox="0 0 24 24" className="h-3 w-3" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" className="h-3 w-3 text-slate-500 dark:text-slate-300" aria-hidden="true">
                       <path
                         d="M7 10l5 5 5-5"
                         fill="none"
-                        stroke="#64748b"
+                        stroke="currentColor"
                         strokeWidth="2.4"
                         strokeLinecap="round"
                         strokeLinejoin="round"
@@ -414,7 +419,7 @@ export function MobileShell(props: { title: string; children: ReactNode }) {
 
             {activeMealId || queuedMealIds.length > 0 ? (
               <button
-                className="mb-3 flex w-full items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-left text-sm shadow-sm hover:bg-slate-50"
+                className="mb-3 flex w-full items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-left text-sm shadow-sm hover:bg-slate-50 dark:border-slate-800 dark:bg-slate-900 dark:hover:bg-slate-800"
                 onClick={() => {
                   const target = activeMealId ?? queuedMealIds[0] ?? null
                   if (!target) return
@@ -423,13 +428,13 @@ export function MobileShell(props: { title: string; children: ReactNode }) {
                 type="button"
               >
                 <div className="min-w-0">
-                  <div className="text-xs font-semibold text-slate-900">Analyzing in background</div>
-                  <div className="truncate text-xs text-slate-600">
+                  <div className="text-xs font-semibold text-slate-900 dark:text-slate-100">Analyzing in background</div>
+                  <div className="truncate text-xs text-slate-600 dark:text-slate-300">
                     {activeMealId ? 'Running now' : 'Waiting to start'}
                     {queuedMealIds.length > 0 ? ` • ${queuedMealIds.length} queued` : ''}
                   </div>
                 </div>
-                <div className="shrink-0 rounded-xl bg-slate-100 px-3 py-1 text-[11px] font-medium text-slate-700">View</div>
+                <div className="shrink-0 rounded-xl bg-slate-100 px-3 py-1 text-[11px] font-medium text-slate-700 dark:bg-slate-800 dark:text-slate-200">View</div>
               </button>
             ) : null}
 
@@ -442,14 +447,14 @@ export function MobileShell(props: { title: string; children: ReactNode }) {
 
       {!hideBottomNav ? (
         <nav
-          className="fixed bottom-0 left-0 right-0 border-t border-slate-200 bg-white md:hidden"
+          className="fixed bottom-0 left-0 right-0 border-t border-slate-200 bg-white md:hidden dark:border-slate-800 dark:bg-slate-950"
           aria-label="Bottom navigation"
           style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
         >
           <div className="relative mx-auto max-w-md px-2 py-2">
             <button
               onClick={() => openScanPicker()}
-              className="absolute left-1/2 top-[-22px] flex h-14 w-14 -translate-x-1/2 items-center justify-center rounded-full bg-gradient-to-r from-emerald-600 via-teal-500 to-sky-500 shadow-lg ring-8 ring-white"
+              className="absolute left-1/2 top-[-22px] flex h-14 w-14 -translate-x-1/2 items-center justify-center rounded-full bg-gradient-to-r from-emerald-600 via-teal-500 to-sky-500 shadow-lg ring-8 ring-white dark:ring-slate-950"
               aria-label="Scan"
               type="button"
             >
@@ -462,7 +467,7 @@ export function MobileShell(props: { title: string; children: ReactNode }) {
                 className={
                   navItems[0].match(location.pathname)
                     ? 'rounded-xl bg-gradient-to-r from-emerald-600 via-teal-500 to-sky-500 px-2 py-2 text-center text-[11px] font-medium text-white'
-                    : 'rounded-xl px-2 py-2 text-center text-[11px] text-slate-700 hover:bg-slate-100'
+                    : 'rounded-xl px-2 py-2 text-center text-[11px] text-slate-700 hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-900'
                 }
               >
                 <div className="mx-auto flex w-full flex-col items-center gap-1">
@@ -480,7 +485,7 @@ export function MobileShell(props: { title: string; children: ReactNode }) {
                 className={
                   navItems[2].match(location.pathname)
                     ? 'rounded-xl bg-gradient-to-r from-emerald-600 via-teal-500 to-sky-500 px-2 py-2 text-center text-[11px] font-medium text-white'
-                    : 'rounded-xl px-2 py-2 text-center text-[11px] text-slate-700 hover:bg-slate-100'
+                    : 'rounded-xl px-2 py-2 text-center text-[11px] text-slate-700 hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-900'
                 }
               >
                 <div className="mx-auto flex w-full flex-col items-center gap-1">
@@ -498,7 +503,7 @@ export function MobileShell(props: { title: string; children: ReactNode }) {
                 className={
                   navItems[1].match(location.pathname)
                     ? 'rounded-xl bg-gradient-to-r from-emerald-600 via-teal-500 to-sky-500 px-2 py-2 text-center text-[11px] font-medium text-white'
-                    : 'rounded-xl px-2 py-2 text-center text-[11px] text-slate-700 hover:bg-slate-100'
+                    : 'rounded-xl px-2 py-2 text-center text-[11px] text-slate-700 hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-900'
                 }
               >
                 <div className="mx-auto flex w-full flex-col items-center gap-1">
@@ -517,7 +522,7 @@ export function MobileShell(props: { title: string; children: ReactNode }) {
                 className={
                   moreOpen || moreActive
                     ? 'rounded-xl bg-gradient-to-r from-emerald-600 via-teal-500 to-sky-500 px-2 py-2 text-center text-[11px] font-medium text-white'
-                    : 'rounded-xl px-2 py-2 text-center text-[11px] text-slate-700 hover:bg-slate-100'
+                    : 'rounded-xl px-2 py-2 text-center text-[11px] text-slate-700 hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-900'
                 }
                 aria-label="More options"
               >
@@ -534,15 +539,15 @@ export function MobileShell(props: { title: string; children: ReactNode }) {
       {moreOpen ? (
         <div className="fixed inset-0 z-50 md:hidden" role="dialog" aria-modal="true" aria-label="More options">
           <button className="absolute inset-0 bg-black/40" onClick={() => setMoreOpen(false)} type="button" aria-label="Close" />
-          <div className="absolute bottom-0 left-0 right-0 rounded-t-2xl bg-white p-4 shadow-2xl">
-            <div className="text-sm font-semibold text-slate-900">More options</div>
-            <div className="mt-1 text-xs text-slate-600">Other pages and settings.</div>
+          <div className="absolute bottom-0 left-0 right-0 rounded-t-2xl bg-white p-4 shadow-2xl dark:bg-slate-900">
+            <div className="text-sm font-semibold text-slate-900 dark:text-slate-100">More options</div>
+            <div className="mt-1 text-xs text-slate-600 dark:text-slate-300">Other pages and settings.</div>
 
             <div className="mt-4 grid gap-2">
               <Link
                 to="/medical-history"
                 onClick={() => setMoreOpen(false)}
-                className="flex items-center justify-between rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm hover:bg-slate-50"
+                className="flex items-center justify-between rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm hover:bg-slate-50 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100 dark:hover:bg-slate-900"
               >
                 <div className="flex items-center gap-3">
                   <NavIcon name="medical" active={false} />
@@ -552,28 +557,16 @@ export function MobileShell(props: { title: string; children: ReactNode }) {
               </Link>
 
               <Link
-                to="/settings"
-                onClick={() => setMoreOpen(false)}
-                className="flex items-center justify-between rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm hover:bg-slate-50"
-              >
-                <div className="flex items-center gap-3">
-                  <NavIcon name="settings" active={false} />
-                  <div>Settings</div>
-                </div>
-                <div className="text-slate-400">›</div>
-              </Link>
-
-              <Link
                 to="/profile"
                 onClick={() => setMoreOpen(false)}
-                className="flex items-center justify-between rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm hover:bg-slate-50"
+                className="flex items-center justify-between rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm hover:bg-slate-50 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100 dark:hover:bg-slate-900"
               >
                 <div className="flex items-center gap-3">
-                  <svg viewBox="0 0 24 24" className="h-5 w-5" aria-hidden="true">
+                  <svg viewBox="0 0 24 24" className="h-5 w-5 text-slate-500 dark:text-slate-300" aria-hidden="true">
                     <path
                       d="M20 21a8 8 0 0 0-16 0"
                       fill="none"
-                      stroke="#64748b"
+                      stroke="currentColor"
                       strokeWidth="2.2"
                       strokeLinecap="round"
                       strokeLinejoin="round"
@@ -581,7 +574,7 @@ export function MobileShell(props: { title: string; children: ReactNode }) {
                     <path
                       d="M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8z"
                       fill="none"
-                      stroke="#64748b"
+                      stroke="currentColor"
                       strokeWidth="2.2"
                       strokeLinecap="round"
                       strokeLinejoin="round"
@@ -592,8 +585,20 @@ export function MobileShell(props: { title: string; children: ReactNode }) {
                 <div className="text-slate-400">›</div>
               </Link>
 
+              <Link
+                to="/settings"
+                onClick={() => setMoreOpen(false)}
+                className="flex items-center justify-between rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm hover:bg-slate-50 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100 dark:hover:bg-slate-900"
+              >
+                <div className="flex items-center gap-3">
+                  <NavIcon name="settings" active={false} />
+                  <div>Settings</div>
+                </div>
+                <div className="text-slate-400">›</div>
+              </Link>
+
               <button
-                className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm hover:bg-slate-50"
+                className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-950 dark:hover:bg-slate-900"
                 onClick={() => setMoreOpen(false)}
                 type="button"
               >
@@ -612,9 +617,9 @@ export function MobileShell(props: { title: string; children: ReactNode }) {
             type="button"
             aria-label="Close"
           />
-          <div className="absolute bottom-0 left-0 right-0 rounded-t-2xl bg-white p-4 shadow-2xl">
-            <div className="text-sm font-semibold text-slate-900">Scan</div>
-            <div className="mt-1 text-xs text-slate-600">Choose camera or gallery.</div>
+          <div className="absolute bottom-0 left-0 right-0 rounded-t-2xl bg-white p-4 shadow-2xl dark:bg-slate-900">
+            <div className="text-sm font-semibold text-slate-900 dark:text-slate-100">Scan</div>
+            <div className="mt-1 text-xs text-slate-600 dark:text-slate-300">Choose camera or gallery.</div>
             <div className="mt-3 grid gap-2">
               <button
                 className="w-full rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-500 px-3 py-2 text-sm font-medium text-white transition hover:brightness-110 active:brightness-95"
@@ -624,14 +629,14 @@ export function MobileShell(props: { title: string; children: ReactNode }) {
                 Camera
               </button>
               <button
-                className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm hover:bg-slate-50"
+                className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-950 dark:hover:bg-slate-900"
                 onClick={() => pickScanSource('gallery')}
                 type="button"
               >
                 Gallery
               </button>
               <button
-                className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm hover:bg-slate-50"
+                className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-950 dark:hover:bg-slate-900"
                 onClick={() => setScanSourcePickerOpen(false)}
                 type="button"
               >
@@ -650,17 +655,17 @@ export function MobileShell(props: { title: string; children: ReactNode }) {
             type="button"
             aria-label="Close"
           />
-          <div className="absolute bottom-0 left-0 right-0 rounded-t-2xl bg-white p-4 shadow-2xl md:left-1/2 md:bottom-auto md:top-1/2 md:max-w-lg md:-translate-x-1/2 md:-translate-y-1/2 md:rounded-2xl">
-            <div className="text-sm font-semibold text-slate-900">AI analysis & cloud processing</div>
-            <div className="mt-2 text-xs leading-5 text-slate-600">
+          <div className="absolute bottom-0 left-0 right-0 rounded-t-2xl bg-white p-4 shadow-2xl md:left-1/2 md:bottom-auto md:top-1/2 md:max-w-lg md:-translate-x-1/2 md:-translate-y-1/2 md:rounded-2xl dark:bg-slate-900">
+            <div className="text-sm font-semibold text-slate-900 dark:text-slate-100">AI analysis & cloud processing</div>
+            <div className="mt-2 text-xs leading-5 text-slate-600 dark:text-slate-300">
               When you use AI features (photo analysis, item analysis), the information you provide will be sent for processing and may leave
               this device. Avoid including sensitive personal information in images or text.
             </div>
-            <div className="mt-2 text-xs leading-5 text-slate-600">
+            <div className="mt-2 text-xs leading-5 text-slate-600 dark:text-slate-300">
               If you upload lab results, it’s suggested to crop out your name and your physician’s name for privacy.
             </div>
 
-            <label className="mt-4 flex items-center gap-2 text-xs text-slate-700">
+            <label className="mt-4 flex items-center gap-2 text-xs text-slate-700 dark:text-slate-200">
               <input
                 type="checkbox"
                 checked={aiDisclaimerDontShowAgain}
@@ -671,14 +676,14 @@ export function MobileShell(props: { title: string; children: ReactNode }) {
 
             <div className="mt-4 grid gap-2 sm:grid-cols-2">
               <button
-                className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm hover:bg-slate-50"
+                className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-950 dark:hover:bg-slate-900"
                 onClick={() => closeAiDisclaimer()}
                 type="button"
               >
                 Close
               </button>
               <button
-                className="w-full rounded-xl bg-slate-900 px-3 py-2 text-sm font-medium text-white hover:bg-slate-800"
+                className="w-full rounded-xl bg-slate-900 px-3 py-2 text-sm font-medium text-white hover:bg-slate-800 dark:bg-slate-100 dark:text-slate-900 dark:hover:bg-white"
                 onClick={() => closeAiDisclaimer()}
                 type="button"
               >

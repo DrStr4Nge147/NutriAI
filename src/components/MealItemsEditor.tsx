@@ -138,7 +138,7 @@ export function MealItemsEditor(props: {
 
   return (
     <div className="space-y-4">
-      <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+      <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
         <div className="text-sm font-medium">Totals</div>
         <div className="mt-2 text-sm">
           <div>{totals.calories} kcal</div>
@@ -148,13 +148,13 @@ export function MealItemsEditor(props: {
         </div>
       </div>
 
-      <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm space-y-3">
+      <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm space-y-3 dark:border-slate-800 dark:bg-slate-900">
         <div className="text-sm font-medium">Add item</div>
 
         <label className="block text-sm">
-          <div className="font-medium">Food</div>
+          <div className="font-medium text-slate-900 dark:text-slate-100">Food</div>
           <input
-            className="mt-1 w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm"
+            className="mt-1 w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
             value={newName}
             onChange={(e) => setNewName(e.target.value)}
             placeholder="e.g., White rice (cooked)"
@@ -166,7 +166,7 @@ export function MealItemsEditor(props: {
             {suggestions.map((s) => (
               <button
                 key={s.id}
-                className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs text-slate-900 hover:bg-slate-100"
+                className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs text-slate-900 hover:bg-slate-100 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100 dark:hover:bg-slate-900"
                 onClick={() => setNewName(s.name)}
                 type="button"
               >
@@ -177,9 +177,9 @@ export function MealItemsEditor(props: {
         ) : null}
 
         <label className="block text-sm">
-          <div className="font-medium">Grams</div>
+          <div className="font-medium text-slate-900 dark:text-slate-100">Grams</div>
           <input
-            className="mt-1 w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm"
+            className="mt-1 w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
             value={newGrams}
             onChange={(e) => setNewGrams(e.target.value)}
             inputMode="numeric"
@@ -195,24 +195,24 @@ export function MealItemsEditor(props: {
           Add item (estimate)
         </button>
 
-        <div className="text-xs text-slate-600">
+        <div className="text-xs text-slate-600 dark:text-slate-300">
           Estimation uses the built-in food list. If an item isn’t recognized, macros will be 0.
         </div>
       </div>
 
-      <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm space-y-3">
+      <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm space-y-3 dark:border-slate-800 dark:bg-slate-900">
         <div className="text-sm font-medium">Items</div>
 
         {draftItems.length === 0 ? (
-          <div className="text-sm text-slate-600">No items yet.</div>
+          <div className="text-sm text-slate-600 dark:text-slate-300">No items yet.</div>
         ) : (
           <div className="space-y-3">
             {draftItems.map((i) => (
-              <div key={i.id} className="rounded-xl border border-slate-200 p-4 space-y-2">
+              <div key={i.id} className="rounded-xl border border-slate-200 p-4 space-y-2 dark:border-slate-800">
                 <label className="block text-sm">
-                  <div className="font-medium">Name</div>
+                  <div className="font-medium text-slate-900 dark:text-slate-100">Name</div>
                   <input
-                    className="mt-1 w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm"
+                    className="mt-1 w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
                     value={i.name}
                     onChange={(e) => {
                       const nextName = e.target.value
@@ -225,9 +225,9 @@ export function MealItemsEditor(props: {
 
                 <div className="grid grid-cols-2 gap-3">
                   <label className="block text-sm">
-                    <div className="font-medium">Grams</div>
+                    <div className="font-medium text-slate-900 dark:text-slate-100">Grams</div>
                     <input
-                      className="mt-1 w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm"
+                      className="mt-1 w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
                       value={String(i.quantityGrams)}
                       onChange={(e) => {
                         const nextGrams = Math.max(1, safeNumber(e.target.value, i.quantityGrams))
@@ -244,8 +244,8 @@ export function MealItemsEditor(props: {
                   </label>
 
                   <div className="text-sm">
-                    <div className="font-medium">Macros</div>
-                    <div className="mt-1 text-xs text-slate-600">
+                    <div className="font-medium text-slate-900 dark:text-slate-100">Macros</div>
+                    <div className="mt-1 text-xs text-slate-600 dark:text-slate-300">
                       {i.macros.calories} kcal · P {i.macros.protein_g}g · C {i.macros.carbs_g}g · F {i.macros.fat_g}g
                     </div>
                   </div>
@@ -254,7 +254,7 @@ export function MealItemsEditor(props: {
                 <div className="flex gap-2">
                   {isZeroMacros(i) ? (
                     <button
-                      className="flex-1 rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm hover:bg-slate-50 disabled:opacity-50"
+                      className="flex-1 rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm hover:bg-slate-50 disabled:opacity-50 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100 dark:hover:bg-slate-900"
                       onClick={() => void analyzeItem(i)}
                       disabled={busy || analyzingItemId !== null}
                       type="button"
@@ -263,7 +263,7 @@ export function MealItemsEditor(props: {
                     </button>
                   ) : null}
                   <button
-                    className="rounded-xl border border-red-300 bg-white px-3 py-2 text-sm text-red-700 disabled:opacity-50"
+                    className="rounded-xl border border-red-300 bg-white px-3 py-2 text-sm text-red-700 disabled:opacity-50 dark:bg-slate-950"
                     onClick={() => removeItem(i.id)}
                     disabled={busy || analyzingItemId === i.id}
                     type="button"

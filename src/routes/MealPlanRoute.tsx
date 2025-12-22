@@ -233,7 +233,7 @@ export function MealPlanRoute() {
   return (
     <>
       <div className="space-y-4">
-        <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+        <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
           <div className="flex items-center gap-2">
             <svg viewBox="0 0 24 24" className="h-5 w-5 text-emerald-700" aria-hidden="true">
               <path
@@ -263,14 +263,14 @@ export function MealPlanRoute() {
             </svg>
             <div className="text-base font-semibold">Meal Plan</div>
           </div>
-          <div className="mt-1 text-sm text-slate-600">Generate a simple Filipino-style meal that’s easy to cook and easy to shop for.</div>
+          <div className="mt-1 text-sm text-slate-600 dark:text-slate-300">Generate a simple Filipino-style meal that’s easy to cook and easy to shop for.</div>
         </div>
 
-        <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm space-y-4">
+        <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm space-y-4 dark:border-slate-800 dark:bg-slate-900">
           <label className="block text-sm">
-            <div className="font-medium">Meal type</div>
+            <div className="font-medium text-slate-900 dark:text-slate-100">Meal type</div>
             <select
-              className="mt-1 w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm"
+              className="mt-1 w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
               value={mealType}
               onChange={(e) => {
                 const next = (e.target.value === 'breakfast' || e.target.value === 'lunch' || e.target.value === 'dinner')
@@ -315,22 +315,22 @@ export function MealPlanRoute() {
           ) : null}
 
           {avoidTitles.length > 0 ? (
-            <div className="text-xs text-slate-600">Avoiding repeats from your last {avoidTitles.length} approved {mealTypeLabel(mealType).toLowerCase()} plan(s).</div>
+            <div className="text-xs text-slate-600 dark:text-slate-300">Avoiding repeats from your last {avoidTitles.length} approved {mealTypeLabel(mealType).toLowerCase()} plan(s).</div>
           ) : null}
 
           {error ? <div className="text-sm text-red-700">{error}</div> : null}
         </div>
 
         {generated ? (
-          <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm space-y-4">
+          <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm space-y-4 dark:border-slate-800 dark:bg-slate-900">
             <div>
               <div className="text-lg font-semibold">{generated.title}</div>
-              <div className="mt-1 text-sm text-slate-600">{generated.intro}</div>
+              <div className="mt-1 text-sm text-slate-600 dark:text-slate-300">{generated.intro}</div>
             </div>
 
             <div>
               <div className="text-sm font-medium">Ingredients</div>
-              <ul className="mt-2 list-disc pl-5 text-sm text-slate-700 space-y-1">
+              <ul className="mt-2 list-disc pl-5 text-sm text-slate-700 space-y-1 dark:text-slate-200">
                 {generated.ingredients.map((x, idx) => (
                   <li key={`${idx}-${x}`}>{x}</li>
                 ))}
@@ -339,7 +339,7 @@ export function MealPlanRoute() {
 
             <div>
               <div className="text-sm font-medium">How to cook</div>
-              <ol className="mt-2 list-decimal pl-5 text-sm text-slate-700 space-y-1">
+              <ol className="mt-2 list-decimal pl-5 text-sm text-slate-700 space-y-1 dark:text-slate-200">
                 {generated.steps.map((x, idx) => (
                   <li key={`${idx}-${x}`}>{x}</li>
                 ))}
@@ -348,7 +348,7 @@ export function MealPlanRoute() {
 
             <div className="grid gap-2 sm:grid-cols-2">
               <button
-                className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm hover:bg-slate-50 disabled:opacity-50"
+                className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm hover:bg-slate-50 disabled:opacity-50 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100 dark:hover:bg-slate-900"
                 onClick={() => void onGenerate()}
                 disabled={busy || approveBusy}
                 type="button"
@@ -369,7 +369,7 @@ export function MealPlanRoute() {
                 </span>
               </button>
               <button
-                className="w-full rounded-xl bg-slate-900 px-3 py-2 text-sm font-medium text-white hover:bg-slate-800 disabled:opacity-50"
+                className="w-full rounded-xl bg-slate-900 px-3 py-2 text-sm font-medium text-white hover:bg-slate-800 disabled:opacity-50 dark:bg-slate-100 dark:text-slate-900 dark:hover:bg-white"
                 onClick={() => void onApprove()}
                 disabled={busy || approveBusy}
                 type="button"
@@ -380,15 +380,15 @@ export function MealPlanRoute() {
           </div>
         ) : null}
 
-        <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+        <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
           <div className="text-sm font-medium">Approved {mealTypeLabel(mealType)} plans</div>
-          <div className="mt-1 text-xs text-slate-600">Used to reduce repetition when you generate again.</div>
+          <div className="mt-1 text-xs text-slate-600 dark:text-slate-300">Used to reduce repetition when you generate again.</div>
 
           <div className="mt-3 grid gap-2 sm:grid-cols-4">
             <label className="block text-xs">
-              <div className="font-medium text-slate-700">Filter</div>
+              <div className="font-medium text-slate-700 dark:text-slate-200">Filter</div>
               <select
-                className="mt-1 w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm"
+                className="mt-1 w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
                 value={approvedDateFilter}
                 onChange={(e) => {
                   const v = e.target.value === 'week' || e.target.value === 'month' ? e.target.value : 'none'
@@ -405,9 +405,9 @@ export function MealPlanRoute() {
             </label>
 
             <label className="block text-xs">
-              <div className="font-medium text-slate-700">Year</div>
+              <div className="font-medium text-slate-700 dark:text-slate-200">Year</div>
               <select
-                className="mt-1 w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm"
+                className="mt-1 w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
                 value={approvedYear}
                 onChange={(e) => {
                   const v = e.target.value
@@ -427,9 +427,9 @@ export function MealPlanRoute() {
 
             {approvedDateFilter === 'month' ? (
               <label className="block text-xs">
-                <div className="font-medium text-slate-700">Month</div>
+                <div className="font-medium text-slate-700 dark:text-slate-200">Month</div>
                 <select
-                  className="mt-1 w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm"
+                  className="mt-1 w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
                   value={String(approvedMonth)}
                   onChange={(e) => {
                     const v = Number.parseInt(e.target.value, 10)
@@ -452,9 +452,9 @@ export function MealPlanRoute() {
 
             {approvedDateFilter === 'week' ? (
               <label className="block text-xs">
-                <div className="font-medium text-slate-700">Week</div>
+                <div className="font-medium text-slate-700 dark:text-slate-200">Week</div>
                 <select
-                  className="mt-1 w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm"
+                  className="mt-1 w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
                   value={String(approvedWeek)}
                   onChange={(e) => {
                     const v = Number.parseInt(e.target.value, 10)
@@ -474,21 +474,21 @@ export function MealPlanRoute() {
           </div>
 
           {approvedForType.length === 0 ? (
-            <div className="mt-3 text-sm text-slate-600">No approved plans yet.</div>
+            <div className="mt-3 text-sm text-slate-600 dark:text-slate-300">No approved plans yet.</div>
           ) : filteredApprovedForType.length === 0 ? (
-            <div className="mt-3 text-sm text-slate-600">No approved plans match this filter.</div>
+            <div className="mt-3 text-sm text-slate-600 dark:text-slate-300">No approved plans match this filter.</div>
           ) : (
             <div className="mt-3 space-y-2">
               {visibleApproved.map((p) => (
-                <div key={p.id} className="rounded-xl border border-slate-200 bg-white px-3 py-3">
+                <div key={p.id} className="rounded-xl border border-slate-200 bg-white px-3 py-3 dark:border-slate-800 dark:bg-slate-950">
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
-                      <div className="truncate text-sm font-medium text-slate-900">{p.title}</div>
-                      <div className="mt-1 text-xs text-slate-600">{new Date(p.createdAt).toLocaleString()}</div>
+                      <div className="truncate text-sm font-medium text-slate-900 dark:text-slate-100">{p.title}</div>
+                      <div className="mt-1 text-xs text-slate-600 dark:text-slate-300">{new Date(p.createdAt).toLocaleString()}</div>
                     </div>
                     <div className="flex shrink-0 items-center gap-2">
                       <button
-                        className="rounded-lg border border-slate-300 bg-white px-2.5 py-1.5 text-xs hover:bg-slate-50"
+                        className="rounded-lg border border-slate-300 bg-white px-2.5 py-1.5 text-xs hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:hover:bg-slate-800"
                         onClick={() => onViewApproved(p)}
                         disabled={busy || approveBusy}
                         type="button"
@@ -496,7 +496,7 @@ export function MealPlanRoute() {
                         View
                       </button>
                       <button
-                        className="rounded-lg border border-slate-300 bg-white px-2.5 py-1.5 text-xs text-red-700 hover:bg-red-50"
+                        className="rounded-lg border border-slate-300 bg-white px-2.5 py-1.5 text-xs text-red-700 hover:bg-red-50 dark:border-slate-700 dark:bg-slate-900 dark:hover:bg-red-900/30"
                         onClick={() => void onDeleteApproved(p)}
                         disabled={busy || approveBusy}
                         type="button"
@@ -510,7 +510,7 @@ export function MealPlanRoute() {
 
               {filteredApprovedForType.length > 5 ? (
                 <button
-                  className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm hover:bg-slate-50"
+                  className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100 dark:hover:bg-slate-900"
                   onClick={() => setShowAllApproved((x) => !x)}
                   disabled={busy || approveBusy}
                   type="button"
@@ -529,15 +529,15 @@ export function MealPlanRoute() {
           role="dialog"
           aria-modal="true"
         >
-          <div className="flex w-full max-w-lg max-h-[calc(100dvh-2rem)] flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl sm:max-h-[calc(100vh-2rem)]">
+          <div className="flex w-full max-w-lg max-h-[calc(100dvh-2rem)] flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl sm:max-h-[calc(100vh-2rem)] dark:border-slate-800 dark:bg-slate-900">
             <div className="p-5 pb-3">
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
-                  <div className="text-base font-semibold text-slate-900">{previewApproved.title}</div>
-                  <div className="mt-1 text-xs text-slate-600">{new Date(previewApproved.createdAt).toLocaleString()}</div>
+                  <div className="text-base font-semibold text-slate-900 dark:text-slate-100">{previewApproved.title}</div>
+                  <div className="mt-1 text-xs text-slate-600 dark:text-slate-300">{new Date(previewApproved.createdAt).toLocaleString()}</div>
                 </div>
                 <button
-                  className="rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm hover:bg-slate-50"
+                  className="rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100 dark:hover:bg-slate-900"
                   onClick={() => setPreviewApproved(null)}
                   type="button"
                 >
@@ -547,11 +547,11 @@ export function MealPlanRoute() {
             </div>
 
             <div className="px-5 pb-5 overflow-y-auto">
-              <div className="text-sm text-slate-700">{previewApproved.intro}</div>
+              <div className="text-sm text-slate-700 dark:text-slate-200">{previewApproved.intro}</div>
 
               <div className="mt-4">
                 <div className="text-sm font-medium">Ingredients</div>
-                <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-slate-700">
+                <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-slate-700 dark:text-slate-200">
                   {previewApproved.ingredients.map((x, idx) => (
                     <li key={`${idx}-${x}`}>{x}</li>
                   ))}
@@ -560,7 +560,7 @@ export function MealPlanRoute() {
 
               <div className="mt-4">
                 <div className="text-sm font-medium">How to cook</div>
-                <ol className="mt-2 list-decimal space-y-1 pl-5 text-sm text-slate-700">
+                <ol className="mt-2 list-decimal space-y-1 pl-5 text-sm text-slate-700 dark:text-slate-200">
                   {previewApproved.steps.map((x, idx) => (
                     <li key={`${idx}-${x}`}>{x}</li>
                   ))}

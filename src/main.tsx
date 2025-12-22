@@ -7,7 +7,10 @@ import { MealPhotoAnalysisProvider } from './state/MealPhotoAnalysisContext'
 import { UiFeedbackProvider } from './state/UiFeedbackContext'
 import { registerServiceWorker } from './pwa/registerServiceWorker'
 import { initReminderScheduler } from './notifications/reminders'
+import { applyUiTheme, getUiTheme } from './ui/theme'
 import './index.css'
+
+applyUiTheme(getUiTheme())
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
