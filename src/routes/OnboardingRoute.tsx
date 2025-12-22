@@ -83,6 +83,7 @@ export function OnboardingRoute() {
   const [conditionsText, setConditionsText] = useState('')
   const [labUploads, setLabUploads] = useState<MedicalLabUpload[]>([])
   const [labError, setLabError] = useState<string | null>(null)
+  const [medicalBlankError, setMedicalBlankError] = useState<string | null>(null)
 
   const conditions = useMemo(() => {
     return conditionsText
@@ -152,12 +153,6 @@ export function OnboardingRoute() {
               disabled={!canContinue}
             >
               Get started
-            </button>
-            <button
-              className="inline-flex items-center justify-center rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-medium text-slate-900 transition hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100 dark:hover:bg-slate-900"
-              onClick={() => finish(DEFAULTS)}
-            >
-              Skip
             </button>
           </div>
 
@@ -235,10 +230,16 @@ export function OnboardingRoute() {
 
           <div className="flex flex-col gap-2 sm:flex-row">
             <button
+              className="inline-flex items-center justify-center rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-medium text-slate-900 transition hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100 dark:hover:bg-slate-900"
+              onClick={() => setStep('welcome')}
+            >
+              Previous
+            </button>
+            <button
               className="inline-flex flex-1 items-center justify-center rounded-xl bg-gradient-to-r from-emerald-600 via-teal-500 to-sky-500 px-4 py-3 text-sm font-semibold text-white shadow-lg shadow-emerald-600/15 transition hover:brightness-110 active:brightness-95"
               onClick={() => setStep('medical')}
             >
-              Continue
+              Next
             </button>
             <button
               className="inline-flex items-center justify-center rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-medium text-slate-900 transition hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100 dark:hover:bg-slate-900"
@@ -255,6 +256,7 @@ export function OnboardingRoute() {
   if (step === 'medical') {
     async function onAddLabs(files: FileList | null) {
       setLabError(null)
+      setMedicalBlankError(null)
       if (!files || files.length === 0) return
 
       try {
@@ -277,6 +279,17 @@ export function OnboardingRoute() {
       }
     }
 
+    function onNext() {
+      const isBlank = conditions.length === 0 && labUploads.length === 0
+      if (isBlank) {
+        setMedicalBlankError('Medical conditions and uploads are blank — you can add them, or you can just skip.')
+        return
+      }
+
+      setMedicalBlankError(null)
+      setStep('privacy')
+    }
+
     return (
       <OnboardingStepShell stepTitle={stepTitle} stepIndex={stepIndex} animateKey={step}>
         <div className="space-y-6">
@@ -292,7 +305,10 @@ export function OnboardingRoute() {
             <input
               className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 shadow-inner shadow-slate-900/5 outline-none transition focus:border-emerald-400 focus:ring-2 focus:ring-emerald-200/60 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100 dark:placeholder:text-slate-500"
               value={conditionsText}
-              onChange={(e) => setConditionsText(e.target.value)}
+              onChange={(e) => {
+                setConditionsText(e.target.value)
+                setMedicalBlankError(null)
+              }}
               placeholder="diabetes, hypertension"
             />
           </div>
@@ -318,6 +334,8 @@ export function OnboardingRoute() {
 
             {labError ? <div className="mt-2 text-xs text-red-600">{labError}</div> : null}
 
+            {medicalBlankError ? <div className="mt-2 text-xs text-red-600">{medicalBlankError}</div> : null}
+
             {labUploads.length > 0 ? (
               <div className="mt-3 space-y-2">
                 <div className="text-xs font-medium text-slate-700 dark:text-slate-200">Uploaded</div>
@@ -342,14 +360,26 @@ export function OnboardingRoute() {
 
           <div className="flex flex-col gap-2 sm:flex-row">
             <button
-              className="inline-flex flex-1 items-center justify-center rounded-xl bg-gradient-to-r from-emerald-600 via-teal-500 to-sky-500 px-4 py-3 text-sm font-semibold text-white shadow-lg shadow-emerald-600/15 transition hover:brightness-110 active:brightness-95"
-              onClick={() => setStep('privacy')}
+              className="inline-flex items-center justify-center rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-medium text-slate-900 transition hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100 dark:hover:bg-slate-900"
+              onClick={() => {
+                setMedicalBlankError(null)
+                setStep('body')
+              }}
             >
-              Continue
+              Previous
+            </button>
+            <button
+              className="inline-flex flex-1 items-center justify-center rounded-xl bg-gradient-to-r from-emerald-600 via-teal-500 to-sky-500 px-4 py-3 text-sm font-semibold text-white shadow-lg shadow-emerald-600/15 transition hover:brightness-110 active:brightness-95"
+              onClick={onNext}
+            >
+              Next
             </button>
             <button
               className="inline-flex items-center justify-center rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-medium text-slate-900 transition hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100 dark:hover:bg-slate-900"
-              onClick={() => setStep('privacy')}
+              onClick={() => {
+                setMedicalBlankError(null)
+                setStep('privacy')
+              }}
             >
               Skip
             </button>
@@ -369,12 +399,20 @@ export function OnboardingRoute() {
           </div>
         </div>
 
-        <button
-          className="w-full rounded-xl bg-gradient-to-r from-emerald-600 via-teal-500 to-sky-500 px-4 py-3 text-sm font-semibold text-white shadow-lg shadow-emerald-600/15 transition hover:brightness-110 active:brightness-95"
-          onClick={() => void finish()}
-        >
-          Finish
-        </button>
+        <div className="flex flex-col gap-2 sm:flex-row">
+          <button
+            className="inline-flex items-center justify-center rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-medium text-slate-900 transition hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100 dark:hover:bg-slate-900"
+            onClick={() => setStep('medical')}
+          >
+            Previous
+          </button>
+          <button
+            className="inline-flex flex-1 items-center justify-center rounded-xl bg-gradient-to-r from-emerald-600 via-teal-500 to-sky-500 px-4 py-3 text-sm font-semibold text-white shadow-lg shadow-emerald-600/15 transition hover:brightness-110 active:brightness-95"
+            onClick={() => void finish()}
+          >
+            Finish
+          </button>
+        </div>
       </div>
     </OnboardingStepShell>
   )

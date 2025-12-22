@@ -63,8 +63,8 @@ describe('ai/analyzePhoto', () => {
       'ai-nutritionist.aiSettings',
       JSON.stringify({
         provider: 'gemini',
-        gemini: { apiKey: '', model: 'gemini-2.0-flash', consentToSendData: false },
-        ollama: { baseUrl: 'http://localhost:11434', model: 'qwen3-vl:8b' },
+        gemini: { apiKey: '', model: 'gemini-flash-latest', consentToSendData: false },
+        ollama: { baseUrl: 'http://localhost:11434', model: 'ministral-3:8b' },
       }),
     )
 

@@ -42,11 +42,14 @@ async function completeOnboarding(name: string) {
 
   fireEvent.click(screen.getByRole('button', { name: 'Get started' }))
 
-  await screen.findByRole('button', { name: 'Continue' })
-  fireEvent.click(screen.getByRole('button', { name: 'Continue' }))
+  await screen.findByRole('button', { name: 'Next' })
+  fireEvent.click(screen.getByRole('button', { name: 'Next' }))
 
   await screen.findByText('Medical conditions (optional)')
-  fireEvent.click(screen.getByRole('button', { name: 'Continue' }))
+  fireEvent.click(screen.getByRole('button', { name: 'Next' }))
+
+  await screen.findByText('Medical conditions and uploads are blank — you can add them, or you can just skip.')
+  fireEvent.click(screen.getByRole('button', { name: 'Skip' }))
 
   await screen.findByRole('button', { name: 'Finish' })
   fireEvent.click(screen.getByRole('button', { name: 'Finish' }))
@@ -106,8 +109,8 @@ describe('app flows', () => {
       'ai-nutritionist.aiSettings',
       JSON.stringify({
         provider: 'gemini',
-        gemini: { apiKey: 'x', model: 'gemini-2.0-flash', consentToSendData: true },
-        ollama: { baseUrl: 'http://localhost:11434', model: 'qwen3-vl:8b' },
+        gemini: { apiKey: 'x', model: 'gemini-flash-latest', consentToSendData: true },
+        ollama: { baseUrl: 'http://localhost:11434', model: 'ministral-3:8b' },
       }),
     )
 
@@ -212,8 +215,8 @@ describe('app flows', () => {
       'ai-nutritionist.aiSettings',
       JSON.stringify({
         provider: 'gemini',
-        gemini: { apiKey: 'x', model: 'gemini-2.0-flash', consentToSendData: true },
-        ollama: { baseUrl: 'http://localhost:11434', model: 'qwen3-vl:8b' },
+        gemini: { apiKey: 'x', model: 'gemini-flash-latest', consentToSendData: true },
+        ollama: { baseUrl: 'http://localhost:11434', model: 'ministral-3:8b' },
       }),
     )
 
@@ -335,8 +338,8 @@ describe('app flows', () => {
       'ai-nutritionist.aiSettings',
       JSON.stringify({
         provider: 'gemini',
-        gemini: { apiKey: 'x', model: 'gemini-2.0-flash', consentToSendData: true },
-        ollama: { baseUrl: 'http://localhost:11434', model: 'qwen3-vl:8b' },
+        gemini: { apiKey: 'x', model: 'gemini-flash-latest', consentToSendData: true },
+        ollama: { baseUrl: 'http://localhost:11434', model: 'ministral-3:8b' },
       }),
     )
 
@@ -472,8 +475,8 @@ describe('app flows', () => {
       fireEvent.change(nameInput, { target: { value: 'Test' } })
       fireEvent.click(screen.getByRole('button', { name: 'Get started' }))
 
-      await screen.findByRole('button', { name: 'Continue' })
-      fireEvent.click(screen.getByRole('button', { name: 'Continue' }))
+      await screen.findByRole('button', { name: 'Next' })
+      fireEvent.click(screen.getByRole('button', { name: 'Next' }))
 
       await screen.findByText('Medical conditions (optional)')
       expect(screen.getByText('Upload lab results (optional)')).toBeInTheDocument()
@@ -481,7 +484,10 @@ describe('app flows', () => {
         screen.getByText("Before uploading, it’s suggested to crop out your name and your physician’s name for privacy."),
       ).toBeInTheDocument()
 
-      fireEvent.click(screen.getByRole('button', { name: 'Continue' }))
+      fireEvent.click(screen.getByRole('button', { name: 'Next' }))
+
+      await screen.findByText('Medical conditions and uploads are blank — you can add them, or you can just skip.')
+      fireEvent.click(screen.getByRole('button', { name: 'Skip' }))
 
       await screen.findByRole('button', { name: 'Finish' })
       fireEvent.click(screen.getByRole('button', { name: 'Finish' }))
@@ -657,8 +663,8 @@ describe('app flows', () => {
       'ai-nutritionist.aiSettings',
       JSON.stringify({
         provider: 'ollama',
-        gemini: { apiKey: '', model: 'gemini-2.0-flash', consentToSendData: false },
-        ollama: { baseUrl: 'http://localhost:11434', model: 'qwen3-vl:8b' },
+        gemini: { apiKey: '', model: 'gemini-flash-latest', consentToSendData: false },
+        ollama: { baseUrl: 'http://localhost:11434', model: 'ministral-3:8b' },
       }),
     )
 

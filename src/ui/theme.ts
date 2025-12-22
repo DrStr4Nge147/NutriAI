@@ -6,10 +6,6 @@ export function getUiTheme(): UiTheme {
   try {
     const raw = typeof window !== 'undefined' ? window.localStorage.getItem(STORAGE_UI_THEME) : null
     if (raw === 'light' || raw === 'dark') return raw
-
-    if (typeof window !== 'undefined' && typeof window.matchMedia === 'function') {
-      return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
-    }
   } catch {
     // ignore
   }

@@ -17,15 +17,7 @@ describe('ui/theme', () => {
     expect(getUiTheme()).toBe('light')
   })
 
-  it('getUiTheme falls back to prefers-color-scheme when no stored theme', () => {
-    const matchMediaMock = vi.fn().mockReturnValue({ matches: true })
-    ;(window as any).matchMedia = matchMediaMock
-
-    expect(getUiTheme()).toBe('dark')
-    expect(matchMediaMock).toHaveBeenCalledWith('(prefers-color-scheme: dark)')
-  })
-
-  it('getUiTheme falls back to light when no stored theme and no matchMedia', () => {
+  it('getUiTheme falls back to light when no stored theme', () => {
     expect(getUiTheme()).toBe('light')
   })
 

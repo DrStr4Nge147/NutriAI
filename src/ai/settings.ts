@@ -30,12 +30,12 @@ function defaultSettings(): AiSettings {
     provider: env.VITE_AI_PROVIDER === 'ollama' ? 'ollama' : 'gemini',
     gemini: {
       apiKey: env.VITE_GEMINI_API_KEY ?? '',
-      model: env.VITE_GEMINI_MODEL ?? 'gemini-2.0-flash',
+      model: env.VITE_GEMINI_MODEL ?? 'gemini-flash-latest',
       consentToSendData: false,
     },
     ollama: {
       baseUrl: env.VITE_OLLAMA_BASE_URL ?? 'http://localhost:11434',
-      model: env.VITE_OLLAMA_MODEL ?? 'qwen3-vl:8b',
+      model: env.VITE_OLLAMA_MODEL ?? 'ministral-3:8b',
     },
   }
 }

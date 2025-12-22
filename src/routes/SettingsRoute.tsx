@@ -80,8 +80,31 @@ export function SettingsRoute() {
     setBusy(true)
     try {
       await clearAllData()
+
+      try {
+        localStorage.removeItem('ai-nutritionist.currentProfileId')
+        localStorage.removeItem('ai-nutritionist.aiSettings')
+        localStorage.removeItem('ai-nutritionist.uiTheme')
+        localStorage.removeItem('ai-nutritionist.reminders')
+        localStorage.removeItem('ai-nutritionist.hideAiCloudDisclaimer')
+      } catch {
+        // ignore
+      }
+
+      const nextTheme = getUiTheme()
+      setUiThemeState(nextTheme)
+      saveAndApplyUiTheme(nextTheme)
+
+      const nextAiSettings = getAiSettings()
+      setAiSettingsState(nextAiSettings)
+
+      const nextReminders = getReminderSettings()
+      setRemindersState(nextReminders)
+      refreshReminderScheduler()
+
       await refresh()
       toast({ kind: 'success', message: 'Local data cleared' })
+      navigate('/onboarding', { replace: true })
     } catch (e) {
       toast({ kind: 'error', message: e instanceof Error ? e.message : 'Failed to clear data' })
     } finally {
