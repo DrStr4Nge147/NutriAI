@@ -21,6 +21,10 @@ export function SettingsRoute() {
   const [busy, setBusy] = useState(false)
   const [uiTheme, setUiThemeState] = useState<UiTheme>(() => getUiTheme())
   const [aiSettings, setAiSettingsState] = useState(() => getAiSettings())
+  const [isMobile, setIsMobile] = useState(() => {
+    if (typeof window === 'undefined') return false
+    return window.matchMedia('(max-width: 767px)').matches
+  })
   const [geminiTutorialOpen, setGeminiTutorialOpen] = useState(false)
   const [reminders, setRemindersState] = useState(() => getReminderSettings())
   const [notificationPermission, setNotificationPermission] = useState<
@@ -42,6 +46,29 @@ export function SettingsRoute() {
     } catch {
     }
   }, [aiSettings.provider, aiSettings.gemini.apiKey])
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    const mq = window.matchMedia('(max-width: 767px)')
+    const onChange = () => setIsMobile(mq.matches)
+    onChange()
+
+    if (typeof mq.addEventListener === 'function') {
+      mq.addEventListener('change', onChange)
+      return () => mq.removeEventListener('change', onChange)
+    }
+
+    mq.addListener(onChange)
+    return () => mq.removeListener(onChange)
+  }, [])
+
+  useEffect(() => {
+    if (!isMobile) return
+    if (aiSettings.provider !== 'ollama') return
+    const next = { ...aiSettings, provider: 'gemini' as const }
+    setAiSettings(next)
+    setAiSettingsState(next)
+  }, [isMobile, aiSettings])
 
   async function onExport() {
     setBusy(true)
@@ -190,15 +217,19 @@ export function SettingsRoute() {
           <div className="font-medium text-slate-900 dark:text-slate-100">Provider</div>
           <select
             className="mt-1 w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm dark:border-slate-700 dark:bg-slate-950"
-            value={aiSettings.provider}
+            value={isMobile ? 'gemini' : aiSettings.provider}
             onChange={(e) => {
+              if (isMobile) {
+                saveAiSettings({ ...aiSettings, provider: 'gemini' })
+                return
+              }
               const provider = e.target.value === 'ollama' ? 'ollama' : 'gemini'
               saveAiSettings({ ...aiSettings, provider })
             }}
             disabled={busy}
           >
             <option value="gemini">Gemini (online)</option>
-            <option value="ollama">Ollama (local)</option>
+            {isMobile ? <option value="offline" disabled>Offline mode (coming soon)</option> : <option value="ollama">Ollama (local)</option>}
           </select>
         </label>
 
@@ -254,33 +285,35 @@ export function SettingsRoute() {
           </label>
         </div>
 
-        <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 space-y-3 dark:border-slate-800 dark:bg-slate-950">
-          <div className="text-sm font-medium text-slate-900 dark:text-slate-100">Ollama</div>
-          <label className="block text-sm">
-            <div className="font-medium text-slate-900 dark:text-slate-100">Base URL</div>
-            <input
-              className="mt-1 w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm dark:border-slate-700 dark:bg-slate-900"
-              value={aiSettings.ollama.baseUrl}
-              onChange={(e) => setAiSettingsState({
-                ...aiSettings,
-                ollama: { ...aiSettings.ollama, baseUrl: e.target.value },
-              })}
-              disabled={busy}
-            />
-          </label>
-          <label className="block text-sm">
-            <div className="font-medium text-slate-900 dark:text-slate-100">Model</div>
-            <input
-              className="mt-1 w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm dark:border-slate-700 dark:bg-slate-900"
-              value={aiSettings.ollama.model}
-              onChange={(e) => setAiSettingsState({
-                ...aiSettings,
-                ollama: { ...aiSettings.ollama, model: e.target.value },
-              })}
-              disabled={busy}
-            />
-          </label>
-        </div>
+        {!isMobile ? (
+          <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 space-y-3 dark:border-slate-800 dark:bg-slate-950">
+            <div className="text-sm font-medium text-slate-900 dark:text-slate-100">Ollama</div>
+            <label className="block text-sm">
+              <div className="font-medium text-slate-900 dark:text-slate-100">Base URL</div>
+              <input
+                className="mt-1 w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm dark:border-slate-700 dark:bg-slate-900"
+                value={aiSettings.ollama.baseUrl}
+                onChange={(e) => setAiSettingsState({
+                  ...aiSettings,
+                  ollama: { ...aiSettings.ollama, baseUrl: e.target.value },
+                })}
+                disabled={busy}
+              />
+            </label>
+            <label className="block text-sm">
+              <div className="font-medium text-slate-900 dark:text-slate-100">Model</div>
+              <input
+                className="mt-1 w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm dark:border-slate-700 dark:bg-slate-900"
+                value={aiSettings.ollama.model}
+                onChange={(e) => setAiSettingsState({
+                  ...aiSettings,
+                  ollama: { ...aiSettings.ollama, model: e.target.value },
+                })}
+                disabled={busy}
+              />
+            </label>
+          </div>
+        ) : null}
 
         <button
           className="w-full rounded-xl bg-gradient-to-r from-emerald-600 via-teal-500 to-sky-500 px-3 py-2 text-sm font-medium text-white transition hover:brightness-110 active:brightness-95 disabled:opacity-50"
