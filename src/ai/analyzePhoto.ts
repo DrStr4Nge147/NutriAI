@@ -26,7 +26,7 @@ type AiPayloadJson = {
   items?: unknown
 }
 
-function normalizeAiJsonText(text: string): string {
+export function normalizeAiJsonText(text: string): string {
   const trimmed = text.trim()
   if (!trimmed) return trimmed
 

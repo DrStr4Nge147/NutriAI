@@ -97,4 +97,25 @@ export type ExportPayloadV1 = {
   currentProfileId: string | null
   profiles: UserProfile[]
   meals: Meal[]
+  mealPlans: MealPlan[]
+}
+
+export type MealPlanMealType = 'breakfast' | 'lunch' | 'dinner'
+
+export type MealPlanAi = {
+  provider: AiProvider
+  generatedAt: string
+  rawText?: string
+}
+
+export type MealPlan = {
+  id: string
+  profileId: string
+  createdAt: string
+  mealType: MealPlanMealType
+  title: string
+  intro: string
+  ingredients: string[]
+  steps: string[]
+  ai?: MealPlanAi
 }

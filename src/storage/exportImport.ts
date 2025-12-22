@@ -1,5 +1,5 @@
-import type { ExportPayloadV1, Meal, UserProfile } from '../models/types'
-import { listMealsByProfile, listProfiles, putMeal, putProfile } from './db'
+import type { ExportPayloadV1, Meal, MealPlan, UserProfile } from '../models/types'
+import { listMealPlansByProfile, listMealsByProfile, listProfiles, putMeal, putMealPlan, putProfile } from './db'
 
 const STORAGE_CURRENT_PROFILE_ID = 'ai-nutritionist.currentProfileId'
 
@@ -20,9 +20,13 @@ export async function exportAllData(): Promise<ExportPayloadV1> {
   const currentProfileId = getCurrentProfileId()
 
   const meals: Meal[] = []
+  const mealPlans: MealPlan[] = []
   for (const p of profiles) {
     const profileMeals = await listMealsByProfile(p.id)
     meals.push(...profileMeals)
+
+    const profilePlans = await listMealPlansByProfile(p.id)
+    mealPlans.push(...profilePlans)
   }
 
   return {
@@ -31,6 +35,7 @@ export async function exportAllData(): Promise<ExportPayloadV1> {
     currentProfileId,
     profiles,
     meals,
+    mealPlans,
   }
 }
 
@@ -42,6 +47,10 @@ export async function importAllData(payload: unknown): Promise<{ profiles: numbe
   }
   for (const m of parsed.meals) {
     await putMeal(m)
+  }
+
+  for (const mp of parsed.mealPlans) {
+    await putMealPlan(mp)
   }
 
   setCurrentProfileId(parsed.currentProfileId)
@@ -67,6 +76,7 @@ function parsePayload(payload: unknown): ExportPayloadV1 {
     currentProfileId,
     profiles,
     meals,
+    mealPlans: Array.isArray((p as any).mealPlans) ? (p as any).mealPlans.map(parseMealPlan) : [],
   }
 }
 
@@ -125,5 +135,15 @@ function parseMeal(value: unknown): Meal {
   if (!v.id || !v.profileId || !v.createdAt || !v.eatenAt) throw new Error('Invalid meal')
   if (!Array.isArray(v.items)) throw new Error('Invalid meal')
   if (!v.totalMacros) throw new Error('Invalid meal')
+  return v
+}
+
+function parseMealPlan(value: unknown): MealPlan {
+  if (!value || typeof value !== 'object') throw new Error('Invalid meal plan')
+  const v = value as MealPlan
+  if (!v.id || !v.profileId || !v.createdAt) throw new Error('Invalid meal plan')
+  if (v.mealType !== 'breakfast' && v.mealType !== 'lunch' && v.mealType !== 'dinner') throw new Error('Invalid meal plan')
+  if (!v.title || !v.intro) throw new Error('Invalid meal plan')
+  if (!Array.isArray(v.ingredients) || !Array.isArray(v.steps)) throw new Error('Invalid meal plan')
   return v
 }

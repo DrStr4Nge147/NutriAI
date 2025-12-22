@@ -13,6 +13,8 @@ export function FilePreviewModal(props: {
   const zoomRef = useRef(zoom)
   const panRef = useRef(pan)
   const dragRef = useRef<{ pointerId: number; startX: number; startY: number; startPanX: number; startPanY: number } | null>(null)
+  const pointersRef = useRef<Map<number, { x: number; y: number }>>(new Map())
+  const pinchRef = useRef<{ startDistance: number; startZoom: number } | null>(null)
 
   useEffect(() => {
     zoomRef.current = zoom
@@ -62,6 +64,7 @@ export function FilePreviewModal(props: {
   }, [props.file?.mimeType])
 
   const canZoom = kind === 'image' || kind === 'pdf'
+  const canGestureZoom = kind === 'image'
 
   useEffect(() => {
     const el = wheelRef.current
@@ -109,9 +112,17 @@ export function FilePreviewModal(props: {
     setZoomClamped(1)
   }
 
+  function dist(a: { x: number; y: number }, b: { x: number; y: number }) {
+    const dx = a.x - b.x
+    const dy = a.y - b.y
+    return Math.sqrt(dx * dx + dy * dy)
+  }
+
   function onPointerDown(e: React.PointerEvent<HTMLDivElement>) {
-    if (!canZoom) return
-    if (zoomRef.current <= 1) return
+    if (!canGestureZoom) return
+
+    const nextPointers = pointersRef.current
+    nextPointers.set(e.pointerId, { x: e.clientX, y: e.clientY })
 
     const target = e.currentTarget as any
     if (typeof target.setPointerCapture === 'function') {
@@ -121,6 +132,17 @@ export function FilePreviewModal(props: {
         // ignore
       }
     }
+
+    if (nextPointers.size >= 2) {
+      const pts = Array.from(nextPointers.values())
+      const d = dist(pts[0], pts[1])
+      pinchRef.current = { startDistance: d || 1, startZoom: zoomRef.current }
+      dragRef.current = null
+      setDragging(false)
+      return
+    }
+
+    if (zoomRef.current <= 1) return
 
     dragRef.current = {
       pointerId: e.pointerId,
@@ -133,6 +155,19 @@ export function FilePreviewModal(props: {
   }
 
   function onPointerMove(e: React.PointerEvent<HTMLDivElement>) {
+    const pts = pointersRef.current
+    if (pts.has(e.pointerId)) pts.set(e.pointerId, { x: e.clientX, y: e.clientY })
+
+    const pinch = pinchRef.current
+    if (pinch && pts.size >= 2) {
+      const values = Array.from(pts.values())
+      const nextDistance = dist(values[0], values[1])
+      if (!Number.isFinite(nextDistance) || nextDistance <= 0) return
+      const ratio = nextDistance / (pinch.startDistance || 1)
+      setZoomClamped(pinch.startZoom * ratio)
+      return
+    }
+
     const d = dragRef.current
     if (!d) return
     if (d.pointerId !== e.pointerId) return
@@ -142,6 +177,11 @@ export function FilePreviewModal(props: {
   }
 
   function endDrag(e?: React.PointerEvent<HTMLDivElement>) {
+    if (e && pointersRef.current.has(e.pointerId)) {
+      pointersRef.current.delete(e.pointerId)
+      if (pointersRef.current.size < 2) pinchRef.current = null
+    }
+
     const d = dragRef.current
     if (e && d && d.pointerId === e.pointerId) {
       const target = e.currentTarget as any
@@ -159,10 +199,15 @@ export function FilePreviewModal(props: {
   }
 
   const content = (
-    <div className="fixed inset-0 z-50" role="dialog" aria-modal="true" aria-label="File preview">
-      <button className="absolute inset-0 bg-black/40" onClick={props.onClose} type="button" aria-label="Close preview" />
+    <div
+      className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 px-3 pt-[calc(0.75rem+env(safe-area-inset-top))] pb-[calc(0.75rem+env(safe-area-inset-bottom))] md:items-center"
+      role="dialog"
+      aria-modal="true"
+      aria-label="File preview"
+    >
+      <button className="absolute inset-0" onClick={props.onClose} type="button" aria-label="Close preview" />
 
-      <div className="absolute bottom-0 left-0 right-0 flex max-h-[85vh] flex-col rounded-t-2xl bg-white p-4 shadow-2xl md:left-1/2 md:bottom-auto md:top-1/2 md:max-h-[80vh] md:max-w-4xl md:-translate-x-1/2 md:-translate-y-1/2 md:rounded-2xl">
+      <div className="relative flex w-full max-w-4xl max-h-[calc(100dvh-2rem)] flex-col overflow-hidden rounded-2xl bg-white p-4 shadow-2xl">
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
             <div className="truncate text-sm font-semibold text-slate-900">{props.file.name}</div>
@@ -263,7 +308,7 @@ export function FilePreviewModal(props: {
             <div
               data-testid="file-preview-viewport"
               className={
-                'relative flex h-full w-full items-center justify-center p-2 ' +
+                'relative flex h-full w-full touch-none items-center justify-center p-2 ' +
                 (zoom > 1 ? (dragging ? 'cursor-grabbing' : 'cursor-grab') : '')
               }
               onPointerDown={onPointerDown}
@@ -297,7 +342,7 @@ export function FilePreviewModal(props: {
                 <iframe
                   title={props.file.name}
                   src={props.file.dataUrl}
-                  className="h-[70vh] w-[90vw] max-w-4xl rounded-lg"
+                  className="h-full w-full max-w-4xl rounded-lg"
                   style={{ pointerEvents: zoom > 1 ? 'none' : 'auto' }}
                 />
               </div>

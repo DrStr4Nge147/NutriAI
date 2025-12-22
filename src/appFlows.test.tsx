@@ -65,6 +65,182 @@ describe('app flows', () => {
     await clearAllData()
   })
 
+  it('can generate and approve a meal plan, and avoids repeating approved titles', async () => {
+    const prevFetch = (globalThis as any).fetch
+
+    const fetchBodies: any[] = []
+    const responses = [
+      { title: 'Chicken Adobo', intro: 'A simple Filipino classic.', ingredients: ['500g chicken', '1/4 cup soy sauce'], steps: ['Marinate.', 'Simmer.'] },
+      { title: 'Sinigang na Baboy', intro: 'A comforting sour soup.', ingredients: ['300g pork', '1 pack sinigang mix'], steps: ['Boil.', 'Season.'] },
+    ]
+    let callIdx = 0
+
+    ;(globalThis as any).fetch = vi.fn(async (_url: any, init: any) => {
+      try {
+        fetchBodies.push(init?.body ? JSON.parse(init.body) : null)
+      } catch {
+        fetchBodies.push(null)
+      }
+
+      const next = responses[Math.min(callIdx, responses.length - 1)]
+      callIdx += 1
+
+      return {
+        ok: true,
+        status: 200,
+        statusText: 'OK',
+        json: async () => ({
+          candidates: [
+            {
+              content: {
+                parts: [{ text: JSON.stringify(next) }],
+              },
+            },
+          ],
+        }),
+        text: async () => '',
+      }
+    })
+
+    localStorage.setItem(
+      'ai-nutritionist.aiSettings',
+      JSON.stringify({
+        provider: 'gemini',
+        gemini: { apiKey: 'x', model: 'gemini-2.0-flash', consentToSendData: true },
+        ollama: { baseUrl: 'http://localhost:11434', model: 'qwen3-vl:8b' },
+      }),
+    )
+
+    try {
+      await renderApp(['/'])
+      await completeOnboarding('Test')
+
+      fireEvent.click(within(screen.getByRole('navigation', { name: 'Primary' })).getByRole('link', { name: 'Meal Plan' }))
+      await screen.findByRole('button', { name: 'Generate a Meal Plan' })
+
+      fireEvent.change(screen.getByRole('combobox', { name: /meal type/i }), { target: { value: 'lunch' } })
+      fireEvent.click(screen.getByRole('button', { name: 'Generate a Meal Plan' }))
+
+      await screen.findByText('Chicken Adobo')
+      expect(screen.getByText('A simple Filipino classic.')).toBeInTheDocument()
+
+      fireEvent.click(screen.getByRole('button', { name: 'Approve & save' }))
+      await screen.findByText('Meal plan approved and saved')
+
+      await screen.findByText('Approved Lunch plans')
+      await screen.findByText(/Avoiding repeats from your last 1 approved lunch plan\(s\)\./)
+
+      fireEvent.click(screen.getByRole('button', { name: 'Regenerate' }))
+      await screen.findByText('Sinigang na Baboy')
+
+      fireEvent.click(screen.getByRole('button', { name: 'View' }))
+      const previewDialog = await screen.findByRole('dialog')
+      expect(within(previewDialog).getByText('A simple Filipino classic.')).toBeInTheDocument()
+      expect(within(previewDialog).getByText('1/4 cup soy sauce')).toBeInTheDocument()
+      fireEvent.click(within(previewDialog).getByRole('button', { name: 'Close' }))
+
+      fireEvent.click(screen.getByRole('button', { name: 'Delete' }))
+      const dialog = await screen.findByRole('dialog')
+      fireEvent.click(within(dialog).getByRole('button', { name: 'Delete' }))
+      await screen.findByText('Approved plan deleted')
+      await screen.findByText('No approved plans yet.')
+
+      await waitFor(() => {
+        expect(fetchBodies.length).toBeGreaterThanOrEqual(2)
+      })
+
+      const secondPrompt =
+        fetchBodies?.[1]?.contents?.[0]?.parts?.[0]?.text ??
+        fetchBodies?.[1]?.contents?.[0]?.parts?.map((p: any) => p?.text).filter(Boolean).join('\n') ??
+        ''
+      expect(typeof secondPrompt).toBe('string')
+      expect(secondPrompt).toContain('Avoid repeating')
+      expect(secondPrompt).toContain('Chicken Adobo')
+
+      const profiles = await listProfiles()
+      expect(profiles.find((p) => p.name === 'Test')).toBeTruthy()
+    } finally {
+      ;(globalThis as any).fetch = prevFetch
+    }
+  })
+
+  it('includes medical notes in the meal plan prompt when present', async () => {
+    const prevFetch = (globalThis as any).fetch
+
+    const fetchBodies: any[] = []
+    ;(globalThis as any).fetch = vi.fn(async (_url: any, init: any) => {
+      try {
+        fetchBodies.push(init?.body ? JSON.parse(init.body) : null)
+      } catch {
+        fetchBodies.push(null)
+      }
+
+      return {
+        ok: true,
+        status: 200,
+        statusText: 'OK',
+        json: async () => ({
+          candidates: [
+            {
+              content: {
+                parts: [
+                  {
+                    text: JSON.stringify({
+                      title: 'Tinola',
+                      intro: 'A light ginger chicken soup.',
+                      ingredients: ['500g chicken', '1 thumb ginger'],
+                      steps: ['Simmer.'],
+                    }),
+                  },
+                ],
+              },
+            },
+          ],
+        }),
+        text: async () => '',
+      }
+    })
+
+    localStorage.setItem(
+      'ai-nutritionist.aiSettings',
+      JSON.stringify({
+        provider: 'gemini',
+        gemini: { apiKey: 'x', model: 'gemini-2.0-flash', consentToSendData: true },
+        ollama: { baseUrl: 'http://localhost:11434', model: 'qwen3-vl:8b' },
+      }),
+    )
+
+    try {
+      await renderApp(['/'])
+      await completeOnboarding('Test')
+
+      fireEvent.click(within(screen.getByRole('navigation', { name: 'Primary' })).getByRole('link', { name: 'Medical' }))
+      await screen.findByText('Medical History')
+
+      fireEvent.change(screen.getByPlaceholderText('Medications, allergies, surgeries, family history, symptoms, etc.'), {
+        target: { value: 'Avoid grapefruit' },
+      })
+
+      fireEvent.click(screen.getByRole('button', { name: 'Save medical history' }))
+      await screen.findByRole('button', { name: 'Export data' })
+
+      fireEvent.click(within(screen.getByRole('navigation', { name: 'Primary' })).getByRole('link', { name: 'Meal Plan' }))
+      await screen.findByRole('button', { name: 'Generate a Meal Plan' })
+      fireEvent.click(screen.getByRole('button', { name: 'Generate a Meal Plan' }))
+
+      await screen.findByText('Tinola')
+      await waitFor(() => expect(fetchBodies.length).toBeGreaterThanOrEqual(1))
+
+      const prompt =
+        fetchBodies?.[0]?.contents?.[0]?.parts?.[0]?.text ??
+        fetchBodies?.[0]?.contents?.[0]?.parts?.map((p: any) => p?.text).filter(Boolean).join('\n') ??
+        ''
+      expect(prompt).toContain('Notes/medications: Avoid grapefruit')
+    } finally {
+      ;(globalThis as any).fetch = prevFetch
+    }
+  })
+
   it('can edit medical history, upload a file, and persists to storage', async () => {
     const prevFileReader = (globalThis as any).FileReader
 

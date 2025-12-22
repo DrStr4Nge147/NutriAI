@@ -33,6 +33,7 @@ describe('exportImport', () => {
         },
       ],
       meals: [],
+      mealPlans: [],
     }
 
     await importAllData(payload)

@@ -5,7 +5,7 @@ import { readFileAsDataUrl } from '../utils/files'
 import { useMealPhotoAnalysis } from '../state/MealPhotoAnalysisContext'
 import { useApp } from '../state/AppContext'
 
-function NavIcon(props: { name: 'home' | 'scan' | 'manual' | 'history' | 'medical' | 'settings' | 'more'; active: boolean; tone?: 'inverse' }) {
+function NavIcon(props: { name: 'home' | 'scan' | 'manual' | 'history' | 'mealPlan' | 'medical' | 'settings' | 'more'; active: boolean; tone?: 'inverse' }) {
   const stroke = props.tone === 'inverse' ? '#ffffff' : props.active ? '#047857' : '#64748b'
   const common = { stroke, strokeWidth: 2.2, fill: 'none', strokeLinecap: 'round' as const, strokeLinejoin: 'round' as const }
 
@@ -45,6 +45,16 @@ function NavIcon(props: { name: 'home' | 'scan' | 'manual' | 'history' | 'medica
         <path {...common} d="M7 16h10" />
         <path {...common} d="M5 4v16" />
         <path {...common} d="M19 4v16" />
+      </svg>
+    )
+  }
+
+  if (props.name === 'mealPlan') {
+    return (
+      <svg viewBox="0 0 24 24" className="h-5 w-5" aria-hidden="true">
+        <path {...common} d="M5 7h14" />
+        <path {...common} d="M7 12h10" />
+        <path {...common} d="M9 17h6" />
       </svg>
     )
   }
@@ -181,6 +191,7 @@ export function MobileShell(props: { title: string; children: ReactNode }) {
   const navItems: Array<{ to: string; label: string; icon: Parameters<typeof NavIcon>[0]['name']; match: (path: string) => boolean }> = [
     { to: '/', label: 'Dashboard', icon: 'home', match: (p) => p === '/' },
     { to: '/meals', label: 'Meal History', icon: 'history', match: (p) => p.startsWith('/meals') },
+    { to: '/meal-plan', label: 'Meal Plan', icon: 'mealPlan', match: (p) => p.startsWith('/meal-plan') },
     { to: '/manual', label: 'Manual Entry', icon: 'manual', match: (p) => p.startsWith('/manual') },
     { to: '/medical-history', label: 'Medical', icon: 'medical', match: (p) => p.startsWith('/medical-history') },
     { to: '/settings', label: 'Settings', icon: 'settings', match: (p) => p.startsWith('/settings') },
