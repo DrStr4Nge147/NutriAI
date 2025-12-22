@@ -169,7 +169,7 @@ export function HomeRoute() {
         <Link
           to="/profile"
           aria-label="Profile"
-          className="mt-0.5 inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-slate-200 bg-white shadow-sm hover:bg-slate-50"
+          className="relative mt-0.5 hidden h-10 w-10 shrink-0 items-center justify-center rounded-full border border-slate-200 bg-white shadow-sm hover:bg-slate-50 md:inline-flex"
         >
           <svg viewBox="0 0 24 24" className="h-5 w-5" aria-hidden="true">
             <path
@@ -189,6 +189,22 @@ export function HomeRoute() {
               strokeLinejoin="round"
             />
           </svg>
+
+          <span
+            className="pointer-events-none absolute -bottom-1 -right-1 inline-flex h-4 w-4 items-center justify-center rounded-full bg-slate-100 ring-1 ring-slate-200"
+            aria-hidden="true"
+          >
+            <svg viewBox="0 0 24 24" className="h-3 w-3" aria-hidden="true">
+              <path
+                d="M7 10l5 5 5-5"
+                fill="none"
+                stroke="#64748b"
+                strokeWidth="2.4"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
+          </span>
         </Link>
       </div>
 

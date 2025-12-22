@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { getAiSettings, setAiSettings } from '../ai/settings'
 import {
   getReminderSettings,
@@ -12,6 +13,7 @@ import { useApp } from '../state/AppContext'
 import { useUiFeedback } from '../state/UiFeedbackContext'
 
 export function SettingsRoute() {
+  const navigate = useNavigate()
   const { refresh } = useApp()
   const { toast, confirm } = useUiFeedback()
   const [busy, setBusy] = useState(false)
@@ -89,6 +91,7 @@ export function SettingsRoute() {
     setAiSettings(next)
     setAiSettingsState(next)
     toast({ kind: 'success', message: 'AI settings saved' })
+    navigate('/')
   }
 
   async function onEnableNotifications() {

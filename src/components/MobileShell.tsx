@@ -248,6 +248,62 @@ export function MobileShell(props: { title: string; children: ReactNode }) {
         onChange={(e) => void onPickScanPhoto(e.target.files?.[0] ?? null)}
       />
       <div className="mx-auto max-w-6xl px-4 py-4 md:px-6">
+        {!hideBottomNav ? (
+          <header
+            className="sticky top-0 z-40 -mx-4 -mt-4 mb-4 md:hidden"
+            style={{ paddingTop: 'env(safe-area-inset-top)' }}
+          >
+            <div className="bg-gradient-to-r from-emerald-600 via-teal-500 to-sky-500 px-4 py-3 text-white shadow-sm">
+              <div className="mx-auto flex max-w-md items-center justify-between">
+                <Link to="/" className="flex items-center gap-2" aria-label={props.title}>
+                  <img src="/icons/icon-192.svg" alt="" aria-hidden="true" className="h-8 w-8" />
+                  <div className="text-base font-semibold tracking-tight">{props.title}</div>
+                </Link>
+
+                <Link
+                  to="/profile"
+                  aria-label="Open profile"
+                  className="relative inline-flex h-10 w-10 items-center justify-center rounded-full bg-white/30 shadow-sm shadow-black/20 ring-1 ring-white/50 backdrop-blur-sm hover:bg-white/35"
+                >
+                  <svg viewBox="0 0 24 24" className="h-6 w-6" aria-hidden="true">
+                    <path
+                      d="M20 21a8 8 0 0 0-16 0"
+                      fill="none"
+                      stroke="#ffffff"
+                      strokeWidth="2.2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                    <path
+                      d="M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8z"
+                      fill="none"
+                      stroke="#ffffff"
+                      strokeWidth="2.2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                  </svg>
+
+                  <span
+                    className="pointer-events-none absolute -bottom-1 -right-1 inline-flex h-4 w-4 items-center justify-center rounded-full bg-white/20 ring-1 ring-white/30"
+                    aria-hidden="true"
+                  >
+                    <svg viewBox="0 0 24 24" className="h-3 w-3" aria-hidden="true">
+                      <path
+                        d="M7 10l5 5 5-5"
+                        fill="none"
+                        stroke="#ffffff"
+                        strokeWidth="2.4"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      />
+                    </svg>
+                  </span>
+                </Link>
+              </div>
+            </div>
+          </header>
+        ) : null}
         <div className="md:grid md:grid-cols-[260px_1fr] md:gap-8">
           <aside className="hidden md:block">
             <div className="sticky top-4 flex min-h-[calc(100vh-2rem)] flex-col rounded-3xl bg-emerald-50/60 p-4">
@@ -302,11 +358,11 @@ export function MobileShell(props: { title: string; children: ReactNode }) {
 
           <div className="min-w-0">
             {location.pathname !== '/' ? (
-              <div className="mb-3 flex items-center justify-end">
+              <div className="mb-3 hidden items-center justify-end md:flex">
                 <Link
                   to="/profile"
                   aria-label="Profile"
-                  className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 bg-white shadow-sm hover:bg-slate-50"
+                  className="relative inline-flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 bg-white shadow-sm hover:bg-slate-50"
                 >
                   <svg viewBox="0 0 24 24" className="h-5 w-5" aria-hidden="true">
                     <path
@@ -326,6 +382,22 @@ export function MobileShell(props: { title: string; children: ReactNode }) {
                       strokeLinejoin="round"
                     />
                   </svg>
+
+                  <span
+                    className="pointer-events-none absolute -bottom-1 -right-1 inline-flex h-4 w-4 items-center justify-center rounded-full bg-slate-100 ring-1 ring-slate-200"
+                    aria-hidden="true"
+                  >
+                    <svg viewBox="0 0 24 24" className="h-3 w-3" aria-hidden="true">
+                      <path
+                        d="M7 10l5 5 5-5"
+                        fill="none"
+                        stroke="#64748b"
+                        strokeWidth="2.4"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      />
+                    </svg>
+                  </span>
                 </Link>
               </div>
             ) : null}
