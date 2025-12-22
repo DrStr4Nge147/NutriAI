@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { dailyCalorieTarget } from '../nutrition/dailyNeeds'
 import { buildHealthInsights, buildLifestyleInsights } from '../nutrition/health'
 import { sumMacroNutrients } from '../nutrition/macros'
+import { PwaInstallButton } from '../pwa/PwaInstallButton'
 import { useApp } from '../state/AppContext'
 
 function clamp(value: number, min: number, max: number) {
@@ -160,6 +161,7 @@ export function HomeRoute() {
 
   return (
     <div className="space-y-4">
+      <PwaInstallButton className="md:hidden" />
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <div className="text-sm text-slate-600 dark:text-slate-300">{greetingForHour(new Date().getHours())}</div>
