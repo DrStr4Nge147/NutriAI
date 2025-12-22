@@ -1,12 +1,12 @@
 import { useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import type { ActivityLevel, MedicalLabUpload, Sex, UserProfile } from '../models/types'
+import type { ActivityLevel, Goal, MedicalLabUpload, Sex, UserProfile } from '../models/types'
 import { useApp } from '../state/AppContext'
 import { readFileAsDataUrl } from '../utils/files'
 import { newId } from '../utils/id'
 import { clampNumber, safeNumber } from '../utils/numbers'
 
-type Step = 'welcome' | 'body' | 'medical' | 'privacy'
+type Step = 'welcome' | 'body' | 'goal' | 'medical' | 'privacy'
 
 const DEFAULTS: Omit<UserProfile, 'id' | 'createdAt'> = {
   name: 'Me',
@@ -44,13 +44,13 @@ function OnboardingStepShell(props: {
             <div className="text-xs font-medium uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">Getting started</div>
             <div className="mt-1 text-lg font-semibold">{props.stepTitle}</div>
           </div>
-          <div className="hidden sm:block text-xs text-slate-500 dark:text-slate-400">Step {props.stepIndex + 1} of 4</div>
+          <div className="hidden sm:block text-xs text-slate-500 dark:text-slate-400">Step {props.stepIndex + 1} of 5</div>
         </div>
 
         <div className="mt-5 h-2 w-full overflow-hidden rounded-full bg-slate-200/70 dark:bg-slate-800/70">
           <div
             className="h-full rounded-full bg-gradient-to-r from-emerald-600 via-teal-500 to-sky-500 transition-[width] duration-500 ease-out"
-            style={{ width: `${((props.stepIndex + 1) / 4) * 100}%` }}
+            style={{ width: `${((props.stepIndex + 1) / 5) * 100}%` }}
             aria-hidden="true"
           />
         </div>
@@ -80,6 +80,7 @@ export function OnboardingRoute() {
   const [age, setAge] = useState(String(DEFAULTS.body.age))
   const [sex, setSex] = useState<Sex>(DEFAULTS.body.sex)
   const [activityLevel, setActivityLevel] = useState<ActivityLevel>(DEFAULTS.body.activityLevel)
+  const [goal, setGoal] = useState<Goal>(DEFAULTS.goal ?? 'maintain')
   const [conditionsText, setConditionsText] = useState('')
   const [labUploads, setLabUploads] = useState<MedicalLabUpload[]>([])
   const [labError, setLabError] = useState<string | null>(null)
@@ -107,6 +108,7 @@ export function OnboardingRoute() {
         conditions,
         labs: labUploads,
       },
+      goal,
       ...profileOverrides,
     }
 
@@ -114,15 +116,17 @@ export function OnboardingRoute() {
     navigate('/', { replace: true })
   }
 
-  const stepIndex = step === 'welcome' ? 0 : step === 'body' ? 1 : step === 'medical' ? 2 : 3
+  const stepIndex = step === 'welcome' ? 0 : step === 'body' ? 1 : step === 'goal' ? 2 : step === 'medical' ? 3 : 4
   const stepTitle =
     step === 'welcome'
       ? 'Welcome'
       : step === 'body'
         ? 'Body details'
-        : step === 'medical'
-          ? 'Medical conditions'
-          : 'Privacy & storage'
+        : step === 'goal'
+          ? 'Goal'
+          : step === 'medical'
+            ? 'Medical conditions'
+            : 'Privacy & storage'
 
   if (step === 'welcome') {
     const canContinue = name.trim().length > 0
@@ -232,6 +236,56 @@ export function OnboardingRoute() {
             <button
               className="inline-flex items-center justify-center rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-medium text-slate-900 transition hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100 dark:hover:bg-slate-900"
               onClick={() => setStep('welcome')}
+            >
+              Previous
+            </button>
+            <button
+              className="inline-flex flex-1 items-center justify-center rounded-xl bg-gradient-to-r from-emerald-600 via-teal-500 to-sky-500 px-4 py-3 text-sm font-semibold text-white shadow-lg shadow-emerald-600/15 transition hover:brightness-110 active:brightness-95"
+              onClick={() => setStep('goal')}
+            >
+              Next
+            </button>
+            <button
+              className="inline-flex items-center justify-center rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-medium text-slate-900 transition hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100 dark:hover:bg-slate-900"
+              onClick={() => finish(DEFAULTS)}
+            >
+              Skip
+            </button>
+          </div>
+        </div>
+      </OnboardingStepShell>
+    )
+  }
+
+  if (step === 'goal') {
+    return (
+      <OnboardingStepShell stepTitle={stepTitle} stepIndex={stepIndex} animateKey={step}>
+        <div className="space-y-6">
+          <div>
+            <div className="text-2xl font-semibold tracking-tight">Goal</div>
+            <div className="mt-2 text-sm leading-6 text-slate-600 dark:text-slate-300">
+              Used to tailor recommendations. You can change this later.
+            </div>
+          </div>
+
+          <label className="text-sm">
+            <div className="font-medium text-slate-700 dark:text-slate-200">Your goal</div>
+            <select
+              className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 shadow-inner shadow-slate-900/5 outline-none transition focus:border-emerald-400 focus:ring-2 focus:ring-emerald-200/60 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
+              value={goal}
+              onChange={(e) => setGoal(e.target.value as Goal)}
+            >
+              <option value="maintain">Maintain weight</option>
+              <option value="lose">Lose weight</option>
+              <option value="gain">Gain weight</option>
+              <option value="overall_health">Overall health</option>
+            </select>
+          </label>
+
+          <div className="flex flex-col gap-2 sm:flex-row">
+            <button
+              className="inline-flex items-center justify-center rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-medium text-slate-900 transition hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100 dark:hover:bg-slate-900"
+              onClick={() => setStep('body')}
             >
               Previous
             </button>
@@ -363,7 +417,7 @@ export function OnboardingRoute() {
               className="inline-flex items-center justify-center rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-medium text-slate-900 transition hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100 dark:hover:bg-slate-900"
               onClick={() => {
                 setMedicalBlankError(null)
-                setStep('body')
+                setStep('goal')
               }}
             >
               Previous

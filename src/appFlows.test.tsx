@@ -45,6 +45,9 @@ async function completeOnboarding(name: string) {
   await screen.findByRole('button', { name: 'Next' })
   fireEvent.click(screen.getByRole('button', { name: 'Next' }))
 
+  await screen.findByText('Your goal')
+  fireEvent.click(screen.getByRole('button', { name: 'Next' }))
+
   await screen.findByText('Medical conditions (optional)')
   fireEvent.click(screen.getByRole('button', { name: 'Next' }))
 
@@ -476,6 +479,9 @@ describe('app flows', () => {
       fireEvent.click(screen.getByRole('button', { name: 'Get started' }))
 
       await screen.findByRole('button', { name: 'Next' })
+      fireEvent.click(screen.getByRole('button', { name: 'Next' }))
+
+      await screen.findByText('Your goal')
       fireEvent.click(screen.getByRole('button', { name: 'Next' }))
 
       await screen.findByText('Medical conditions (optional)')
