@@ -6,6 +6,8 @@ type BeforeInstallPromptEvent = Event & {
   userChoice: Promise<{ outcome: 'accepted' | 'dismissed'; platform: string }>
 }
 
+const INSTALLED_STORAGE_KEY = 'himsogai.pwaInstalled'
+
 function isInstalled(): boolean {
   if (typeof window === 'undefined') return false
 
@@ -18,6 +20,24 @@ function isInstalled(): boolean {
   return false
 }
 
+function readStoredInstalled(): boolean {
+  if (typeof window === 'undefined') return false
+  try {
+    return localStorage.getItem(INSTALLED_STORAGE_KEY) === '1'
+  } catch {
+    return false
+  }
+}
+
+function writeStoredInstalled(installed: boolean) {
+  if (typeof window === 'undefined') return
+  try {
+    if (installed) localStorage.setItem(INSTALLED_STORAGE_KEY, '1')
+    else localStorage.removeItem(INSTALLED_STORAGE_KEY)
+  } catch {
+  }
+}
+
 function isIos(): boolean {
   if (typeof window === 'undefined') return false
   const ua = window.navigator.userAgent
@@ -27,22 +47,27 @@ function isIos(): boolean {
 export function PwaInstallButton(props: { className?: string }) {
   const { toast } = useUiFeedback()
   const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null)
-  const [installed, setInstalled] = useState<boolean>(() => isInstalled())
+  const [installed, setInstalled] = useState<boolean>(() => isInstalled() || readStoredInstalled())
 
   const visible = useMemo(() => {
     if (installed) return false
+    if (isIos()) return true
+    if (!deferredPrompt) return false
     return true
-  }, [installed])
+  }, [installed, deferredPrompt])
 
   useEffect(() => {
     if (typeof window === 'undefined') return
 
     const onBeforeInstallPrompt = (e: Event) => {
       e.preventDefault()
+      writeStoredInstalled(false)
+      setInstalled(false)
       setDeferredPrompt(e as BeforeInstallPromptEvent)
     }
 
     const onAppInstalled = () => {
+      writeStoredInstalled(true)
       setInstalled(true)
       setDeferredPrompt(null)
     }
@@ -53,6 +78,7 @@ export function PwaInstallButton(props: { className?: string }) {
     const mql = window.matchMedia?.('(display-mode: standalone)')
     const onDisplayModeChange = () => {
       if (isInstalled()) {
+        writeStoredInstalled(true)
         setInstalled(true)
         setDeferredPrompt(null)
       }
@@ -61,6 +87,7 @@ export function PwaInstallButton(props: { className?: string }) {
     if (mql?.addEventListener) mql.addEventListener('change', onDisplayModeChange)
 
     if (isInstalled()) {
+      writeStoredInstalled(true)
       setInstalled(true)
       setDeferredPrompt(null)
     }
@@ -82,11 +109,6 @@ export function PwaInstallButton(props: { className?: string }) {
         })
         return
       }
-
-      toast({
-        kind: 'info',
-        message: 'Install isn’t available yet. Try in a production (HTTPS) build with the service worker active.',
-      })
       return
     }
 
@@ -94,6 +116,7 @@ export function PwaInstallButton(props: { className?: string }) {
       await prompt.prompt()
       const choice = await prompt.userChoice
       if (choice.outcome === 'accepted') {
+        writeStoredInstalled(true)
         setInstalled(true)
         setDeferredPrompt(null)
       }
