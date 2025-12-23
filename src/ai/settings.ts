@@ -44,7 +44,7 @@ function defaultSettings(): AiSettings {
     provider: isHostedOnline() && provider === 'ollama' ? 'gemini' : provider,
     gemini: {
       apiKey: env.VITE_GEMINI_API_KEY ?? '',
-      model: env.VITE_GEMINI_MODEL ?? 'gemini-flash-latest',
+      model: env.VITE_GEMINI_MODEL ?? 'gemini-3-flash-preview',
       consentToSendData: false,
     },
     ollama: {

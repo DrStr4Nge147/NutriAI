@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import type { ActivityLevel, Goal, MedicalLabUpload, Sex, UserProfile } from '../models/types'
+import { PwaInstallButton } from '../pwa/PwaInstallButton'
 import { useApp } from '../state/AppContext'
 import { readFileAsDataUrl } from '../utils/files'
 import { newId } from '../utils/id'
@@ -45,6 +46,10 @@ function OnboardingStepShell(props: {
             <div className="mt-1 text-lg font-semibold">{props.stepTitle}</div>
           </div>
           <div className="hidden sm:block text-xs text-slate-500 dark:text-slate-400">Step {props.stepIndex + 1} of 5</div>
+        </div>
+
+        <div className="mt-4 md:hidden">
+          <PwaInstallButton />
         </div>
 
         <div className="mt-5 h-2 w-full overflow-hidden rounded-full bg-slate-200/70 dark:bg-slate-800/70">
