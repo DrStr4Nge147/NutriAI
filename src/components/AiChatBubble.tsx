@@ -44,6 +44,7 @@ export function AiChatBubble(props: { hidden?: boolean }) {
 
   const [pos, setPos] = useState<Pos>(() => readPos() ?? defaultPos)
   const [animScale, setAnimScale] = useState(1)
+  const [modalOpen, setModalOpen] = useState(false)
 
   const posRef = useRef<Pos>(pos)
   const targetPosRef = useRef<Pos>(pos)
@@ -124,6 +125,20 @@ export function AiChatBubble(props: { hidden?: boolean }) {
   }, [])
 
   useEffect(() => {
+    if (typeof document === 'undefined') return
+
+    function compute() {
+      setModalOpen(Boolean(document.querySelector('[aria-modal="true"]')))
+    }
+
+    compute()
+
+    const obs = new MutationObserver(() => compute())
+    obs.observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ['aria-modal'] })
+    return () => obs.disconnect()
+  }, [])
+
+  useEffect(() => {
     if (typeof window === 'undefined') return
 
     function onResize() {
@@ -146,13 +161,15 @@ export function AiChatBubble(props: { hidden?: boolean }) {
     <button
       type="button"
       aria-label="Open AI chat"
-      className="fixed z-50 flex items-center justify-center rounded-full bg-gradient-to-r from-emerald-600 via-teal-500 to-sky-500 text-white shadow-xl ring-4 ring-white/70 active:brightness-95 dark:ring-slate-950/60"
+      className="fixed z-40 flex items-center justify-center rounded-full bg-gradient-to-r from-emerald-600 via-teal-500 to-sky-500 text-white shadow-xl ring-4 ring-white/70 active:brightness-95 dark:ring-slate-950/60"
       style={{
         width: size,
         height: size,
         left: pos.x,
         top: pos.y,
         touchAction: 'none',
+        zIndex: modalOpen ? 10 : 40,
+        pointerEvents: modalOpen ? 'none' : 'auto',
         transform: `scale(${animScale})`,
         transition: 'transform 180ms cubic-bezier(0.34, 1.56, 0.64, 1)',
       }}
