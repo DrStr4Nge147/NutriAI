@@ -5,8 +5,10 @@ import { readFileAsDataUrl } from '../utils/files'
 import { useMealPhotoAnalysis } from '../state/MealPhotoAnalysisContext'
 import { useApp } from '../state/AppContext'
 import { AppLogo } from './AppLogo'
+import { AiChatBubble } from './AiChatBubble'
+import { AI_CHAT_BUBBLE_SETTINGS_EVENT, getAiChatBubbleEnabled } from '../ui/aiChatBubble'
 
-function NavIcon(props: { name: 'home' | 'scan' | 'manual' | 'history' | 'mealPlan' | 'medical' | 'settings' | 'about' | 'more'; active: boolean; tone?: 'inverse' }) {
+function NavIcon(props: { name: 'home' | 'scan' | 'manual' | 'history' | 'mealPlan' | 'medical' | 'chat' | 'settings' | 'about' | 'more'; active: boolean; tone?: 'inverse' }) {
   const iconClass =
     props.tone === 'inverse'
       ? 'text-white'
@@ -86,6 +88,17 @@ function NavIcon(props: { name: 'home' | 'scan' | 'manual' | 'history' | 'mealPl
     )
   }
 
+  if (props.name === 'chat') {
+    return (
+      <svg viewBox="0 0 24 24" className={`h-5 w-5 ${iconClass}`} aria-hidden="true">
+        <path {...common} d="M4 5.5h16v10H7.5L4 19v-3.5z" />
+        <path {...common} d="M8 10h.01" />
+        <path {...common} d="M12 10h.01" />
+        <path {...common} d="M16 10h.01" />
+      </svg>
+    )
+  }
+
   if (props.name === 'more') {
     return (
       <svg viewBox="0 0 24 24" className={`h-5 w-5 ${iconClass}`} aria-hidden="true">
@@ -140,12 +153,29 @@ export function MobileShell(props: { title: string; children: ReactNode }) {
   const [scanSourcePickerOpen, setScanSourcePickerOpen] = useState(false)
   const [moreOpen, setMoreOpen] = useState(false)
 
+  const [aiChatBubbleEnabled, setAiChatBubbleEnabledState] = useState(() => getAiChatBubbleEnabled())
+
   const AI_DISCLAIMER_KEY = 'ai-nutritionist.hideAiCloudDisclaimer'
   const aiDisclaimerShownRef = useRef(false)
   const [aiDisclaimerOpen, setAiDisclaimerOpen] = useState(false)
   const [aiDisclaimerDontShowAgain, setAiDisclaimerDontShowAgain] = useState(false)
 
   const isAndroid = typeof navigator !== 'undefined' ? /Android/i.test(navigator.userAgent) : false
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+
+    function onBubbleSettingChange() {
+      setAiChatBubbleEnabledState(getAiChatBubbleEnabled())
+    }
+
+    window.addEventListener(AI_CHAT_BUBBLE_SETTINGS_EVENT, onBubbleSettingChange)
+    window.addEventListener('storage', onBubbleSettingChange)
+    return () => {
+      window.removeEventListener(AI_CHAT_BUBBLE_SETTINGS_EVENT, onBubbleSettingChange)
+      window.removeEventListener('storage', onBubbleSettingChange)
+    }
+  }, [])
 
   useEffect(() => {
     if (!isHydrated) return
@@ -212,11 +242,13 @@ export function MobileShell(props: { title: string; children: ReactNode }) {
     { to: '/medical-history', label: 'Medical', icon: 'medical', match: (p) => p.startsWith('/medical-history') },
     { to: '/settings', label: 'Settings', icon: 'settings', match: (p) => p.startsWith('/settings') },
     { to: '/about', label: 'About', icon: 'about', match: (p) => p.startsWith('/about') },
+    { to: '/ai-chat', label: 'AI Chat', icon: 'chat', match: (p) => p.startsWith('/ai-chat') },
   ]
 
   const hideBottomNav = location.pathname.startsWith('/capture')
 
   const moreActive =
+    location.pathname.startsWith('/ai-chat') ||
     location.pathname.startsWith('/medical-history') ||
     location.pathname.startsWith('/settings') ||
     location.pathname.startsWith('/profile') ||
@@ -539,6 +571,18 @@ export function MobileShell(props: { title: string; children: ReactNode }) {
 
             <div className="mt-4 grid gap-2">
               <Link
+                to="/ai-chat"
+                onClick={() => setMoreOpen(false)}
+                className="flex items-center justify-between rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm hover:bg-slate-50 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100 dark:hover:bg-slate-900"
+              >
+                <div className="flex items-center gap-3">
+                  <NavIcon name="chat" active={false} />
+                  <div>AI Chat</div>
+                </div>
+                <div className="text-slate-400">›</div>
+              </Link>
+
+              <Link
                 to="/medical-history"
                 onClick={() => setMoreOpen(false)}
                 className="flex items-center justify-between rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm hover:bg-slate-50 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100 dark:hover:bg-slate-900"
@@ -692,6 +736,10 @@ export function MobileShell(props: { title: string; children: ReactNode }) {
           </div>
         </div>
       ) : null}
+
+      <AiChatBubble
+        hidden={!aiChatBubbleEnabled || hideBottomNav || location.pathname.startsWith('/ai-chat')}
+      />
     </div>
   )
 }

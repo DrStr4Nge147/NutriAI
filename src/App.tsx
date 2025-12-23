@@ -14,6 +14,7 @@ import { ProfileRoute } from './routes/ProfileRoute'
 import { MedicalHistoryRoute } from './routes/MedicalHistoryRoute'
 import { MealPlanRoute } from './routes/MealPlanRoute'
 import { AboutRoute } from './routes/AboutRoute'
+import { AiChatRoute } from './routes/AiChatRoute'
 
 export default function App() {
   const { isHydrated, currentProfileId } = useApp()
@@ -138,6 +139,16 @@ export default function App() {
           element={
             currentProfileId ? (
               <MedicalHistoryRoute />
+            ) : (
+              <Navigate to="/onboarding" replace />
+            )
+          }
+        />
+        <Route
+          path="ai-chat"
+          element={
+            currentProfileId ? (
+              <AiChatRoute />
             ) : (
               <Navigate to="/onboarding" replace />
             )

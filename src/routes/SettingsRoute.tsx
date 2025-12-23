@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { getAiSettings, setAiSettings } from '../ai/settings'
+import { getAiSettings, isHostedOnline, setAiSettings } from '../ai/settings'
 import { getUiTheme, saveAndApplyUiTheme, type UiTheme } from '../ui/theme'
 import {
   getReminderSettings,
@@ -13,6 +13,7 @@ import { clearAllData } from '../storage/db'
 import { GeminiTutorialModal } from '../components/GeminiTutorialModal'
 import { useApp } from '../state/AppContext'
 import { useUiFeedback } from '../state/UiFeedbackContext'
+import { getAiChatBubbleEnabled, setAiChatBubbleEnabled } from '../ui/aiChatBubble'
 
 export function SettingsRoute() {
   const navigate = useNavigate()
@@ -21,12 +22,15 @@ export function SettingsRoute() {
   const [busy, setBusy] = useState(false)
   const [uiTheme, setUiThemeState] = useState<UiTheme>(() => getUiTheme())
   const [aiSettings, setAiSettingsState] = useState(() => getAiSettings())
+  const [hostedOnline] = useState(() => isHostedOnline())
   const [isMobile, setIsMobile] = useState(() => {
     if (typeof window === 'undefined') return false
+    if (typeof window.matchMedia !== 'function') return false
     return window.matchMedia('(max-width: 767px)').matches
   })
   const [geminiTutorialOpen, setGeminiTutorialOpen] = useState(false)
   const [reminders, setRemindersState] = useState(() => getReminderSettings())
+  const [aiChatBubbleEnabled, setAiChatBubbleEnabledState] = useState(() => getAiChatBubbleEnabled())
   const [notificationPermission, setNotificationPermission] = useState<
     NotificationPermission | 'unsupported'
   >(() => {
@@ -35,20 +39,8 @@ export function SettingsRoute() {
   })
 
   useEffect(() => {
-    if (aiSettings.provider !== 'gemini') return
-    if (aiSettings.gemini.apiKey) return
-
-    try {
-      const k = 'ai-nutritionist.geminiTutorialShown'
-      if (localStorage.getItem(k)) return
-      setGeminiTutorialOpen(true)
-      localStorage.setItem(k, '1')
-    } catch {
-    }
-  }, [aiSettings.provider, aiSettings.gemini.apiKey])
-
-  useEffect(() => {
     if (typeof window === 'undefined') return
+    if (typeof window.matchMedia !== 'function') return
     const mq = window.matchMedia('(max-width: 767px)')
     const onChange = () => setIsMobile(mq.matches)
     onChange()
@@ -69,6 +61,14 @@ export function SettingsRoute() {
     setAiSettings(next)
     setAiSettingsState(next)
   }, [isMobile, aiSettings])
+
+  useEffect(() => {
+    if (!hostedOnline) return
+    if (aiSettings.provider !== 'ollama') return
+    const next = { ...aiSettings, provider: 'gemini' as const }
+    setAiSettings(next)
+    setAiSettingsState(next)
+  }, [hostedOnline, aiSettings])
 
   async function onExport() {
     setBusy(true)
@@ -213,13 +213,46 @@ export function SettingsRoute() {
       <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm space-y-3 dark:border-slate-800 dark:bg-slate-900">
         <div className="text-sm font-medium text-slate-900 dark:text-slate-100">AI</div>
 
+        <label className="flex items-center justify-between gap-3 text-sm text-slate-900 dark:text-slate-100">
+          <div>
+            <div className="font-medium">AI Chat bubble</div>
+            <div className="text-xs text-slate-600 dark:text-slate-300">Show a draggable chat button on every page.</div>
+          </div>
+          <button
+            type="button"
+            role="switch"
+            aria-label="AI Chat bubble"
+            aria-checked={aiChatBubbleEnabled}
+            disabled={busy}
+            onClick={() => {
+              const next = !aiChatBubbleEnabled
+              setAiChatBubbleEnabled(next)
+              setAiChatBubbleEnabledState(next)
+            }}
+            className={
+              aiChatBubbleEnabled
+                ? 'relative inline-flex h-7 w-12 items-center rounded-full bg-emerald-600 transition disabled:opacity-50'
+                : 'relative inline-flex h-7 w-12 items-center rounded-full bg-slate-300 transition disabled:opacity-50 dark:bg-slate-700'
+            }
+          >
+            <span
+              className={
+                aiChatBubbleEnabled
+                  ? 'inline-block h-5 w-5 translate-x-6 rounded-full bg-white shadow transition'
+                  : 'inline-block h-5 w-5 translate-x-1 rounded-full bg-white shadow transition'
+              }
+              aria-hidden="true"
+            />
+          </button>
+        </label>
+
         <label className="block text-sm">
           <div className="font-medium text-slate-900 dark:text-slate-100">Provider</div>
           <select
             className="mt-1 w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm dark:border-slate-700 dark:bg-slate-950"
-            value={isMobile ? 'gemini' : aiSettings.provider}
+            value={isMobile || hostedOnline ? 'gemini' : aiSettings.provider}
             onChange={(e) => {
-              if (isMobile) {
+              if (isMobile || hostedOnline) {
                 saveAiSettings({ ...aiSettings, provider: 'gemini' })
                 return
               }
@@ -229,7 +262,13 @@ export function SettingsRoute() {
             disabled={busy}
           >
             <option value="gemini">Gemini (online)</option>
-            {isMobile ? <option value="offline" disabled>Offline mode (coming soon)</option> : <option value="ollama">Ollama (local)</option>}
+            {isMobile ? (
+              <option value="offline" disabled>Offline mode (coming soon)</option>
+            ) : hostedOnline ? (
+              <option value="ollama" disabled>Ollama (local) - disabled when hosted online</option>
+            ) : (
+              <option value="ollama">Ollama (local)</option>
+            )}
           </select>
         </label>
 
@@ -281,11 +320,11 @@ export function SettingsRoute() {
               })}
               disabled={busy}
             />
-            Allow sending meal photos to Gemini (online)
+            Allow sending data to Gemini (online) for health chat and meal logging
           </label>
         </div>
 
-        {!isMobile ? (
+        {!isMobile && !hostedOnline ? (
           <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 space-y-3 dark:border-slate-800 dark:bg-slate-950">
             <div className="text-sm font-medium text-slate-900 dark:text-slate-100">Ollama</div>
             <label className="block text-sm">

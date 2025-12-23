@@ -71,6 +71,36 @@ describe('app flows', () => {
     await clearAllData()
   })
 
+  it('can open AI Chat from More options when chat bubble is disabled', async () => {
+    await renderApp(['/'])
+    await completeOnboarding('Test')
+
+    fireEvent.click(within(screen.getByRole('navigation', { name: 'Primary' })).getByRole('link', { name: 'Settings' }))
+    await screen.findByRole('button', { name: 'Export data' })
+
+    const bubbleToggle = screen.getByRole('switch', { name: 'AI Chat bubble' })
+    expect(bubbleToggle).toHaveAttribute('aria-checked', 'true')
+    fireEvent.click(bubbleToggle)
+    expect(screen.getByRole('switch', { name: 'AI Chat bubble' })).toHaveAttribute('aria-checked', 'false')
+
+    fireEvent.click(screen.getByRole('button', { name: 'More options' }))
+    const moreDialog = await screen.findByRole('dialog', { name: 'More options' })
+
+    fireEvent.click(within(moreDialog).getByRole('link', { name: /AI Chat/i }))
+    await screen.findByText('AI Health Chat')
+
+    expect(screen.getByText(/Hi Test,/)).toBeInTheDocument()
+    expect(screen.queryByLabelText('Open AI chat')).not.toBeInTheDocument()
+
+    const input = screen.getByPlaceholderText('Ask a health question…') as HTMLTextAreaElement
+    fireEvent.change(input, { target: { value: 'How can I sleep better?' } })
+    fireEvent.keyDown(input, { key: 'Enter', ctrlKey: true })
+    await screen.findByText('How can I sleep better?')
+
+    fireEvent.click(screen.getByRole('button', { name: 'Reset Chat' }))
+    await screen.findByText(/Hi Test, what health question can I help you with today\?/)
+  })
+
   it('can generate and approve a meal plan, and avoids repeating approved titles', async () => {
     const prevFetch = (globalThis as any).fetch
 

@@ -1,5 +1,17 @@
 import type { AiProvider } from '../models/types'
 
+function isLocalHostname(hostname: string): boolean {
+  const h = hostname.toLowerCase()
+  return h === 'localhost' || h === '127.0.0.1' || h === '0.0.0.0' || h === '::1'
+}
+
+export function isHostedOnline(): boolean {
+  if (typeof window === 'undefined') return false
+  const { protocol, hostname } = window.location
+  if (protocol === 'file:') return false
+  return !isLocalHostname(hostname)
+}
+
 export type AiSettingsProvider = Extract<AiProvider, 'gemini' | 'ollama'>
 
 export type AiSettings = {
@@ -26,8 +38,10 @@ function defaultSettings(): AiSettings {
     VITE_OLLAMA_MODEL?: string
   }
 
+  const provider: AiSettingsProvider = env.VITE_AI_PROVIDER === 'ollama' ? 'ollama' : 'gemini'
+
   return {
-    provider: env.VITE_AI_PROVIDER === 'ollama' ? 'ollama' : 'gemini',
+    provider: isHostedOnline() && provider === 'ollama' ? 'gemini' : provider,
     gemini: {
       apiKey: env.VITE_GEMINI_API_KEY ?? '',
       model: env.VITE_GEMINI_MODEL ?? 'gemini-flash-latest',
@@ -49,9 +63,10 @@ export function getAiSettings(): AiSettings {
     const d = defaultSettings()
 
     const provider: AiSettingsProvider = parsed.provider === 'ollama' ? 'ollama' : 'gemini'
+    const effectiveProvider: AiSettingsProvider = isHostedOnline() && provider === 'ollama' ? 'gemini' : provider
 
     return {
-      provider,
+      provider: effectiveProvider,
       gemini: {
         apiKey: parsed.gemini?.apiKey ?? d.gemini.apiKey,
         model: parsed.gemini?.model ?? d.gemini.model,
