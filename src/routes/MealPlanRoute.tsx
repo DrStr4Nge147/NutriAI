@@ -234,6 +234,7 @@ export function MealPlanRoute() {
 
       await putMealPlan(plan)
       setApprovedPlans(await listMealPlansByProfile(currentProfileId))
+      setGenerated(null)
       toast({ kind: 'success', message: 'Meal plan approved and saved' })
     } catch (e) {
       const msg = e instanceof Error ? e.message : 'Failed to approve meal plan'

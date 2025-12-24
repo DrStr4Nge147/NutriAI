@@ -184,7 +184,7 @@ describe('app flows', () => {
       await screen.findByText('Approved Lunch plans')
       await screen.findByText(/Avoiding repeats from your last 1 approved lunch plan\(s\)\./)
 
-      fireEvent.click(screen.getByRole('button', { name: 'Regenerate' }))
+      fireEvent.click(screen.getByRole('button', { name: 'Generate a Meal Plan' }))
       await screen.findByText('Sinigang na Baboy')
 
       fireEvent.click(screen.getByRole('button', { name: 'View' }))
