@@ -12,6 +12,13 @@ function mealTypeLabel(mealType: MealPlanMealType) {
   return 'Dinner'
 }
 
+function mealTypeFromLocalTime(date: Date): MealPlanMealType {
+  const hour = date.getHours()
+  if (hour >= 5 && hour < 11) return 'breakfast'
+  if (hour >= 11 && hour < 16) return 'lunch'
+  return 'dinner'
+}
+
 function isoWeekYearAndNumber(date: Date) {
   const tmp = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()))
   const dayNum = tmp.getUTCDay() || 7
@@ -29,6 +36,7 @@ export function MealPlanRoute() {
   const nowIsoWeek = isoWeekYearAndNumber(now)
 
   const [mealType, setMealType] = useState<MealPlanMealType>('lunch')
+  const [userPickedMealType, setUserPickedMealType] = useState(false)
   const [approvedPlans, setApprovedPlans] = useState<MealPlan[]>([])
 
   const [busy, setBusy] = useState(false)
@@ -43,6 +51,11 @@ export function MealPlanRoute() {
   const [approvedYear, setApprovedYear] = useState<string>('all')
   const [approvedMonth, setApprovedMonth] = useState<number>(now.getMonth())
   const [approvedWeek, setApprovedWeek] = useState<number>(nowIsoWeek.week)
+
+  useEffect(() => {
+    if (userPickedMealType) return
+    setMealType(mealTypeFromLocalTime(new Date()))
+  }, [userPickedMealType])
 
   useEffect(() => {
     if (approvedDateFilter === 'none') return
@@ -276,6 +289,7 @@ export function MealPlanRoute() {
                 const next = (e.target.value === 'breakfast' || e.target.value === 'lunch' || e.target.value === 'dinner')
                   ? (e.target.value as MealPlanMealType)
                   : 'lunch'
+                setUserPickedMealType(true)
                 setMealType(next)
                 setGenerated(null)
                 setError(null)
