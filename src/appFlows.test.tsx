@@ -71,6 +71,24 @@ describe('app flows', () => {
     await clearAllData()
   })
 
+  it('preserves the entered name when skipping onboarding early', async () => {
+    await renderApp(['/'])
+
+    const nameInput = screen.getByPlaceholderText('Your name')
+    fireEvent.change(nameInput, { target: { value: 'Nick' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Get started' }))
+
+    await screen.findByText('Height (cm)')
+    fireEvent.click(await screen.findByRole('button', { name: 'Skip' }))
+
+    const disclaimer = await screen.findByText('AI analysis & cloud processing')
+    expect(disclaimer).toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: 'I understand' }))
+
+    await screen.findByText('Calories left')
+    expect(screen.getByText('Nick')).toBeInTheDocument()
+  })
+
   it('can open AI Chat from More options when chat bubble is disabled', async () => {
     await renderApp(['/'])
     await completeOnboarding('Test')
