@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useMemo, useRef, useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { getAiSettings, isHostedOnline, setAiSettings } from '../ai/settings'
 import { getUiTheme, saveAndApplyUiTheme, type UiTheme } from '../ui/theme'
@@ -31,6 +31,10 @@ export function SettingsRoute() {
   const [geminiTutorialOpen, setGeminiTutorialOpen] = useState(false)
   const [reminders, setRemindersState] = useState(() => getReminderSettings())
   const [aiChatBubbleEnabled, setAiChatBubbleEnabledState] = useState(() => getAiChatBubbleEnabled())
+  const savedAiSettingsRef = useRef(getAiSettings())
+  const savedRemindersRef = useRef(getReminderSettings())
+  const [unsavedModalOpen, setUnsavedModalOpen] = useState(false)
+  const pendingNavigationRef = useRef<string | null>(null)
   const [notificationPermission, setNotificationPermission] = useState<
     NotificationPermission | 'unsupported'
   >(() => {
@@ -69,6 +73,93 @@ export function SettingsRoute() {
     setAiSettings(next)
     setAiSettingsState(next)
   }, [hostedOnline, aiSettings])
+
+  const unsavedChanges = useMemo(() => {
+    const changes: string[] = []
+    const savedAi = savedAiSettingsRef.current
+    const savedReminders = savedRemindersRef.current
+
+    if (aiSettings.provider !== savedAi.provider) changes.push('AI provider')
+    if (aiSettings.gemini.apiKey !== savedAi.gemini.apiKey) changes.push('Gemini API key')
+    if (aiSettings.gemini.model !== savedAi.gemini.model) changes.push('Gemini model')
+    if (aiSettings.gemini.consentToSendData !== savedAi.gemini.consentToSendData) changes.push('Gemini consent to send data')
+    if (aiSettings.ollama.baseUrl !== savedAi.ollama.baseUrl) changes.push('Ollama base URL')
+    if (aiSettings.ollama.model !== savedAi.ollama.model) changes.push('Ollama model')
+
+    if (reminders.mealLog.enabled !== savedReminders.mealLog.enabled) changes.push('Meal logging reminder enabled')
+    if (reminders.mealLog.time !== savedReminders.mealLog.time) changes.push('Meal logging reminder time')
+    if (reminders.weighIn.enabled !== savedReminders.weighIn.enabled) changes.push('Weigh-in reminder enabled')
+    if (reminders.weighIn.time !== savedReminders.weighIn.time) changes.push('Weigh-in reminder time')
+
+    return changes
+  }, [aiSettings, reminders])
+
+  const hasUnsavedChanges = unsavedChanges.length > 0
+
+  useEffect(() => {
+    if (hasUnsavedChanges) return
+    pendingNavigationRef.current = null
+    setUnsavedModalOpen(false)
+  }, [hasUnsavedChanges])
+
+  useEffect(() => {
+    if (!hasUnsavedChanges) return
+    if (typeof document === 'undefined') return
+
+    function onDocumentClick(e: MouseEvent) {
+      if (!hasUnsavedChanges) return
+      if (unsavedModalOpen) return
+      if (e.defaultPrevented) return
+      if (e.button !== 0) return
+      if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return
+
+      const target = e.target as Element | null
+      const a = target?.closest?.('a') as HTMLAnchorElement | null
+      if (!a) return
+      const href = a.getAttribute('href')
+      if (!href) return
+      if (a.target && a.target !== '_self') return
+      if (href.startsWith('#')) return
+      if (href.startsWith('mailto:') || href.startsWith('tel:')) return
+
+      let url: URL
+      try {
+        url = new URL(href, window.location.href)
+      } catch {
+        return
+      }
+
+      if (url.origin !== window.location.origin) return
+
+      const nextPath = `${url.pathname}${url.search}${url.hash}`
+      const currentPath = `${window.location.pathname}${window.location.search}${window.location.hash}`
+      if (nextPath === currentPath) return
+
+      e.preventDefault()
+      pendingNavigationRef.current = nextPath
+      setUnsavedModalOpen(true)
+    }
+
+    document.addEventListener('click', onDocumentClick, true)
+    return () => document.removeEventListener('click', onDocumentClick, true)
+  }, [hasUnsavedChanges, unsavedModalOpen])
+
+  useEffect(() => {
+    if (!hasUnsavedChanges) return
+    function onBeforeUnload(e: BeforeUnloadEvent) {
+      e.preventDefault()
+      e.returnValue = ''
+    }
+    window.addEventListener('beforeunload', onBeforeUnload)
+    return () => window.removeEventListener('beforeunload', onBeforeUnload)
+  }, [hasUnsavedChanges])
+
+  function proceedPendingNavigation() {
+    const to = pendingNavigationRef.current
+    pendingNavigationRef.current = null
+    if (!to) return
+    navigate(to)
+  }
 
   async function onExport() {
     setBusy(true)
@@ -155,11 +246,12 @@ export function SettingsRoute() {
     }
   }
 
-  function saveAiSettings(next: typeof aiSettings) {
+  function persistAiSettings(next: typeof aiSettings, options?: { navigateHome?: boolean }) {
     setAiSettings(next)
     setAiSettingsState(next)
+    savedAiSettingsRef.current = next
     toast({ kind: 'success', message: 'AI settings saved' })
-    navigate('/')
+    if (options?.navigateHome !== false) navigate('/')
   }
 
   async function onEnableNotifications() {
@@ -177,12 +269,77 @@ export function SettingsRoute() {
   function saveReminders(next: typeof reminders) {
     setReminderSettings(next)
     setRemindersState(next)
+    savedRemindersRef.current = next
     refreshReminderScheduler()
     toast({ kind: 'success', message: 'Reminder settings saved' })
   }
 
   return (
     <div className="space-y-4">
+      {unsavedModalOpen ? (
+        <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 p-3 sm:items-center" role="dialog" aria-modal="true">
+          <div className="w-full max-w-md rounded-2xl border border-slate-200 bg-white p-5 shadow-2xl dark:border-slate-800 dark:bg-slate-900">
+            <div className="text-base font-semibold text-slate-900 dark:text-slate-100">Unsaved changes</div>
+            <div className="mt-2 text-sm text-slate-700 dark:text-slate-200">
+              You have unsaved changes in:
+            </div>
+            <div className="mt-2 space-y-1">
+              {unsavedChanges.map((c) => (
+                <div key={c} className="text-sm text-slate-700 dark:text-slate-200">- {c}</div>
+              ))}
+            </div>
+
+            <div className="mt-4 flex flex-col gap-2 sm:flex-row sm:justify-end">
+              <button
+                className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-950 dark:hover:bg-slate-900"
+                onClick={() => {
+                  setUnsavedModalOpen(false)
+                  pendingNavigationRef.current = null
+                }}
+                type="button"
+              >
+                Stay
+              </button>
+              <button
+                className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-950 dark:hover:bg-slate-900"
+                onClick={() => {
+                  setUnsavedModalOpen(false)
+                  proceedPendingNavigation()
+                }}
+                type="button"
+              >
+                Leave without saving
+              </button>
+              <button
+                className="rounded-xl bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800"
+                onClick={() => {
+                  if (busy) return
+                  if (unsavedChanges.length === 0) {
+                    setUnsavedModalOpen(false)
+                    proceedPendingNavigation()
+                    return
+                  }
+
+                  const savedAi = savedAiSettingsRef.current
+                  const savedReminders = savedRemindersRef.current
+                  const aiDirty = JSON.stringify(aiSettings) !== JSON.stringify(savedAi)
+                  const remindersDirty = JSON.stringify(reminders) !== JSON.stringify(savedReminders)
+
+                  if (aiDirty) persistAiSettings(aiSettings, { navigateHome: false })
+                  if (remindersDirty) saveReminders(reminders)
+
+                  setUnsavedModalOpen(false)
+                  proceedPendingNavigation()
+                }}
+                type="button"
+              >
+                Save and leave
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
       <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
         <div className="text-base font-semibold text-slate-900 dark:text-slate-100">Settings</div>
         <div className="mt-1 text-sm text-slate-600 dark:text-slate-300">Export/import your local data.</div>
@@ -253,11 +410,10 @@ export function SettingsRoute() {
             value={isMobile || hostedOnline ? 'gemini' : aiSettings.provider}
             onChange={(e) => {
               if (isMobile || hostedOnline) {
-                saveAiSettings({ ...aiSettings, provider: 'gemini' })
                 return
               }
               const provider = e.target.value === 'ollama' ? 'ollama' : 'gemini'
-              saveAiSettings({ ...aiSettings, provider })
+              setAiSettingsState({ ...aiSettings, provider })
             }}
             disabled={busy}
           >
@@ -272,59 +428,61 @@ export function SettingsRoute() {
           </select>
         </label>
 
-        <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 space-y-3 dark:border-slate-800 dark:bg-slate-950">
-          <div className="flex items-center justify-between gap-3">
-            <div className="text-sm font-medium text-slate-900 dark:text-slate-100">Gemini</div>
-            <button
-              className="shrink-0 rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100 dark:hover:bg-slate-900"
-              onClick={() => setGeminiTutorialOpen(true)}
-              type="button"
-            >
-              How?
-            </button>
+        {aiSettings.provider === 'gemini' ? (
+          <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 space-y-3 dark:border-slate-800 dark:bg-slate-950">
+            <div className="flex items-center justify-between gap-3">
+              <div className="text-sm font-medium text-slate-900 dark:text-slate-100">Gemini</div>
+              <button
+                className="shrink-0 rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100 dark:hover:bg-slate-900"
+                onClick={() => setGeminiTutorialOpen(true)}
+                type="button"
+              >
+                How?
+              </button>
+            </div>
+            <label className="block text-sm">
+              <div className="font-medium text-slate-900 dark:text-slate-100">API key</div>
+              <input
+                className="mt-1 w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm dark:border-slate-700 dark:bg-slate-900"
+                value={aiSettings.gemini.apiKey}
+                onChange={(e) => setAiSettingsState({
+                  ...aiSettings,
+                  gemini: { ...aiSettings.gemini, apiKey: e.target.value },
+                })}
+                disabled={busy}
+                type="password"
+                autoComplete="off"
+              />
+            </label>
+            <label className="block text-sm">
+              <div className="font-medium text-slate-900 dark:text-slate-100">Model</div>
+              <input
+                className="mt-1 w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm dark:border-slate-700 dark:bg-slate-900"
+                value={aiSettings.gemini.model}
+                onChange={(e) => setAiSettingsState({
+                  ...aiSettings,
+                  gemini: { ...aiSettings.gemini, model: e.target.value },
+                })}
+                disabled={busy}
+              />
+            </label>
+
+            <label className="flex items-center gap-2 text-sm text-slate-900 dark:text-slate-100">
+              <input
+                type="checkbox"
+                checked={aiSettings.gemini.consentToSendData}
+                onChange={(e) => setAiSettingsState({
+                  ...aiSettings,
+                  gemini: { ...aiSettings.gemini, consentToSendData: e.target.checked },
+                })}
+                disabled={busy}
+              />
+              Allow sending data to Gemini (online) for health chat and meal logging
+            </label>
           </div>
-          <label className="block text-sm">
-            <div className="font-medium text-slate-900 dark:text-slate-100">API key</div>
-            <input
-              className="mt-1 w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm dark:border-slate-700 dark:bg-slate-900"
-              value={aiSettings.gemini.apiKey}
-              onChange={(e) => setAiSettingsState({
-                ...aiSettings,
-                gemini: { ...aiSettings.gemini, apiKey: e.target.value },
-              })}
-              disabled={busy}
-              type="password"
-              autoComplete="off"
-            />
-          </label>
-          <label className="block text-sm">
-            <div className="font-medium text-slate-900 dark:text-slate-100">Model</div>
-            <input
-              className="mt-1 w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm dark:border-slate-700 dark:bg-slate-900"
-              value={aiSettings.gemini.model}
-              onChange={(e) => setAiSettingsState({
-                ...aiSettings,
-                gemini: { ...aiSettings.gemini, model: e.target.value },
-              })}
-              disabled={busy}
-            />
-          </label>
+        ) : null}
 
-          <label className="flex items-center gap-2 text-sm text-slate-900 dark:text-slate-100">
-            <input
-              type="checkbox"
-              checked={aiSettings.gemini.consentToSendData}
-              onChange={(e) => setAiSettingsState({
-                ...aiSettings,
-                gemini: { ...aiSettings.gemini, consentToSendData: e.target.checked },
-              })}
-              disabled={busy}
-            />
-            Allow sending data to Gemini (online) for health chat and meal logging
-          </label>
-        </div>
-
-        {!isMobile && !hostedOnline ? (
+        {aiSettings.provider === 'ollama' && !isMobile && !hostedOnline ? (
           <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 space-y-3 dark:border-slate-800 dark:bg-slate-950">
             <div className="text-sm font-medium text-slate-900 dark:text-slate-100">Ollama</div>
             <label className="block text-sm">
@@ -356,7 +514,7 @@ export function SettingsRoute() {
 
         <button
           className="w-full rounded-xl bg-gradient-to-r from-emerald-600 via-teal-500 to-sky-500 px-3 py-2 text-sm font-medium text-white transition hover:brightness-110 active:brightness-95 disabled:opacity-50"
-          onClick={() => saveAiSettings(aiSettings)}
+          onClick={() => persistAiSettings(aiSettings)}
           disabled={busy}
           type="button"
         >

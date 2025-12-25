@@ -467,6 +467,32 @@ describe('app flows', () => {
     expect(screen.getByRole('link', { name: 'Create new profile' })).toBeInTheDocument()
   })
 
+  it('warns about unsaved settings when navigating away', async () => {
+    await renderApp(['/'])
+    await completeOnboarding('Test')
+
+    fireEvent.click(within(screen.getByRole('navigation', { name: 'Primary' })).getByRole('link', { name: 'Settings' }))
+    await screen.findByRole('button', { name: 'Export data' })
+
+    const providerSelect = screen.getByRole('combobox', { name: 'Provider' })
+    fireEvent.change(providerSelect, { target: { value: 'ollama' } })
+
+    fireEvent.click(screen.getByRole('link', { name: 'Profile' }))
+
+    const modal = await screen.findByRole('dialog')
+    expect(within(modal).getByText('Unsaved changes')).toBeInTheDocument()
+    expect(within(modal).getByText(/AI provider/i)).toBeInTheDocument()
+
+    fireEvent.click(within(modal).getByRole('button', { name: 'Stay' }))
+    await screen.findByRole('button', { name: 'Export data' })
+
+    fireEvent.click(screen.getByRole('link', { name: 'Profile' }))
+    const modal2 = await screen.findByRole('dialog')
+    fireEvent.click(within(modal2).getByRole('button', { name: 'Leave without saving' }))
+
+    await screen.findByText('Edit profile')
+  })
+
   it('can set goal to Overall Health and persists', async () => {
     await renderApp(['/'])
     await completeOnboarding('Test')
