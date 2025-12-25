@@ -150,6 +150,17 @@ export function MealDetailRoute() {
     return mealLabelFromHour(dt.getHours())
   }, [meal])
 
+  const mealTitle = useMemo(() => {
+    if (!meal) return ''
+    const first = meal.items?.[0]?.name?.trim() ?? ''
+    if (first) {
+      const extra = Math.max(0, (meal.items?.length ?? 0) - 1)
+      return extra > 0 ? `${first} +${extra} more` : first
+    }
+    if (meal.photoDataUrl) return 'Photo meal'
+    return 'Meal'
+  }, [meal])
+
   const note = useMemo(() => {
     if (!meal) return ''
     return nutritionistNote(meal.totalMacros)
@@ -220,6 +231,7 @@ export function MealDetailRoute() {
             <div className="text-3xl font-bold text-white">
               {meal.totalMacros.calories} <span className="text-base font-medium">kcal</span>
             </div>
+            <div className="mt-1 text-base font-semibold text-white">{mealTitle}</div>
             <div className="mt-1 text-sm text-white/90">{new Date(meal.eatenAt).toLocaleString()}</div>
           </div>
         </div>
@@ -228,6 +240,7 @@ export function MealDetailRoute() {
           <div className="flex items-start justify-between gap-4">
             <div>
               <div className="text-xs font-semibold uppercase tracking-wide text-emerald-700">{mealLabel}</div>
+              <div className="mt-1 text-lg font-semibold text-slate-900 dark:text-slate-100">{mealTitle}</div>
               <div className="mt-1 text-2xl font-bold text-slate-900 dark:text-slate-100">
                 {meal.totalMacros.calories} <span className="text-base font-medium text-slate-700 dark:text-slate-200">kcal</span>
               </div>
