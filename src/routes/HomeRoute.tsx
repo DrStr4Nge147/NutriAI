@@ -282,8 +282,14 @@ export function HomeRoute() {
         {todayMeals.length === 0 ? (
           <div className="mt-3 text-sm text-slate-600 dark:text-slate-300">No meals logged today.</div>
         ) : (
-          <div className="mt-3 space-y-2">
-            {todayMeals.slice(0, 6).map((m) => {
+          <div
+            className={
+              todayMeals.length > 5
+                ? 'mt-3 max-h-[392px] space-y-2 overflow-y-auto pr-1'
+                : 'mt-3 space-y-2'
+            }
+          >
+            {todayMeals.map((m) => {
               const dt = new Date(m.eatenAt)
               const label = mealLabelFromHour(dt.getHours())
               const time = dt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
