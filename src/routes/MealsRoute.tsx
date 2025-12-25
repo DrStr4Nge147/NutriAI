@@ -13,11 +13,47 @@ function dayKey(dt: Date) {
 }
 
 function labelForMealHour(hour: number) {
-  if (hour >= 5 && hour < 11) return 'Breakfast'
-  if (hour >= 11 && hour < 15) return 'Lunch'
-  if (hour >= 15 && hour < 18) return 'Snack'
+  if (hour >= 5 && hour < 10) return 'Breakfast'
+  if (hour >= 10 && hour < 12) return 'AM snack'
+  if (hour >= 12 && hour < 15) return 'Lunch'
+  if (hour >= 15 && hour < 18) return 'PM snack'
   if (hour >= 18 && hour < 23) return 'Dinner'
   return 'Meal'
+}
+
+function MealCoverFallback() {
+  return (
+    <svg viewBox="0 0 24 24" className="h-full w-full text-slate-500 dark:text-slate-300" role="img" aria-label="Meal cover">
+      <path
+        d="M7 6h10a2 2 0 0 1 2 2v7a5 5 0 0 1-5 5H10a5 5 0 0 1-5-5V8a2 2 0 0 1 2-2Z"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.8"
+        strokeLinejoin="round"
+      />
+      <path
+        d="M9 10h6"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.8"
+        strokeLinecap="round"
+      />
+      <path
+        d="M10 3h4"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.8"
+        strokeLinecap="round"
+      />
+      <path
+        d="M8.5 14.2c.8-1 2.1-1.7 3.5-1.7s2.7.7 3.5 1.7"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.8"
+        strokeLinecap="round"
+      />
+    </svg>
+  )
 }
 
 export function MealsRoute() {
@@ -291,7 +327,7 @@ export function MealsRoute() {
                               className="h-4 w-4"
                             />
                             <div className="h-12 w-12 overflow-hidden rounded-xl bg-slate-100 dark:bg-slate-800">
-                              {m.photoDataUrl ? <img src={m.photoDataUrl} alt="" className="h-full w-full object-cover" /> : null}
+                              {m.photoDataUrl ? <img src={m.photoDataUrl} alt="" className="h-full w-full object-cover" /> : <MealCoverFallback />}
                             </div>
                             <div className="min-w-0 flex-1">
                               <div className="flex items-start justify-between gap-3">
@@ -318,7 +354,7 @@ export function MealsRoute() {
                         <Link key={m.id} to={`/meals/${m.id}`} className="block px-4 py-3 hover:bg-slate-50 dark:hover:bg-slate-800">
                           <div className="flex items-center gap-3">
                             <div className="h-12 w-12 overflow-hidden rounded-xl bg-slate-100 dark:bg-slate-800">
-                              {m.photoDataUrl ? <img src={m.photoDataUrl} alt="" className="h-full w-full object-cover" /> : null}
+                              {m.photoDataUrl ? <img src={m.photoDataUrl} alt="" className="h-full w-full object-cover" /> : <MealCoverFallback />}
                             </div>
                             <div className="min-w-0 flex-1">
                               <div className="flex items-start justify-between gap-3">

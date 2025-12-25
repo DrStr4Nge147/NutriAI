@@ -4,6 +4,7 @@ import { MemoryRouter } from 'react-router-dom'
 import App from './App'
 import { AppProvider } from './state/AppContext'
 import { MealPhotoAnalysisProvider } from './state/MealPhotoAnalysisContext'
+import { MealPlanAnalysisProvider } from './state/MealPlanAnalysisContext'
 import { UiFeedbackProvider } from './state/UiFeedbackContext'
 import { clearAllData, listProfiles } from './storage/db'
 
@@ -19,7 +20,9 @@ async function renderApp(initialEntries: string[] = ['/'], options?: { expectOnb
       <UiFeedbackProvider>
         <AppProvider>
           <MealPhotoAnalysisProvider>
-            <App />
+            <MealPlanAnalysisProvider>
+              <App />
+            </MealPlanAnalysisProvider>
           </MealPhotoAnalysisProvider>
         </AppProvider>
       </UiFeedbackProvider>
@@ -125,7 +128,17 @@ describe('app flows', () => {
     const fetchBodies: any[] = []
     const responses = [
       { title: 'Chicken Adobo', intro: 'A simple Filipino classic.', ingredients: ['500g chicken', '1/4 cup soy sauce'], steps: ['Marinate.', 'Simmer.'] },
+      {
+        items: [
+          { name: 'Chicken Adobo (1 serving)', quantityGrams: 350, calories: 520, protein_g: 45, carbs_g: 20, fat_g: 28, sugar_g: 6, sodium_mg: 1200 },
+        ],
+      },
       { title: 'Sinigang na Baboy', intro: 'A comforting sour soup.', ingredients: ['300g pork', '1 pack sinigang mix'], steps: ['Boil.', 'Season.'] },
+      {
+        items: [
+          { name: 'Sinigang na Baboy (1 serving)', quantityGrams: 400, calories: 480, protein_g: 30, carbs_g: 18, fat_g: 30, sugar_g: 5, sodium_mg: 900 },
+        ],
+      },
     ]
     let callIdx = 0
 
@@ -181,6 +194,16 @@ describe('app flows', () => {
       fireEvent.click(screen.getByRole('button', { name: 'Approve & save' }))
       await screen.findByText('Meal plan approved and saved')
 
+      await screen.findByText('Analyzing nutrition…')
+
+      fireEvent.click(within(screen.getByRole('navigation', { name: 'Primary' })).getByRole('link', { name: 'Meal History' }))
+      await screen.findByText('All meals saved on this device.')
+      await screen.findByText('Chicken Adobo')
+
+      const historyCard = screen.getByText('Chicken Adobo').closest('a')
+      expect(historyCard).toBeTruthy()
+      expect(within(historyCard as HTMLElement).getByRole('img', { name: 'Meal cover' })).toBeTruthy()
+
       await screen.findByText('Approved Lunch plans')
       await screen.findByText(/Avoiding repeats from your last 1 approved lunch plan\(s\)\./)
 
@@ -203,20 +226,25 @@ describe('app flows', () => {
         expect(fetchBodies.length).toBeGreaterThanOrEqual(2)
       })
 
-      const secondPrompt =
-        fetchBodies?.[1]?.contents?.[0]?.parts?.[0]?.text ??
-        fetchBodies?.[1]?.contents?.[0]?.parts?.map((p: any) => p?.text).filter(Boolean).join('\n') ??
-        ''
-      expect(typeof secondPrompt).toBe('string')
-      expect(secondPrompt).toContain('The user has the following profile:')
-      expect(secondPrompt).toContain('Age: 30')
-      expect(secondPrompt).toContain('Sex: prefer_not_say')
-      expect(secondPrompt).toContain('Height: 170 cm')
-      expect(secondPrompt).toContain('Weight: 70 kg')
-      expect(secondPrompt).toContain('Activity level: moderate')
-      expect(secondPrompt).toContain('Goal: maintain')
-      expect(secondPrompt).toContain('Avoid repeating')
-      expect(secondPrompt).toContain('Chicken Adobo')
+      const promptBodies = fetchBodies
+        .map((b) =>
+          b?.contents?.[0]?.parts?.[0]?.text ??
+          b?.contents?.[0]?.parts?.map((p: any) => p?.text).filter(Boolean).join('\n') ??
+          '',
+        )
+        .filter((x) => typeof x === 'string' && x.trim())
+
+      const generationPrompt = promptBodies.find((p) => p.includes('The user has the following profile:')) ?? ''
+      expect(typeof generationPrompt).toBe('string')
+      expect(generationPrompt).toContain('The user has the following profile:')
+      expect(generationPrompt).toContain('Age: 30')
+      expect(generationPrompt).toContain('Sex: prefer_not_say')
+      expect(generationPrompt).toContain('Height: 170 cm')
+      expect(generationPrompt).toContain('Weight: 70 kg')
+      expect(generationPrompt).toContain('Activity level: moderate')
+      expect(generationPrompt).toContain('Goal: maintain')
+      expect(generationPrompt).toContain('Avoid repeating')
+      expect(generationPrompt).toContain('Chicken Adobo')
 
       const profiles = await listProfiles()
       expect(profiles.find((p) => p.name === 'Test')).toBeTruthy()

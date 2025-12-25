@@ -6,9 +6,10 @@ import { useUiFeedback } from '../state/UiFeedbackContext'
 import { useMealPhotoAnalysis } from '../state/MealPhotoAnalysisContext'
 
 function mealLabelFromHour(hour: number) {
-  if (hour >= 5 && hour < 11) return 'Breakfast'
-  if (hour >= 11 && hour < 15) return 'Lunch'
-  if (hour >= 15 && hour < 18) return 'Snack'
+  if (hour >= 5 && hour < 10) return 'Breakfast'
+  if (hour >= 10 && hour < 12) return 'AM snack'
+  if (hour >= 12 && hour < 15) return 'Lunch'
+  if (hour >= 15 && hour < 18) return 'PM snack'
   if (hour >= 18 && hour < 23) return 'Dinner'
   return 'Meal'
 }

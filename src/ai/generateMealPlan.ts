@@ -63,7 +63,9 @@ function parseMealPlanJson(text: string): Omit<GeneratedMealPlan, 'ai'> {
 
 function mealTypeLabel(mealType: MealPlanMealType) {
   if (mealType === 'breakfast') return 'breakfast'
+  if (mealType === 'am_snack') return 'morning snack'
   if (mealType === 'lunch') return 'lunch'
+  if (mealType === 'pm_snack') return 'afternoon snack'
   return 'dinner'
 }
 

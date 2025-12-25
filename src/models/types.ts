@@ -100,7 +100,7 @@ export type ExportPayloadV1 = {
   mealPlans: MealPlan[]
 }
 
-export type MealPlanMealType = 'breakfast' | 'lunch' | 'dinner'
+export type MealPlanMealType = 'breakfast' | 'am_snack' | 'lunch' | 'pm_snack' | 'dinner'
 
 export type MealPlanAi = {
   provider: AiProvider

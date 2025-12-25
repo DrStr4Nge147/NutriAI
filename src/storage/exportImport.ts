@@ -142,7 +142,15 @@ function parseMealPlan(value: unknown): MealPlan {
   if (!value || typeof value !== 'object') throw new Error('Invalid meal plan')
   const v = value as MealPlan
   if (!v.id || !v.profileId || !v.createdAt) throw new Error('Invalid meal plan')
-  if (v.mealType !== 'breakfast' && v.mealType !== 'lunch' && v.mealType !== 'dinner') throw new Error('Invalid meal plan')
+  if (
+    v.mealType !== 'breakfast' &&
+    v.mealType !== 'am_snack' &&
+    v.mealType !== 'lunch' &&
+    v.mealType !== 'pm_snack' &&
+    v.mealType !== 'dinner'
+  ) {
+    throw new Error('Invalid meal plan')
+  }
   if (!v.title || !v.intro) throw new Error('Invalid meal plan')
   if (!Array.isArray(v.ingredients) || !Array.isArray(v.steps)) throw new Error('Invalid meal plan')
   return v

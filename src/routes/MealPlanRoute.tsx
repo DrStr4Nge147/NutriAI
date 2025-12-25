@@ -2,20 +2,26 @@ import { useEffect, useMemo, useState } from 'react'
 import { generateMealPlan, type GeneratedMealPlan } from '../ai/generateMealPlan'
 import type { MealPlan, MealPlanMealType } from '../models/types'
 import { useApp } from '../state/AppContext'
+import { useMealPlanAnalysis } from '../state/MealPlanAnalysisContext'
 import { useUiFeedback } from '../state/UiFeedbackContext'
-import { deleteMealPlan, listMealPlansByProfile, putMealPlan } from '../storage/db'
+import { deleteMealPlan, listMealPlansByProfile, putMeal, putMealPlan } from '../storage/db'
+import { emptyMacros } from '../nutrition/macros'
 import { newId } from '../utils/id'
 
 function mealTypeLabel(mealType: MealPlanMealType) {
   if (mealType === 'breakfast') return 'Breakfast'
+  if (mealType === 'am_snack') return 'AM snack'
   if (mealType === 'lunch') return 'Lunch'
+  if (mealType === 'pm_snack') return 'PM snack'
   return 'Dinner'
 }
 
 function mealTypeFromLocalTime(date: Date): MealPlanMealType {
   const hour = date.getHours()
-  if (hour >= 5 && hour < 11) return 'breakfast'
-  if (hour >= 11 && hour < 16) return 'lunch'
+  if (hour >= 5 && hour < 10) return 'breakfast'
+  if (hour >= 10 && hour < 12) return 'am_snack'
+  if (hour >= 12 && hour < 15) return 'lunch'
+  if (hour >= 15 && hour < 18) return 'pm_snack'
   return 'dinner'
 }
 
@@ -29,8 +35,9 @@ function isoWeekYearAndNumber(date: Date) {
 }
 
 export function MealPlanRoute() {
-  const { currentProfileId, currentProfile } = useApp()
+  const { currentProfileId, currentProfile, refresh } = useApp()
   const { toast, confirm } = useUiFeedback()
+  const { enqueueMealPlanAnalysis, isPlanQueued, isPlanRunning, getPlanError } = useMealPlanAnalysis()
 
   const now = new Date()
   const nowIsoWeek = isoWeekYearAndNumber(now)
@@ -38,6 +45,7 @@ export function MealPlanRoute() {
   const [mealType, setMealType] = useState<MealPlanMealType>('lunch')
   const [userPickedMealType, setUserPickedMealType] = useState(false)
   const [approvedPlans, setApprovedPlans] = useState<MealPlan[]>([])
+  const [mealIdByPlanId, setMealIdByPlanId] = useState<Record<string, string>>({})
 
   const [busy, setBusy] = useState(false)
   const [approveBusy, setApproveBusy] = useState(false)
@@ -233,6 +241,53 @@ export function MealPlanRoute() {
       }
 
       await putMealPlan(plan)
+
+      const nowIso = new Date().toISOString()
+      const mealId = newId()
+      const meal = {
+        id: mealId,
+        profileId: currentProfileId,
+        createdAt: nowIso,
+        eatenAt: nowIso,
+        aiAnalysis: {
+          provider: plan.ai?.provider ?? 'gemini',
+          analyzedAt: plan.ai?.generatedAt ?? nowIso,
+          rawText: JSON.stringify(
+            {
+              source: 'ai-meal-plan',
+              mealType: plan.mealType,
+              title: plan.title,
+              intro: plan.intro,
+              ingredients: plan.ingredients,
+              steps: plan.steps,
+            },
+            null,
+            2,
+          ),
+        },
+        items: [
+          {
+            id: newId(),
+            name: plan.title,
+            quantityGrams: 0,
+            macros: emptyMacros(),
+          },
+        ],
+        totalMacros: emptyMacros(),
+      }
+
+      await putMeal(meal)
+      await refresh()
+
+      const analysisText =
+        `Meal plan title: ${plan.title}\n` +
+        `Intro: ${plan.intro}\n` +
+        `Ingredients:\n- ${plan.ingredients.join('\n- ')}\n` +
+        `Steps:\n- ${plan.steps.join('\n- ')}`
+
+      setMealIdByPlanId((prev) => ({ ...prev, [plan.id]: mealId }))
+      enqueueMealPlanAnalysis(plan.id, { mealId, text: analysisText })
+
       setApprovedPlans(await listMealPlansByProfile(currentProfileId))
       setGenerated(null)
       toast({ kind: 'success', message: 'Meal plan approved and saved' })
@@ -287,7 +342,7 @@ export function MealPlanRoute() {
               className="mt-1 w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
               value={mealType}
               onChange={(e) => {
-                const next = (e.target.value === 'breakfast' || e.target.value === 'lunch' || e.target.value === 'dinner')
+                const next = (e.target.value === 'breakfast' || e.target.value === 'am_snack' || e.target.value === 'lunch' || e.target.value === 'pm_snack' || e.target.value === 'dinner')
                   ? (e.target.value as MealPlanMealType)
                   : 'lunch'
                 setUserPickedMealType(true)
@@ -300,7 +355,9 @@ export function MealPlanRoute() {
               disabled={busy || approveBusy}
             >
               <option value="breakfast">Breakfast</option>
+              <option value="am_snack">AM snack</option>
               <option value="lunch">Lunch</option>
+              <option value="pm_snack">PM snack</option>
               <option value="dinner">Dinner</option>
             </select>
           </label>
@@ -494,12 +551,33 @@ export function MealPlanRoute() {
             <div className="mt-3 text-sm text-slate-600 dark:text-slate-300">No approved plans match this filter.</div>
           ) : (
             <div className="mt-3 space-y-2">
-              {visibleApproved.map((p) => (
+              {visibleApproved.map((p) => {
+                const linkedMealId = mealIdByPlanId[p.id]
+                const analyzing = isPlanRunning(p.id) || isPlanQueued(p.id)
+                const err = getPlanError(p.id)
+                return (
                 <div key={p.id} className="rounded-xl border border-slate-200 bg-white px-3 py-3 dark:border-slate-800 dark:bg-slate-950">
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
                       <div className="truncate text-sm font-medium text-slate-900 dark:text-slate-100">{p.title}</div>
                       <div className="mt-1 text-xs text-slate-600 dark:text-slate-300">{new Date(p.createdAt).toLocaleString()}</div>
+                      {analyzing ? (
+                        <div className="mt-2">
+                          <div className="inline-flex items-center gap-2 text-xs text-slate-600 dark:text-slate-300">
+                            <svg viewBox="0 0 24 24" className="h-3.5 w-3.5 animate-spin" aria-hidden="true">
+                              <path d="M12 2a10 10 0 1 0 10 10" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" />
+                            </svg>
+                            <span>Analyzing nutrition…</span>
+                          </div>
+                          <div className="mt-1 h-1.5 w-full overflow-hidden rounded-full bg-slate-200 dark:bg-slate-800">
+                            <div className="h-full w-1/2 animate-pulse rounded-full bg-emerald-500" />
+                          </div>
+                        </div>
+                      ) : err ? (
+                        <div className="mt-1 text-xs text-red-700">Analysis failed: {err}</div>
+                      ) : linkedMealId ? (
+                        <div className="mt-1 text-xs text-slate-600 dark:text-slate-300">Nutrition saved to Meal History</div>
+                      ) : null}
                     </div>
                     <div className="flex shrink-0 items-center gap-2">
                       <button
@@ -521,7 +599,8 @@ export function MealPlanRoute() {
                     </div>
                   </div>
                 </div>
-              ))}
+                )
+              })}
 
               {filteredApprovedForType.length > 5 ? (
                 <button
