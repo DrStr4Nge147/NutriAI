@@ -1,9 +1,12 @@
-import { useMemo } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { buildHealthInsights } from '../nutrition/health'
+import { fallbackRiskNutritionistNote } from '../nutrition/mealGuidance'
 import { useApp } from '../state/AppContext'
 import { useUiFeedback } from '../state/UiFeedbackContext'
 import { useMealPhotoAnalysis } from '../state/MealPhotoAnalysisContext'
+import { generateNutritionistNote } from '../ai/generateNutritionistNote'
+import { mealTypeLabel } from '../utils/mealType'
 
 function mealLabelFromHour(hour: number) {
   if (hour >= 5 && hour < 10) return 'Breakfast'
@@ -12,25 +15,6 @@ function mealLabelFromHour(hour: number) {
   if (hour >= 15 && hour < 18) return 'PM snack'
   if (hour >= 18 && hour < 23) return 'Dinner'
   return 'Meal'
-}
-
-function nutritionistNote(input: { calories: number; protein_g: number; carbs_g: number; fat_g: number }): string {
-  const kcal = input.calories
-  if (!Number.isFinite(kcal) || kcal <= 0) return 'Log a meal to see a nutrition note.'
-
-  const pKcal = Math.max(0, input.protein_g) * 4
-  const cKcal = Math.max(0, input.carbs_g) * 4
-  const fKcal = Math.max(0, input.fat_g) * 9
-  const total = pKcal + cKcal + fKcal
-
-  const pct = (v: number) => (total > 0 ? Math.round((v / total) * 100) : 0)
-  const p = pct(pKcal)
-  const c = pct(cKcal)
-  const f = pct(fKcal)
-
-  if (kcal >= 900) return `This meal is energy-dense (~${kcal} kcal). Consider balancing with lighter meals later and adding vegetables/fiber for fullness.`
-  if (kcal >= 600) return `This is a substantial meal (~${kcal} kcal). Aim for balance: protein, fiber-rich carbs, and some healthy fats.`
-  return `Macro split is roughly P ${p}% / C ${c}% / F ${f}%. If you’re still hungry later, add fiber (fruit/veg) and water.`
 }
 
 function MacroDonut(props: { proteinG: number; carbsG: number; fatG: number }) {
@@ -124,7 +108,7 @@ function TrashIcon(props: { className?: string }) {
 export function MealDetailRoute() {
   const navigate = useNavigate()
   const { mealId } = useParams<{ mealId: string }>()
-  const { meals, removeMeal, currentProfile } = useApp()
+  const { meals, removeMeal, updateMeal, currentProfile } = useApp()
   const { toast, confirm } = useUiFeedback()
 
   const { enqueueMealPhotoAnalysis, isMealRunning, isMealQueued, getMealError } = useMealPhotoAnalysis()
@@ -143,8 +127,11 @@ export function MealDetailRoute() {
     })
   }, [meal, currentProfile])
 
+  const warningInsights = useMemo(() => mealInsights.filter((i) => i.severity === 'warning'), [mealInsights])
+
   const mealLabel = useMemo(() => {
     if (!meal) return 'Meal'
+    if (meal.mealType) return mealTypeLabel(meal.mealType)
     const dt = new Date(meal.eatenAt)
     if (!Number.isFinite(dt.getTime())) return 'Meal'
     return mealLabelFromHour(dt.getHours())
@@ -161,10 +148,58 @@ export function MealDetailRoute() {
     return 'Meal'
   }, [meal])
 
-  const note = useMemo(() => {
-    if (!meal) return ''
-    return nutritionistNote(meal.totalMacros)
-  }, [meal])
+  const [note, setNote] = useState('')
+  const savingNoteRef = useRef(false)
+
+  useEffect(() => {
+    if (!meal || !currentProfile) {
+      setNote('')
+      return
+    }
+
+    const basedOnAiAnalyzedAt = meal.aiAnalysis?.analyzedAt
+    const saved = meal.nutritionistNote
+    if (saved?.text && (saved.basedOnAiAnalyzedAt ?? undefined) === basedOnAiAnalyzedAt) {
+      setNote(saved.text)
+      return
+    }
+
+    const fallback = fallbackRiskNutritionistNote({
+      ...meal.totalMacros,
+      goal: currentProfile.goal ?? undefined,
+      conditions: currentProfile.medical?.conditions ?? [],
+      warnings: warningInsights.map((w) => w.text),
+    })
+    setNote(fallback)
+
+    void (async () => {
+      try {
+        if (savingNoteRef.current) return
+        const aiNote = await generateNutritionistNote({
+          profile: currentProfile,
+          totals: meal.totalMacros,
+          items: meal.items.map((i) => ({ name: i.name })),
+          warnings: warningInsights.map((w) => w.text),
+        })
+        setNote(aiNote)
+
+        savingNoteRef.current = true
+        await updateMeal({
+          ...meal,
+          nutritionistNote: {
+            text: aiNote,
+            generatedAt: new Date().toISOString(),
+            provider: meal.aiAnalysis?.provider,
+            basedOnAiAnalyzedAt,
+          },
+        })
+      } catch {
+        // Keep fallback note.
+      } finally {
+        savingNoteRef.current = false
+      }
+    })()
+  }, [meal, currentProfile, warningInsights, updateMeal])
 
   async function onDelete() {
     if (!meal) return
@@ -263,19 +298,6 @@ export function MealDetailRoute() {
         </div>
       )}
 
-      {mealInsights.length > 0 ? (
-        <div className="rounded-2xl border border-amber-200 bg-amber-50 p-5 shadow-sm dark:border-amber-900/50 dark:bg-amber-900/20">
-          <div className="text-sm font-semibold text-amber-900 dark:text-amber-100">Analysis Warning</div>
-          <div className="mt-2 space-y-1">
-            {mealInsights.map((i) => (
-              <div key={i.id} className="text-sm text-amber-900 dark:text-amber-100">
-                - {i.text}
-              </div>
-            ))}
-          </div>
-        </div>
-      ) : null}
-
       <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
         <div className="flex items-center justify-between gap-4">
           <div className="flex items-center gap-4">
@@ -363,9 +385,45 @@ export function MealDetailRoute() {
         </div>
       </div>
 
-      <div className="rounded-2xl bg-emerald-50 p-5 dark:bg-emerald-900/20">
-        <div className="text-sm font-semibold text-emerald-900 dark:text-emerald-100">Nutritionist Note</div>
-        <div className="mt-2 text-sm text-emerald-900/90 dark:text-emerald-100/90">"{note}"</div>
+      <div
+        className={
+          warningInsights.length > 0
+            ? 'rounded-2xl bg-amber-50 p-5 dark:bg-amber-900/20'
+            : 'rounded-2xl bg-emerald-50 p-5 dark:bg-emerald-900/20'
+        }
+      >
+        <div
+          className={
+            warningInsights.length > 0
+              ? 'text-sm font-semibold text-amber-900 dark:text-amber-100'
+              : 'text-sm font-semibold text-emerald-900 dark:text-emerald-100'
+          }
+        >
+          Nutritionist Note
+        </div>
+
+        {warningInsights.length > 0 ? (
+          <div className="mt-3 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 dark:border-amber-900/50 dark:bg-amber-900/20">
+            <div className="text-sm font-semibold text-amber-900 dark:text-amber-100">Warnings</div>
+            <div className="mt-2 space-y-1">
+              {warningInsights.map((i) => (
+                <div key={i.id} className="text-sm text-amber-900 dark:text-amber-100">
+                  - {i.text}
+                </div>
+              ))}
+            </div>
+          </div>
+        ) : null}
+
+        <div
+          className={
+            warningInsights.length > 0
+              ? 'mt-3 text-sm text-amber-900/90 dark:text-amber-100/90'
+              : 'mt-3 text-sm text-emerald-900/90 dark:text-emerald-100/90'
+          }
+        >
+          "{note}"
+        </div>
       </div>
     </div>
   )

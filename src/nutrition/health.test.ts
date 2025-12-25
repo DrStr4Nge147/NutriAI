@@ -57,6 +57,17 @@ describe('health', () => {
     expect(insights.some((i) => i.id === 'hypertension-high-sodium' && i.severity === 'warning')).toBe(true)
   })
 
+  it('warns on very high sodium even without hypertension', () => {
+    const insights = buildHealthInsights({
+      body: { heightCm: 170, weightKg: 70, age: 30, sex: 'male', activityLevel: 'moderate' },
+      medical: { conditions: [] },
+      totals: { calories: 1000, carbs_g: 0, protein_g: 20, fat_g: 10, sodium_mg: 4000, sugar_g: 0 },
+      targetKcal: 2000,
+    })
+
+    expect(insights.some((i) => i.id === 'sodium-very-high' && i.severity === 'warning')).toBe(true)
+  })
+
   it('warns on high sugar when diabetes is listed', () => {
     const insights = buildHealthInsights({
       body: { heightCm: 170, weightKg: 70, age: 30, sex: 'male', activityLevel: 'moderate' },
@@ -66,6 +77,17 @@ describe('health', () => {
     })
 
     expect(insights.some((i) => i.id === 'diabetes-high-sugar' && i.severity === 'warning')).toBe(true)
+  })
+
+  it('warns on very high sugar even without diabetes', () => {
+    const insights = buildHealthInsights({
+      body: { heightCm: 170, weightKg: 70, age: 30, sex: 'male', activityLevel: 'moderate' },
+      medical: { conditions: [] },
+      totals: { calories: 1500, carbs_g: 150, protein_g: 30, fat_g: 30, sugar_g: 90, sodium_mg: 0 },
+      targetKcal: 2000,
+    })
+
+    expect(insights.some((i) => i.id === 'sugar-very-high' && i.severity === 'warning')).toBe(true)
   })
 
   it('matches allergy terms against meal items when provided', () => {

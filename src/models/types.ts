@@ -80,13 +80,22 @@ export type MealAiAnalysis = {
   rawText?: string
 }
 
+export type MealNutritionistNote = {
+  text: string
+  generatedAt: string
+  provider?: AiProvider
+  basedOnAiAnalyzedAt?: string
+}
+
 export type Meal = {
   id: string
   profileId: string
   createdAt: string
   eatenAt: string
+  mealType?: MealPlanMealType
   photoDataUrl?: string
   aiAnalysis?: MealAiAnalysis
+  nutritionistNote?: MealNutritionistNote
   items: FoodItem[]
   totalMacros: MacroNutrients
 }

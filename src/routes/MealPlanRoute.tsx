@@ -7,22 +7,10 @@ import { useUiFeedback } from '../state/UiFeedbackContext'
 import { deleteMealPlan, listMealPlansByProfile, putMeal, putMealPlan } from '../storage/db'
 import { emptyMacros } from '../nutrition/macros'
 import { newId } from '../utils/id'
-
-function mealTypeLabel(mealType: MealPlanMealType) {
-  if (mealType === 'breakfast') return 'Breakfast'
-  if (mealType === 'am_snack') return 'AM snack'
-  if (mealType === 'lunch') return 'Lunch'
-  if (mealType === 'pm_snack') return 'PM snack'
-  return 'Dinner'
-}
+import { formatDatetimeLocalValue, isHourWithinMealType, mealTypeFromHour, mealTypeLabel } from '../utils/mealType'
 
 function mealTypeFromLocalTime(date: Date): MealPlanMealType {
-  const hour = date.getHours()
-  if (hour >= 5 && hour < 10) return 'breakfast'
-  if (hour >= 10 && hour < 12) return 'am_snack'
-  if (hour >= 12 && hour < 15) return 'lunch'
-  if (hour >= 15 && hour < 18) return 'pm_snack'
-  return 'dinner'
+  return mealTypeFromHour(date.getHours())
 }
 
 function isoWeekYearAndNumber(date: Date) {
@@ -54,6 +42,9 @@ export function MealPlanRoute() {
   const [generated, setGenerated] = useState<GeneratedMealPlan | null>(null)
   const [previewApproved, setPreviewApproved] = useState<MealPlan | null>(null)
   const [showAllApproved, setShowAllApproved] = useState(false)
+
+  const [pendingApprove, setPendingApprove] = useState<null | { mealId: string; plan: MealPlan }>(null)
+  const [pendingEatenAtLocal, setPendingEatenAtLocal] = useState<string>(() => formatDatetimeLocalValue(new Date()))
 
   const [approvedDateFilter, setApprovedDateFilter] = useState<'none' | 'week' | 'month'>('none')
   const [approvedYear, setApprovedYear] = useState<string>('all')
@@ -242,13 +233,23 @@ export function MealPlanRoute() {
 
       await putMealPlan(plan)
 
-      const nowIso = new Date().toISOString()
+      const now = new Date()
+      const nowIso = now.toISOString()
       const mealId = newId()
+
+      if (!isHourWithinMealType(plan.mealType, now.getHours())) {
+        setPendingEatenAtLocal(formatDatetimeLocalValue(now))
+        setPendingApprove({ mealId, plan })
+        setApproveBusy(false)
+        return
+      }
+
       const meal = {
         id: mealId,
         profileId: currentProfileId,
         createdAt: nowIso,
         eatenAt: nowIso,
+        mealType: plan.mealType,
         aiAnalysis: {
           provider: plan.ai?.provider ?? 'gemini',
           analyzedAt: plan.ai?.generatedAt ?? nowIso,
@@ -291,6 +292,75 @@ export function MealPlanRoute() {
       setApprovedPlans(await listMealPlansByProfile(currentProfileId))
       setGenerated(null)
       toast({ kind: 'success', message: 'Meal plan approved and saved' })
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : 'Failed to approve meal plan'
+      toast({ kind: 'error', message: msg })
+    } finally {
+      setApproveBusy(false)
+    }
+  }
+
+  async function confirmPendingApprove() {
+    if (!currentProfileId) return
+    if (!pendingApprove) return
+
+    setApproveBusy(true)
+    setError(null)
+
+    try {
+      const eatenAt = new Date(pendingEatenAtLocal).toISOString()
+      const nowIso = new Date().toISOString()
+      const { plan, mealId } = pendingApprove
+
+      const meal = {
+        id: mealId,
+        profileId: currentProfileId,
+        createdAt: nowIso,
+        eatenAt,
+        mealType: plan.mealType,
+        aiAnalysis: {
+          provider: plan.ai?.provider ?? 'gemini',
+          analyzedAt: plan.ai?.generatedAt ?? nowIso,
+          rawText: JSON.stringify(
+            {
+              source: 'ai-meal-plan',
+              mealType: plan.mealType,
+              title: plan.title,
+              intro: plan.intro,
+              ingredients: plan.ingredients,
+              steps: plan.steps,
+            },
+            null,
+            2,
+          ),
+        },
+        items: [
+          {
+            id: newId(),
+            name: plan.title,
+            quantityGrams: 0,
+            macros: emptyMacros(),
+          },
+        ],
+        totalMacros: emptyMacros(),
+      }
+
+      await putMeal(meal)
+      await refresh()
+
+      const analysisText =
+        `Meal plan title: ${plan.title}\n` +
+        `Intro: ${plan.intro}\n` +
+        `Ingredients:\n- ${plan.ingredients.join('\n- ')}\n` +
+        `Steps:\n- ${plan.steps.join('\n- ')}`
+
+      setMealIdByPlanId((prev) => ({ ...prev, [plan.id]: mealId }))
+      enqueueMealPlanAnalysis(plan.id, { mealId, text: analysisText })
+
+      setApprovedPlans(await listMealPlansByProfile(currentProfileId))
+      setGenerated(null)
+      toast({ kind: 'success', message: 'Meal plan approved and saved' })
+      setPendingApprove(null)
     } catch (e) {
       const msg = e instanceof Error ? e.message : 'Failed to approve meal plan'
       toast({ kind: 'error', message: msg })
@@ -617,49 +687,45 @@ export function MealPlanRoute() {
         </div>
       </div>
 
-      {previewApproved ? (
+      {pendingApprove ? (
         <div
-          className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 px-3 pt-[calc(0.75rem+env(safe-area-inset-top))] pb-[calc(0.75rem+env(safe-area-inset-bottom))] sm:items-center"
+          className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 p-3 sm:items-center"
           role="dialog"
           aria-modal="true"
         >
-          <div className="flex w-full max-w-lg max-h-[calc(100dvh-2rem)] flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl sm:max-h-[calc(100vh-2rem)] dark:border-slate-800 dark:bg-slate-900">
-            <div className="p-5 pb-3">
-              <div className="flex items-start justify-between gap-3">
-                <div className="min-w-0">
-                  <div className="text-base font-semibold text-slate-900 dark:text-slate-100">{previewApproved.title}</div>
-                  <div className="mt-1 text-xs text-slate-600 dark:text-slate-300">{new Date(previewApproved.createdAt).toLocaleString()}</div>
-                </div>
-                <button
-                  className="rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100 dark:hover:bg-slate-900"
-                  onClick={() => setPreviewApproved(null)}
-                  type="button"
-                >
-                  Close
-                </button>
-              </div>
+          <div className="w-full max-w-md rounded-2xl border border-slate-200 bg-white p-5 shadow-2xl dark:border-slate-800 dark:bg-slate-900">
+            <div className="text-base font-semibold text-slate-900 dark:text-slate-100">Confirm meal time</div>
+            <div className="mt-2 text-sm text-slate-700 dark:text-slate-200">
+              You selected <span className="font-semibold">{mealTypeLabel(pendingApprove.plan.mealType)}</span>, but the current time is unusual for that meal.
+              Please confirm when you ate it.
             </div>
 
-            <div className="px-5 pb-5 overflow-y-auto">
-              <div className="text-sm text-slate-700 dark:text-slate-200">{previewApproved.intro}</div>
+            <label className="mt-4 block text-sm">
+              <div className="font-medium text-slate-900 dark:text-slate-100">Eaten at</div>
+              <input
+                className="mt-1 w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
+                value={pendingEatenAtLocal}
+                onChange={(e) => setPendingEatenAtLocal(e.target.value)}
+                type="datetime-local"
+              />
+            </label>
 
-              <div className="mt-4">
-                <div className="text-sm font-medium">Ingredients</div>
-                <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-slate-700 dark:text-slate-200">
-                  {previewApproved.ingredients.map((x, idx) => (
-                    <li key={`${idx}-${x}`}>{x}</li>
-                  ))}
-                </ul>
-              </div>
-
-              <div className="mt-4">
-                <div className="text-sm font-medium">How to cook</div>
-                <ol className="mt-2 list-decimal space-y-1 pl-5 text-sm text-slate-700 dark:text-slate-200">
-                  {previewApproved.steps.map((x, idx) => (
-                    <li key={`${idx}-${x}`}>{x}</li>
-                  ))}
-                </ol>
-              </div>
+            <div className="mt-4 flex justify-end gap-2">
+              <button
+                className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-950 dark:hover:bg-slate-900"
+                onClick={() => setPendingApprove(null)}
+                type="button"
+              >
+                Cancel
+              </button>
+              <button
+                className="rounded-xl bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800 disabled:opacity-50 dark:bg-slate-100 dark:text-slate-900 dark:hover:bg-white"
+                onClick={() => void confirmPendingApprove()}
+                disabled={approveBusy}
+                type="button"
+              >
+                Save
+              </button>
             </div>
           </div>
         </div>

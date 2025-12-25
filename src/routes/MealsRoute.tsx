@@ -1,7 +1,9 @@
 import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { dailyCalorieTarget } from '../nutrition/dailyNeeds'
+import { hasMealWarnings } from '../nutrition/mealGuidance'
 import { sumMacroNutrients } from '../nutrition/macros'
+import { mealTypeLabel } from '../utils/mealType'
 import { useApp } from '../state/AppContext'
 import { useUiFeedback } from '../state/UiFeedbackContext'
 
@@ -19,6 +21,13 @@ function labelForMealHour(hour: number) {
   if (hour >= 15 && hour < 18) return 'PM snack'
   if (hour >= 18 && hour < 23) return 'Dinner'
   return 'Meal'
+}
+
+function labelForMeal(input: { mealType?: any; eatenAt: string }) {
+  if (input.mealType) return mealTypeLabel(input.mealType)
+  const dt = new Date(input.eatenAt)
+  if (Number.isNaN(dt.getTime())) return 'Meal'
+  return labelForMealHour(dt.getHours())
 }
 
 function MealCoverFallback() {
@@ -52,6 +61,22 @@ function MealCoverFallback() {
         strokeWidth="1.8"
         strokeLinecap="round"
       />
+    </svg>
+  )
+}
+
+function WarningIcon(props: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" className={props.className ?? 'h-4 w-4'} aria-hidden="true">
+      <path
+        d="M12 3 1.8 20.5a1.2 1.2 0 0 0 1 1.8h18.4a1.2 1.2 0 0 0 1-1.8L12 3Z"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinejoin="round"
+      />
+      <path d="M12 9v5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+      <path d="M12 18h.01" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" />
     </svg>
   )
 }
@@ -296,8 +321,9 @@ export function MealsRoute() {
                 <div className="border-t border-slate-200 dark:border-slate-800">
                   {day.meals.map((m) => {
                     const dt = new Date(m.eatenAt)
-                    const label = labelForMealHour(dt.getHours())
+                    const label = labelForMeal(m)
                     const time = dt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+                    const showWarning = currentProfile ? hasMealWarnings({ meal: m, profile: currentProfile }) : false
                     const description =
                       m.items.length > 0
                         ? m.items
@@ -339,7 +365,14 @@ export function MealsRoute() {
                                     {time}
                                   </div>
                                 </div>
-                                <div className="shrink-0 text-sm font-semibold text-emerald-700">{m.totalMacros.calories} kcal</div>
+                                <div className="shrink-0 flex items-center gap-2">
+                                  {showWarning ? (
+                                    <div className="text-amber-600" aria-label="Meal warnings" title="Meal warnings">
+                                      <WarningIcon />
+                                    </div>
+                                  ) : null}
+                                  <div className="text-sm font-semibold text-emerald-700">{m.totalMacros.calories} kcal</div>
+                                </div>
                               </div>
 
                               <div className="mt-2 flex flex-wrap gap-1">
@@ -366,7 +399,14 @@ export function MealsRoute() {
                                     {time}
                                   </div>
                                 </div>
-                                <div className="shrink-0 text-sm font-semibold text-emerald-700">{m.totalMacros.calories} kcal</div>
+                                <div className="shrink-0 flex items-center gap-2">
+                                  {showWarning ? (
+                                    <div className="text-amber-600" aria-label="Meal warnings" title="Meal warnings">
+                                      <WarningIcon />
+                                    </div>
+                                  ) : null}
+                                  <div className="text-sm font-semibold text-emerald-700">{m.totalMacros.calories} kcal</div>
+                                </div>
                               </div>
 
                               <div className="mt-2 flex flex-wrap gap-1">

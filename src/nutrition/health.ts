@@ -119,6 +119,22 @@ export function buildHealthInsights(input: {
   const sodiumMg = input.totals.sodium_mg ?? 0
   const sugarG = input.totals.sugar_g ?? 0
 
+  if (sodiumMg >= 3500) {
+    insights.push({
+      id: 'sodium-very-high',
+      severity: 'warning',
+      text: `Sodium looks very high (${Math.round(sodiumMg)} mg). Consider limiting salty sauces/processed foods and choosing lower-sodium options.`,
+    })
+  }
+
+  if (sugarG >= 75) {
+    insights.push({
+      id: 'sugar-very-high',
+      severity: 'warning',
+      text: `Sugar looks very high (${Math.round(sugarG)}g). Consider swapping sweetened drinks/snacks for unsweetened options and adding protein/fiber.`,
+    })
+  }
+
   const hasDiabetes = hasAnyCondition(input.medical, ['diabetes', 'prediabetes', 'insulin resistance', 'insulin_resistance'])
   if (hasDiabetes) {
     const carbs = input.totals.carbs_g

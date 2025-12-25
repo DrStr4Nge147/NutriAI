@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { readFileAsDataUrl } from '../utils/files'
 import { buildHealthInsights } from '../nutrition/health'
+import { fallbackRiskNutritionistNote } from '../nutrition/mealGuidance'
 import { useApp } from '../state/AppContext'
 import { useMealPhotoAnalysis } from '../state/MealPhotoAnalysisContext'
 
@@ -17,25 +18,6 @@ function mealLabelFromHour(hour: number) {
   if (hour >= 15 && hour < 18) return 'Snack'
   if (hour >= 18 && hour < 23) return 'Dinner'
   return 'Meal'
-}
-
-function nutritionistNote(input: { calories: number; protein_g: number; carbs_g: number; fat_g: number }): string {
-  const kcal = input.calories
-  if (!Number.isFinite(kcal) || kcal <= 0) return 'Log a meal to see a nutrition note.'
-
-  const pKcal = Math.max(0, input.protein_g) * 4
-  const cKcal = Math.max(0, input.carbs_g) * 4
-  const fKcal = Math.max(0, input.fat_g) * 9
-  const total = pKcal + cKcal + fKcal
-
-  const pct = (v: number) => (total > 0 ? Math.round((v / total) * 100) : 0)
-  const p = pct(pKcal)
-  const c = pct(cKcal)
-  const f = pct(fKcal)
-
-  if (kcal >= 900) return `This meal is energy-dense (~${kcal} kcal). Consider balancing with lighter meals later and adding vegetables/fiber for fullness.`
-  if (kcal >= 600) return `This is a substantial meal (~${kcal} kcal). Aim for balance: protein, fiber-rich carbs, and some healthy fats.`
-  return `Macro split is roughly P ${p}% / C ${c}% / F ${f}%. If you’re still hungry later, add fiber (fruit/veg) and water.`
 }
 
 export function CaptureMealRoute() {
@@ -126,11 +108,18 @@ export function CaptureMealRoute() {
     })
   }, [meal, currentProfile])
 
+  const warningInsights = useMemo(() => mealInsights.filter((i) => i.severity === 'warning'), [mealInsights])
+
   const note = useMemo(() => {
     const totals = meal?.totalMacros ?? null
     if (!totals) return ''
-    return nutritionistNote(totals)
-  }, [meal?.totalMacros])
+    return fallbackRiskNutritionistNote({
+      ...totals,
+      goal: currentProfile?.goal ?? undefined,
+      conditions: currentProfile?.medical?.conditions ?? [],
+      warnings: warningInsights.map((w) => w.text),
+    })
+  }, [meal?.totalMacros, currentProfile?.goal, currentProfile?.medical?.conditions, warningInsights])
 
   useEffect(() => {
     if (step !== 'analyzing') return
@@ -404,9 +393,45 @@ export function CaptureMealRoute() {
                   )}
                 </div>
 
-                <div className="rounded-2xl bg-emerald-50 px-4 py-3 dark:bg-emerald-900/20">
-                  <div className="text-sm font-semibold text-emerald-900 dark:text-emerald-100">Nutritionist Note</div>
-                  <div className="mt-2 text-xs text-emerald-900/90 dark:text-emerald-100/90">"{note}"</div>
+                <div
+                  className={
+                    warningInsights.length > 0
+                      ? 'rounded-2xl bg-amber-50 px-4 py-3 dark:bg-amber-900/20'
+                      : 'rounded-2xl bg-emerald-50 px-4 py-3 dark:bg-emerald-900/20'
+                  }
+                >
+                  <div
+                    className={
+                      warningInsights.length > 0
+                        ? 'text-sm font-semibold text-amber-900 dark:text-amber-100'
+                        : 'text-sm font-semibold text-emerald-900 dark:text-emerald-100'
+                    }
+                  >
+                    Nutritionist Note
+                  </div>
+
+                  {warningInsights.length > 0 ? (
+                    <div className="mt-3 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 dark:border-amber-900/50 dark:bg-amber-900/20">
+                      <div className="text-sm font-semibold text-amber-900 dark:text-amber-100">Warnings</div>
+                      <div className="mt-2 space-y-1">
+                        {warningInsights.map((i) => (
+                          <div key={i.id} className="text-xs text-amber-900 dark:text-amber-100">
+                            - {i.text}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ) : null}
+
+                  <div
+                    className={
+                      warningInsights.length > 0
+                        ? 'mt-2 text-xs text-amber-900/90 dark:text-amber-100/90'
+                        : 'mt-2 text-xs text-emerald-900/90 dark:text-emerald-100/90'
+                    }
+                  >
+                    "{note}"
+                  </div>
                 </div>
 
                 {mealId && getMealError(mealId) ? (
